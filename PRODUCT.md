@@ -38,11 +38,11 @@ The forces that matter:
 (Pull left out on purpose: "close faster" is the job. Most builders only pitch pull.)
 
 What the product does about each:
-- Push -> within minutes she has 20 investors worth writing to and 3 emails ready, so a pipeline exists tonight.
+- Push -> within minutes she has 20 investors worth writing to and the first email ready, so a pipeline exists tonight.
 - Anxiety -> it runs on her own company, not a demo. Every investor shows why they match. Every email is hers to edit and send; nothing leaves without her. One plain line where she enters her details says what happens to them.
 - Habit -> she sends from her own Gmail, can export the tracker to a Sheet, and doesn't have to stop asking friends for intros. Starting costs four fields.
 
-The one worry onboarding must remove: "What if it sends something wrong to an investor in my name?" **[guess, review: rewrite in the words a founder actually used]**
+The one worry onboarding must remove: "What if it sends something wrong to an investor in my name?" What we say back, to build confidence: "You read every email first, and you send it yourself from your own Gmail."
 
 (Forces map, price of each move, must-have mix and the interview kit: `product-thinking/02-switch-forces.md`)
 
@@ -62,10 +62,10 @@ Today (what they do now, before your product). Neha, a first-time founder of a s
 With my product (happy path; her steps and the product's steps marked):
 1. Tuesday, 11 PM. She checks the bank balance: 3.5 months of runway. (Her step)
 2. She opens the link from a founder group and enters company name, sector, stage and ask size. (Her step)
-3. She sees 20 investors ranked, each with one line on why they fit, and the top 3 emails written to them. (Product's step)
+3. She sees 20 investors ranked, each with one line on why they fit. She taps Write email on the top one and gets an email written to that investor. (Product's step)
 4. She reads one, changes a line, taps "Open in Gmail", and sends it. (Her step)
 5. She marks it "sent". (Her step)
-6. Five days later she sees "3 follow-ups due" with each one written, and sends them the same way. (Product's step, then hers)
+6. Three days later she sees "3 follow-ups due" with each one written, and sends them the same way. (Product's step, then hers)
 7. An investor replies. She taps "replied" and that investor's follow-ups stop. (Her step)
 8. A meeting is booked. The job is done: she is talking to investors who fit, instead of searching for them.
 
@@ -95,7 +95,7 @@ First value: her own company, with 20 named investors, a reason for each, and an
 
 The smallest commitment we ask for: company name, sector, stage and ask size, and nothing more. No deck, no Gmail connection, no sign-up.
 
-The worry it removes: "What if it sends something wrong to an investor in my name?" **[guess, review: replace with a founder's own words after the interviews]**
+The worry it removes: "What if it sends something wrong to an investor in my name?" Answered on screen with: "You read every email first, and you send it yourself from your own Gmail."
 
 From opening the link to the first value:
 1. She opens the link a friend or the founder group shared. removes: "another tool to learn"
@@ -106,14 +106,14 @@ From opening the link to the first value:
 
 Login: not before step 3. Asked at step 5, when she wants to keep her list, because saving it is the reason to sign up.
 What we don't ask on day one: deck, DD documents, Drive, Gmail permission, LinkedIn, profile, tour.
-What we ask later, and when: a one-line description of the company after her first email is sent, to sharpen later drafts; her deck after a meeting is booked (parked, not this sprint).
+What we ask later, and when: just before her first draft, once: her name, one line on her background, the company website and one line on what it does, so the email sounds like her; her deck after a meeting is booked (parked, not this sprint).
 
 How we count it (details: `product-thinking/04-onboarding.md`): Setup = submitted the four details. Aha = saw her 20 and the first email. Habit = came back on a second day and sent a follow-up or added investors within 7 days. A step log in Convex records only the step name and time: no names, no emails, no company details.
 
 ## 5. v1
 
 **Does** (the must haves: one person finishes the one job):
-- Four fields in, 20 ranked investors out from a seeded list of about 100, each with a reason
+- Four fields in, 20 ranked investors out from the seeded list (AI, Climate, Deeptech and sector-agnostic, India only), each with a reason
 - A personalised email for each investor, written to that investor's thesis
 - Edit the email and open it prefilled in her Gmail to send; copy to clipboard if the link fails
 - A tracker with a status per investor: not contacted, sent, replied, meeting, passed
@@ -137,9 +137,9 @@ How we count it (details: `product-thinking/04-onboarding.md`): Setup = submitte
 - Comparable recent rounds mentioned inside the drafts
 - Gmail API send and reply detection
 
-**How I'll know it worked** (what they do again, not what they say): of the first 10 founders who see their list, at least 4 open an email in Gmail within 24 hours, at least 3 return within 7 days to send a follow-up or add investors, and at least 1 gets a reply to an email the product wrote. **[guess, review: numbers are a choice, set your own]**
+**How I'll know it worked** (what they do again, not what they say): of the first 10 founders who see their list, at least 4 open an email in Gmail within 24 hours, at least 3 return within 7 days to send a follow-up or add investors, and at least 1 gets a reply to an email the product wrote.
 
-Build first for the use case with the biggest pain: a first-time founder with 4 months of runway or less. The seed list covers the 2–3 sectors where you know the investors best, not all of India. **[guess, review: which sectors]**
+Build first for the use case with the biggest pain: a first-time founder with 4 months of runway or less. The seed list covers the 2–3 sectors where you know the investors best, not all of India: AI, Climate and Deeptech.
 
 ## 6. The riskiest guess
 
@@ -165,7 +165,7 @@ Thirty-minute check, no code (run it while you build), and what happened:
 3. I can edit an email and open it prefilled in my Gmail, or copy it if the link fails
 4. I can enter a sector with no match and get a clear message, not a junk list
 5. I can mark an investor "sent" and see it in the tracker
-6. I can see follow-ups drafted for investors I emailed five days ago
+6. I can see follow-ups drafted for investors I emailed 3 days ago, then 7 days after that
 7. I can mark a reply and that investor's follow-ups stop
 8. A stranger can finish the whole flow without me explaining it, and the step log shows each step reached
 Last: I can close it, reopen it, and my data is still there.

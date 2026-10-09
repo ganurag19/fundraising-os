@@ -32,7 +32,7 @@ Keep references in one direction; screenshot each one with its label written bes
 
 ## 3. Type and colour
 
-- Font: Inter, one typeface **[guess, review]**
+- Font: Inter, one typeface
 - Sizes: display 40 for the headline (one per screen), heading 20, body 16. No other sizes without asking.
 - Text: #1A1A1A on #FAF8F5 (muted #5C5C5C for fit reasons and dates; cards #FFFFFF)
 - Accent: #B4451F, only on the main action. Red #B3261E only for errors.
@@ -42,11 +42,11 @@ Keep references in one direction; screenshot each one with its label written bes
 
 ## 4. Screens
 
-Flow: Start -> Results -> Draft -> Tracker, plus a Save your list sheet. Full wireflow with error exits: `product-thinking/07-screens-and-states.md`. Phone first, check at 360 px and laptop.
+Flow: Start -> Results -> Draft -> Tracker, plus a Save your list sheet. Full wireflow with error exits: `product-thinking/07-screens-and-states.md`. Phone first, check at 360 px, 390 px and laptop. Same screens on a laptop, wider; no separate desktop layout.
 
 ### Start
 - For: a founder opening the link for the first time, on her phone, at night
-- Top to bottom: one line on what this does; four fields (company, sector, stage, ask size); data line; one button
+- Top to bottom: one line on what this does; four fields (company as text; sector, stage and ask size as dropdowns, ask in ₹ ranges); "For Indian startups" line; data line; one button
 - Main action: Find my investors -> Results
 - Empty, first visit: this is the screen; fields empty with hints
 - Empty, coming back: skip to Tracker if a list exists
@@ -57,7 +57,7 @@ Flow: Start -> Results -> Draft -> Tracker, plus a Save your list sheet. Full wi
 
 ### Results
 - For: a founder who wants proof it understood her
-- Top to bottom: header with company, count and "Investor list updated 5 Oct"; 20 cards with name, fit reason, cheque size, stage, Write email
+- Top to bottom: header with company, count and "Investor list updated [latest source date]"; 20 cards with name, fit reason, cheque size, stage, Write email
 - Main action: Write email on the top card -> Draft
 - Empty, first visit / coming back: not reachable
 - Loading: progress bar with honest steps, her details stay on screen
@@ -88,9 +88,15 @@ Flow: Start -> Results -> Draft -> Tracker, plus a Save your list sheet. Full wi
 - If the AI answer is wrong: status chips changeable in one tap; replied stops follow-ups
 - Status changes are optimistic; AI steps never are
 
+### About you (sheet)
+- For: a founder who just tapped Write email for the first time
+- Top to bottom: "So the email sounds like you."; four short fields (your name, one line on your background, company website, one line on what the company does); one button
+- Main action: Write my email -> Draft. Asked once; editable later from the Draft screen
+- Loading: n/a. Error: a field too long: say the limit. Done: closes to Draft, loading
+
 ### Save your list (sheet)
 - For: a founder who just marked her first email sent
-- Top to bottom: "Save your list so it's here tomorrow."; one field; one button
+- Top to bottom: "Save your list so it's here tomorrow."; one button: Continue with Google
 - Main action: Save my list -> Tracker
 - Loading: "Saving..." Error: "Couldn't save. Your list is still on this screen." Exits: Try again, Not now. Done: closes to Tracker
 
