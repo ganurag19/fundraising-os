@@ -36,9 +36,10 @@ Before milestone 1: GitHub repo, Convex project, Claude keys and caps (the setup
 ## Setup checklist
 
 - [x] Node and npm installed
-- [ ] GitHub CLI installed and signed in (`gh auth login`, by you)
+- [x] GitHub CLI installed (12 Oct)
+- [ ] GitHub sign-in (`gh auth login`, by you)
 - [ ] Public repo created and pushed
-- [ ] App scaffold: Vite + React + TypeScript + Convex (by me)
+- [x] App scaffold: Vite + React + TypeScript + Convex (12 Oct, builds and runs)
 - [ ] Convex project created and signed in (`npx convex dev`, by you)
 - [ ] Claude dev key ($5 limit) and live key ($25 limit) in Convex environment variables (by you)
 
