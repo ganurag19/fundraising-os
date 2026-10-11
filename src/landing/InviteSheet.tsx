@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useConvex, useMutation } from "convex/react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
+import { rememberInviteCode } from "../lib/token";
 
 export type SheetMode = "request" | "code";
 const STAGES = ["Idea", "Pre-seed", "Seed", "Pre-Series A", "Series A"];
@@ -37,7 +38,7 @@ export default function InviteSheet({ mode, onMode, onClose }: { mode: SheetMode
     setBusy(true); setError("");
     try {
       const r = await convex.query(api.invites.checkCode, { code: f.code });
-      if (r.valid) { sessionStorage.setItem("inviteCode", f.code.trim().toUpperCase()); navigate("/start"); }
+      if (r.valid) { rememberInviteCode(f.code.trim().toUpperCase()); navigate("/start"); }
       else setError("That code doesn't work. Check it, or request an invite.");
     } catch { setError("Couldn't check that code. Check your connection and try again."); }
     setBusy(false);

@@ -208,3 +208,17 @@ textarea.field{resize:vertical;min-height:84px;line-height:1.5}
 
 /* the hero glow extends past the edges; clip it sideways so the page never scrolls horizontally */
 .hero{overflow-x:clip}
+
+/* milestone 1: top-pick cards and the email reader (DESIGN.md section 4) */
+.app-wrap{max-width:1060px;margin:0 auto;padding:24px 16px 80px}
+.app-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
+.pick-card{position:relative;border:1px solid var(--gold-line);border-radius:20px;background:linear-gradient(180deg,rgba(233,196,106,.08),rgba(17,17,21,0) 40%),var(--card);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.pick-card .rank{position:absolute;top:14px;right:14px;font:600 11px/1 var(--mono);color:var(--gold);letter-spacing:.08em}
+.email{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:14px;font-size:14px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.email .subj{font-weight:600;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:10px;white-space:normal}
+.warn{background:var(--amber-soft);border:1px solid rgba(245,181,68,.35);color:var(--amber);border-radius:10px;padding:8px 10px;font-size:13px}
+.profile-form{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.profile-form label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--fg2)}
+.preview{border:1px dashed var(--blue-line);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--fg2);background:var(--blue-soft)}
+.err{color:var(--red);font-size:13px;margin:0}

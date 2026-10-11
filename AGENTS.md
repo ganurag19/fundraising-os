@@ -48,7 +48,7 @@ Model: Claude Haiku 4.5 for matching and follow-ups; Claude Sonnet 5.5 for each 
 What goes in, and its limit: the founder's four fields and profile (length-limited) and only the filtered shortlist of investor records, never the whole list; at most 20 records per call.
 Where it runs: a Convex action. Never in the interface.
 Key: ANTHROPIC_API_KEY in Convex environment variables, dev and prod.
-Reply cap: max_tokens 1500 (match), 700 (draft), 400 (follow-up).
+Reply cap: max_tokens 1500 (match), 1000 (draft: the email plus its reason, "why they fit" and "watch out" in one structured reply), 400 (follow-up).
 Calls cap: at most 40 AI calls an hour across the app and 3 runs per visitor a day, checked in the kitchen (Convex rate limiter). A visitor is a long random token made on first visit and kept in her browser.
 Provider limit: a hard monthly limit of $25, set by me in the Claude Console.
 When a cap is hit or the call fails: show "Busy right now. Try again in a few minutes." and keep her details on screen.
