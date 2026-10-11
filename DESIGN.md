@@ -73,9 +73,11 @@ Buttons say what happens next ("Open email", "Send follow-up"), never "Submit" o
 - competition preview, picks of the week with medals and badges
 - built for India, coming soon, FAQ, final call to action
 
-**Founder sign-up (6 steps, with a "time left" chip).** Startup name → your name → sector (AI, Climate, Deeptech open; others "soon") → stage and raise → website and LinkedIn (we read the website once to draft her one-liner) → one-liner and founder line (prefilled, she edits). Then the matching screen ("Written in N seconds"), then the reveal.
+**Founder sign-up (7 steps, with a "time left" chip).** Startup name → your name → sector (AI, Climate, Deeptech open; others "soon") → stage and raise → website and LinkedIn (we read the website once to draft her one-liner) → "A few words about you" (rough notes: what the company does, about you, vision, revenue, customers) → "How you'll come across" (polished founder line, one-liner and traction; she edits; used word for word). Then the matching screen ("Written in N seconds"), then the reveal.
 
-**Reveal ("3 investors to email today").** One line: "Picked from N that fit {company}." Three gold cards: logo, name, person · city · website ↗, rank, dial, a one-line reason, the email (To, subject, body), then Open in Gmail (blue), a copy icon and "I sent it". "Why them" is folded: 2 reasons, 1 watch-out, sources. Below: "N more investors fit {company}" with blurred rows (score and city only; names and emails never leave the server), and "Continue with Google". Signed in, the rows open, each with "Write email".
+**Reveal ("3 investors to email today"), before sign-in.** One line: "Picked from N that fit {company}." Three gold cards: logo, name, person · city · website ↗, rank, dial, a one-line reason, a gold "Why they fit you +" button (2 reasons, 1 watch-out, sources), then the email in this order: hook → who she is → what the company does → traction → the ask. Buttons: Open in Gmail (blue), a copy icon, "I sent it". Below: "N more investors fit {company}" with blurred rows (score and city only; names and emails never leave the server), a ✓ list of what she gets (investors ranked, how many backed a startup recently, how many lead), "See all of them" (Google), and "Coming to your dashboard" cards tagged SOON.
+
+**Dashboard (after sign-in).** "Your investors." Stats: fit, emails ready, sent. Top picks (gold rows), then "Next best" with Write email, then "Coming soon" cards.
 
 **Founder app.** The sidebar, in order, and what each screen does:
 - **Today:** do-this-next card, compact top picks, today's list with time per task, round so far, Q&A readiness, news, data room score

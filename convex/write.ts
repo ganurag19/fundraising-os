@@ -34,7 +34,7 @@ export const oneLinerOf = (f: Doc<"founders">) =>
 
 const briefOf = (f: Doc<"founders">): FounderBrief => ({
   name: f.name, company: f.company, oneLiner: oneLinerOf(f), founderLine: f.founderLine ?? "", sectors: f.sectors,
-  stage: f.stage, raising: f.ask, revenue: f.revenue, customers: f.customers,
+  stage: f.stage, raising: f.ask, traction: f.traction, revenue: f.traction ? undefined : f.revenue, customers: f.traction ? undefined : f.customers,
   website: f.website ? shortUrl(f.website) : undefined, linkedin: f.linkedin ? shortUrl(f.linkedin) : undefined,
 });
 
@@ -62,14 +62,17 @@ export const writeFirstEmails = action({
 
     await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: "writing" });
     const year = new Date().getFullYear();
-    const matchCount = rankMatches(data.investors, f, year).length;
+    const ranked = rankMatches(data.investors, f, year);
+    const matchCount = ranked.length;
+    const activeCount = ranked.filter((x) => x.inv.recent.some((r) => (r.year ?? 0) >= year - 1)).length;
+    const leadCount = ranked.filter((x) => x.inv.leadsRounds).length;
     const list: { inv: Doc<"investors">; score: number }[] = topMatches(data.investors, f, year, 20);
     const top = list.slice(0, 3);
     if (!top.length) {
       await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: "failed" });
       return { ok: false as const, error: "We don't have investors for this sector and stage yet." };
     }
-    await ctx.runMutation(internal.founders.saveMatches, { founderId: f._id, matchCount, picks: list.map((t) => ({ investorId: t.inv._id, score: t.score })) });
+    await ctx.runMutation(internal.founders.saveMatches, { founderId: f._id, matchCount, activeCount, leadCount, picks: list.map((t) => ({ investorId: t.inv._id, score: t.score })) });
 
     const founder = briefOf(f);
     const client = new Anthropic();
@@ -100,7 +103,7 @@ export const writeMore = action({
   },
 });
 
-type FounderBrief = { name: string; company: string; oneLiner: string; founderLine: string; sectors: string[]; stage: string; raising: string; revenue?: string; customers?: string; website?: string; linkedin?: string };
+type FounderBrief = { name: string; company: string; oneLiner: string; founderLine: string; sectors: string[]; stage: string; raising: string; traction?: string; revenue?: string; customers?: string; website?: string; linkedin?: string };
 
 async function writeOne(ctx: ActionCtx, client: Anthropic, founderId: Id<"founders">, founder: FounderBrief, inv: Doc<"investors">, purpose = "first_email", model = MODEL): Promise<boolean> {
   const facts = investorFacts(inv);
@@ -123,7 +126,7 @@ async function writeOne(ctx: ActionCtx, client: Anthropic, founderId: Id<"founde
         ms: Date.now() - started, inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens,
       });
       if (!out || res.stop_reason === "refusal") continue;
-      const problems = checkDraft({ subject: out.subject, body: out.body, oneLiner: founder.oneLiner, founderLine: founder.founderLine });
+      const problems = checkDraft({ subject: out.subject, body: out.body, oneLiner: founder.oneLiner, founderLine: founder.founderLine, traction: founder.traction });
       const unsourced = unsourcedFacts(out.factsUsed, facts as Record<string, unknown>);
       if ((problems.length || unsourced.length) && attempt === 0) {
         fixNote = `\n\nYour last draft had these problems. Fix them and keep everything else true:\n- ${[...problems, ...unsourced.map((u) => `Not in INVESTOR: ${u}`)].join("\n- ")}`;

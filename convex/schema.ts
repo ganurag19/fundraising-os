@@ -62,6 +62,8 @@ export default defineSchema({
     linkedin: v.optional(v.string()),
     // "So the email sounds like you" (asked once). oneLiner is drafted from her website, then edited by her.
     oneLiner: v.optional(v.string()),
+    vision: v.optional(v.string()), // her words, e.g. "make every Indian city climate-ready"
+    traction: v.optional(v.string()), // approved sentence built from revenue and customers
     forWho: v.optional(v.string()), // older one-liner parts, kept for existing rows
     outcome: v.optional(v.string()),
     how: v.optional(v.string()),
@@ -71,6 +73,8 @@ export default defineSchema({
     customers: v.optional(v.string()),
     emailsStatus: v.union(v.literal("none"), v.literal("writing"), v.literal("ready"), v.literal("failed")),
     matchCount: v.optional(v.number()), // every investor that fits, before we keep the top 20
+    activeCount: v.optional(v.number()), // of those, how many backed a deal this year or last
+    leadCount: v.optional(v.number()), // of those, how many lead rounds
     userId: v.optional(v.id("users")), // set when she signs in on the reveal screen
     domainMatch: v.optional(v.boolean()), // internal only: sign-in email domain matches her website
   }).index("by_token", ["token"]),

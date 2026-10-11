@@ -8,7 +8,7 @@ const GENERIC = ["on your list of sectors", "among your sectors", "familiar to y
 export const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9₹ ]+/g, " ").replace(/\s+/g, " ").trim();
 
-export type DraftCheckInput = { subject: string; body: string; oneLiner: string; founderLine: string };
+export type DraftCheckInput = { subject: string; body: string; oneLiner: string; founderLine: string; traction?: string };
 
 /** Returns a list of problems in plain words. Empty means the email passes. */
 export function checkDraft(d: DraftCheckInput): string[] {
@@ -20,6 +20,7 @@ export function checkDraft(d: DraftCheckInput): string[] {
   for (const g of GENERIC) if (all.includes(g)) problems.push(`Generic line, could go to any investor: "${g}"`);
   if (d.oneLiner && !norm(d.body).includes(norm(d.oneLiner).slice(0, 40))) problems.push("Missing the company one-liner");
   if (d.founderLine && !norm(d.body).includes(norm(d.founderLine).slice(0, 30))) problems.push("Missing the founder line");
+  if (d.traction && !norm(d.body).includes(norm(d.traction).slice(0, 30))) problems.push("Missing her traction line");
   return problems;
 }
 

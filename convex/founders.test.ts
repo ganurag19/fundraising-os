@@ -27,6 +27,15 @@ describe("founder sign-up", () => {
     expect(await t.mutation(api.founders.start, { ...nisha, token: tokenA, stage: "Pre-seed" })).toEqual({ ok: true });
   });
 
+  test("fixes all-lower-case names, keeps ones she capitalised", async () => {
+    const t = await setup();
+    await t.mutation(api.founders.start, { ...nisha, token: tokenA, company: "monsoon grid", name: "priya menon" });
+    const me = await t.query(api.founders.me, { token: tokenA });
+    expect([me?.company, me?.name]).toEqual(["Monsoon Grid", "Priya Menon"]);
+    await t.mutation(api.founders.start, { ...nisha, token: tokenA, company: "iCAN Labs", name: "Priya Menon" });
+    expect((await t.query(api.founders.me, { token: tokenA }))?.company).toBe("iCAN Labs");
+  });
+
   test("rejects bad tokens, unknown sectors and stages", async () => {
     const t = await setup();
     expect((await t.mutation(api.founders.start, { ...nisha, token: "short" })).ok).toBe(false);

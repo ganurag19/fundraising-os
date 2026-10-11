@@ -8,9 +8,10 @@ import { normaliseLinkedin, normaliseUrl } from "../../convex/lib/links";
 const SECTORS: [string, boolean][] = [["AI", true], ["Climate & Energy", true], ["Deeptech", true], ["Fintech", false], ["B2B software", false], ["Health", false], ["Consumer brands", false]];
 const STAGES = ["Idea", "Pre-seed", "Seed", "Pre-Series A", "Series A"];
 const ASKS = ["₹25–50L", "₹50L–1Cr", "₹1–3 Cr", "₹3–5 Cr", "₹5–10 Cr"];
-const LEFT = ["~2 min left", "~2 min left", "~2 min left", "~1 min left", "Almost there", "Last step"];
+const LEFT = ["~2 min left", "~2 min left", "~2 min left", "~1 min left", "~1 min left", "Almost there", "Last step"];
+const TOTAL = 7;
 
-type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export default function Start() {
   const token = useMemo(() => visitorToken(), []);
@@ -20,11 +21,12 @@ export default function Start() {
   const saveProfile = useMutation(api.founders.saveProfile);
   const write = useAction(api.write.writeFirstEmails);
   const fromWebsite = useAction(api.suggest.fromWebsite);
+  const polish = useAction(api.suggest.polish);
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>(0);
   const [f, setF] = useState({ company: "", name: "", sectors: [] as string[], stage: "", ask: "" });
-  const [p, setP] = useState({ website: "", linkedin: "", oneLiner: "", founderLine: "", revenue: "", customers: "" });
+  const [p, setP] = useState({ website: "", linkedin: "", oneLiner: "", founderLine: "", vision: "", revenue: "", customers: "", traction: "" });
   const [suggested, setSuggested] = useState<"" | "yes" | "no">("");
   const [note, setNote] = useState(""); // why we couldn't draft from her website (not an error)
   const [busy, setBusy] = useState(false);
@@ -32,8 +34,8 @@ export default function Start() {
   const [seconds, setSeconds] = useState(0);
 
   // Coming back: her emails are already written.
-  useEffect(() => { if (me?.emailsStatus === "ready" && step < 6) navigate("/emails"); }, [me, step, navigate]);
-  useEffect(() => { if (step !== 6) return; const t = setInterval(() => setSeconds((s) => s + 1), 1000); return () => clearInterval(t); }, [step]);
+  useEffect(() => { if (me?.emailsStatus === "ready" && step < 7) navigate("/emails"); }, [me, step, navigate]);
+  useEffect(() => { if (step !== 7) return; const t = setInterval(() => setSeconds((s) => s + 1), 1000); return () => clearInterval(t); }, [step]);
 
   if (me === undefined) return <Shell><div className="spinner" /></Shell>;
   if (!me && !code) {
@@ -49,7 +51,7 @@ export default function Start() {
 
   const next = () => { setError(""); setStep((s) => (s + 1) as Step); };
   const back = () => { setError(""); setStep((s) => (s - 1) as Step); };
-  const company = f.company || me?.company || "Your startup";
+  const company = me?.company || f.company || "Your startup"; // the saved name has its capitals fixed
 
   async function submitRound() {
     setBusy(true); setError("");
@@ -69,18 +71,27 @@ export default function Start() {
     else { setSuggested("no"); setNote(r.error); }
     next();
   }
+  // Her raw notes → "How you'll come across". If the AI is busy, she edits her own words instead.
+  async function submitNotes() {
+    setBusy(true); setError("");
+    const r = await polish({ token, oneLiner: p.oneLiner, founderLine: p.founderLine, vision: p.vision, revenue: p.revenue, customers: p.customers }).catch(() => ({ ok: false as const, error: "" }));
+    setBusy(false);
+    if (r.ok) setP((o) => ({ ...o, founderLine: r.founderLine || o.founderLine, oneLiner: r.oneLiner || o.oneLiner, traction: r.traction }));
+    else setP((o) => ({ ...o, traction: [o.revenue, o.customers].filter(Boolean).join(", ") }));
+    next();
+  }
   async function submitProfile() {
     setBusy(true); setError("");
     const r = await saveProfile({ token, ...p }).catch(() => ({ ok: false as const, error: "Couldn't save that. Check your connection and try again." }));
     if (!r.ok) { setBusy(false); setError(r.error); return; }
-    setStep(6); setSeconds(0);
+    setStep(7); setSeconds(0);
     const w = await write({ token }).catch(() => ({ ok: false as const, error: "Busy right now. Try again in a few minutes." }));
     setBusy(false);
-    if (w.ok) setStep(7); else { setStep(5); setError(w.error); }
+    if (w.ok) setStep(8); else { setStep(6); setError(w.error); }
   }
 
-  const progress = <div className="progress">{[0, 1, 2, 3, 4, 5].map((i) => <i key={i} className={i <= step ? "on" : ""} />)}</div>;
-  const count = (n: number) => <div className="count">STEP {n} OF 6 <span className="tag gold" style={{ float: "right" }}>{LEFT[n - 1]}</span></div>;
+  const progress = <div className="progress">{Array.from({ length: TOTAL }, (_, i) => i).map((i) => <i key={i} className={i <= step ? "on" : ""} />)}</div>;
+  const count = (n: number) => <div className="count">STEP {n} OF {TOTAL} <span className="tag gold" style={{ float: "right" }}>{LEFT[n - 1]}</span></div>;
   const actions = (canGo: boolean, onGo: () => void, label = "Continue →", showBack = true, busyLabel = "Saving…") => (
     <>
       {error && <p className="err" role="alert" style={{ marginTop: 12 }}>{error}</p>}
@@ -119,17 +130,27 @@ export default function Start() {
         </div>
         {actions(true, submitLinks, p.website.trim() ? "Continue →" : "No website yet →", true, "Reading your website…")}</div>}
 
-      {step === 5 && <div className="step rise">{progress}{count(6)}<h1>So the email <span className="it">sounds like you.</span></h1>
-        <p className="help">{suggested === "yes" ? "Drafted from your website. Make it yours." : note || "Two lines. They go into every email."}</p>
+      {step === 5 && <div className="step rise">{progress}{count(6)}<h1>A few words <span className="it">about you.</span></h1>
+        <p className="help">{suggested === "yes" ? "Your one-liner is drafted from your website. Rough notes are fine; we'll polish them next." : note || "Rough notes are fine. We'll polish them next."}</p>
         <div className="profile-form">
-          <label>Your one-liner<textarea className="field" placeholder={`${company} helps [who] [achieve what] by [how].`} maxLength={200} value={p.oneLiner} onChange={(e) => setP((o) => ({ ...o, oneLiner: e.target.value }))} /></label>
-          <label>One line about you<textarea className="field" placeholder="e.g. I'm Neha; I ran a 40-client CA practice for five years." maxLength={220} value={p.founderLine} onChange={(e) => setP((o) => ({ ...o, founderLine: e.target.value }))} /></label>
-          <label>Your best number (optional)<input className="field" placeholder="e.g. ₹3.2L a month, growing 22% a month" maxLength={80} value={p.revenue} onChange={(e) => setP((o) => ({ ...o, revenue: e.target.value }))} /></label>
+          <label>What {company} does<textarea className="field" placeholder={`${company} helps [who] [achieve what] by [how].`} maxLength={200} value={p.oneLiner} onChange={(e) => setP((o) => ({ ...o, oneLiner: e.target.value }))} /></label>
+          <label>About you<textarea className="field" placeholder="e.g. ex-IIT Delhi, 5 years in insurance, obsessed with climate" maxLength={220} value={p.founderLine} onChange={(e) => setP((o) => ({ ...o, founderLine: e.target.value }))} /></label>
+          <label>Your vision, in a few words (optional)<input className="field" placeholder="e.g. make every Indian city climate-ready" maxLength={120} value={p.vision} onChange={(e) => setP((o) => ({ ...o, vision: e.target.value }))} /></label>
+          <label>Revenue (optional)<input className="field" placeholder="e.g. ₹3.2L a month, growing 22% a month" maxLength={80} value={p.revenue} onChange={(e) => setP((o) => ({ ...o, revenue: e.target.value }))} /></label>
           <label>Customers (optional)<input className="field" placeholder="e.g. 8 CA firms, 2 paying" maxLength={80} value={p.customers} onChange={(e) => setP((o) => ({ ...o, customers: e.target.value }))} /></label>
+        </div>
+        {actions(!!(p.oneLiner.trim() && p.founderLine.trim()), submitNotes, "Polish my lines →", true, "Polishing…")}</div>}
+
+      {step === 6 && <div className="step rise">{progress}{count(7)}<h1>How you'll <span className="it">come across.</span></h1>
+        <p className="help">These go into every email, word for word. Make them yours.</p>
+        <div className="profile-form">
+          <label>You<textarea className="field tall" maxLength={220} value={p.founderLine} onChange={(e) => setP((o) => ({ ...o, founderLine: e.target.value }))} /></label>
+          <label>{company}<textarea className="field tall" maxLength={200} value={p.oneLiner} onChange={(e) => setP((o) => ({ ...o, oneLiner: e.target.value }))} /></label>
+          {(p.traction || p.revenue || p.customers) && <label>Traction<textarea className="field" style={{ minHeight: 60 }} maxLength={200} value={p.traction} onChange={(e) => setP((o) => ({ ...o, traction: e.target.value }))} /></label>}
         </div>
         {actions(!!(p.oneLiner.trim() && p.founderLine.trim()), submitProfile, "Find my investors →")}</div>}
 
-      {step === 6 && <div className="step center rise"><div className="spinner" /><h1 style={{ fontSize: 24 }}>Checking 433 investors for {company}…</h1>
+      {step === 7 && <div className="step center rise"><div className="spinner" /><h1 style={{ fontSize: 24 }}>Checking 433 investors for {company}…</h1>
         <ul className="rat" style={{ textAlign: "left", maxWidth: 380, margin: "16px auto 0", listStyle: "none", padding: 0 }}>
           <li className="fg2">✓ What they invest in, and at what stage</li>
           <li className={seconds > 1 ? "fg2" : ""}>{seconds > 1 ? "✓" : "…"} Whether their cheque fits your round</li>
@@ -137,7 +158,7 @@ export default function Start() {
           <li>… Writing your first 3 emails ({seconds}s)</li>
         </ul></div>}
 
-      {step === 7 && <div className="step center rise"><span className="kicker gold">Written in {seconds < 60 ? `${Math.max(seconds, 1)} seconds` : `${Math.round(seconds / 60)} min`}</span>
+      {step === 8 && <div className="step center rise"><span className="kicker gold">Written in {seconds < 60 ? `${Math.max(seconds, 1)} seconds` : `${Math.round(seconds / 60)} min`}</span>
         <h1 style={{ marginTop: 12 }}>Your first 3 emails <span className="it">are ready.</span></h1>
         <p className="fg2">Each one opens on something that investor actually did.</p>
         <button className="btn white" style={{ borderRadius: 14, padding: 14, marginTop: 18 }} onClick={() => navigate("/emails")}>Read my emails →</button></div>}

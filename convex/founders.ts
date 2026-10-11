@@ -9,6 +9,10 @@ import { domainOf, normaliseLinkedin, normaliseUrl } from "./lib/links";
 const TOKEN = /^[a-f0-9]{48}$/;
 const normaliseCode = (code: string) => code.trim().toUpperCase().replace(/\s+/g, "");
 const short = (s: string | undefined, max: number) => (s ?? "").trim().slice(0, max);
+/** "anurag rao" → "Anurag Rao"; leaves "DeVries" or "iCAN" alone. */
+export const nameCase = (s: string) => (s === s.toLowerCase() ? s.replace(/(^|[\s'-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()) : s);
+/** "monsoon grid" → "Monsoon Grid"; a name with any capital stays as she typed it. */
+export const companyCase = nameCase;
 
 /** Every public function finds the founder from her own token, never from an id she sends. */
 export async function founderByToken(ctx: QueryCtx | MutationCtx, token: string) {
@@ -31,7 +35,7 @@ export const start = mutation({
   returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
   handler: async (ctx, a) => {
     if (!TOKEN.test(a.token)) return { ok: false as const, error: "Please reload the page and try again." };
-    const company = short(a.company, 80), name = short(a.name, 80);
+    const company = companyCase(short(a.company, 80)), name = nameCase(short(a.name, 80));
     if (!company) return { ok: false as const, error: "Please enter your startup's name." };
     if (!name) return { ok: false as const, error: "Please enter your name." };
     const sectors = a.sectors.filter((s) => s in SECTOR_KEYS).slice(0, 3);
@@ -56,7 +60,7 @@ export const start = mutation({
 
 /** "So the email sounds like you": her links, one-liner and founder line. */
 export const saveProfile = mutation({
-  args: { token: v.string(), website: v.string(), linkedin: v.string(), oneLiner: v.string(), founderLine: v.string(), revenue: v.optional(v.string()), customers: v.optional(v.string()) },
+  args: { token: v.string(), website: v.string(), linkedin: v.string(), oneLiner: v.string(), founderLine: v.string(), vision: v.optional(v.string()), traction: v.optional(v.string()), revenue: v.optional(v.string()), customers: v.optional(v.string()) },
   returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
   handler: async (ctx, a) => {
     const f = await founderByToken(ctx, a.token);
@@ -71,6 +75,7 @@ export const saveProfile = mutation({
     await ctx.db.patch("founders", f._id, {
       website: website ?? undefined, linkedin: linkedin ?? undefined, oneLiner, founderLine,
       revenue: short(a.revenue, 80) || undefined, customers: short(a.customers, 80) || undefined,
+      vision: short(a.vision, 120) || undefined, traction: short(a.traction, 200) || undefined,
     });
     if (!f.founderLine) await ctx.db.insert("steps", { step: "profile_done" });
     return { ok: true as const };
@@ -137,7 +142,7 @@ export const me = query({
     v.object({
       company: v.string(), name: v.string(), stage: v.string(), ask: v.string(), sectors: v.array(v.string()),
       website: v.union(v.string(), v.null()), hasProfile: v.boolean(), emailsStatus: v.string(),
-      unlocked: v.boolean(), matchCount: v.number(), rows: v.array(rowV),
+      unlocked: v.boolean(), matchCount: v.number(), activeCount: v.number(), leadCount: v.number(), rows: v.array(rowV),
     }),
   ),
   handler: async (ctx, { token }) => {
@@ -162,7 +167,7 @@ export const me = query({
     return {
       company: f.company, name: f.name, stage: f.stage, ask: f.ask, sectors: f.sectors, website: f.website ?? null,
       hasProfile: !!(f.oneLiner || f.forWho) && !!f.founderLine, emailsStatus: f.emailsStatus,
-      unlocked, matchCount: f.matchCount ?? rows.length, rows,
+      unlocked, matchCount: f.matchCount ?? rows.length, activeCount: f.activeCount ?? 0, leadCount: f.leadCount ?? 0, rows,
     };
   },
 });
@@ -212,10 +217,10 @@ export const setStatus = internalMutation({
 });
 
 export const saveMatches = internalMutation({
-  args: { founderId: v.id("founders"), matchCount: v.number(), picks: v.array(v.object({ investorId: v.id("investors"), score: v.number() })) },
+  args: { founderId: v.id("founders"), matchCount: v.number(), activeCount: v.number(), leadCount: v.number(), picks: v.array(v.object({ investorId: v.id("investors"), score: v.number() })) },
   returns: v.null(),
-  handler: async (ctx, { founderId, matchCount, picks }) => {
-    await ctx.db.patch("founders", founderId, { matchCount });
+  handler: async (ctx, { founderId, matchCount, activeCount, leadCount, picks }) => {
+    await ctx.db.patch("founders", founderId, { matchCount, activeCount, leadCount });
     const old = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId)).take(50);
     for (const m of old) await ctx.db.delete("matches", m._id);
     const oldDrafts = await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", founderId)).take(50);
