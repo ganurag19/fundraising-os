@@ -1,0 +1,594 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fundraising OS Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+/* Layout: RoundFunded's flow and components (landing → 4-step apply → reveal → app with sidebar, list, drawer, kanban),
+   dressed in GrowthX's black-and-blue dark system, with Apple-style big type and Boketto's italic serif accent.
+   Deliberately dark-only, as asked: every colour is set here and color-scheme is dark. */
+:root{
+  color-scheme:dark;
+  --bg:#000; --bg2:#0A0A0B; --card:#111113; --card2:#17171A; --line:#26262B; --line2:#34343B;
+  --fg:#F5F5F7; --fg2:#B4B4BC; --muted:#85858F;
+  --blue:#2F6BFF; --blue-ink:#fff; --blue-soft:rgba(47,107,255,.14);
+  --green:#3DDC84; --green-soft:rgba(61,220,132,.12); --amber:#F5B544; --amber-soft:rgba(245,181,68,.13);
+  --red:#FF6B6B; --violet:#A98BFF; --violet-soft:rgba(169,139,255,.14);
+  --display:"Inter Tight","Inter",system-ui,sans-serif; --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Instrument Serif",Georgia,serif;
+  --r:14px; --r-lg:22px; --pill:999px;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font:15px/1.55 var(--body);margin:0;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.it{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:0}
+.muted{color:var(--muted)} .fg2{color:var(--fg2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:var(--pill);padding:12px 20px;font-weight:600;border:1px solid transparent;white-space:nowrap}
+.btn.primary{background:var(--blue);color:var(--blue-ink)}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.white{background:var(--fg);color:#000}
+.btn.ghost{background:transparent;border-color:var(--line2);color:var(--fg)}
+.btn.ghost:hover{border-color:var(--fg2)}
+.btn.sm{padding:8px 14px;font-size:13px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:var(--pill);padding:6px 12px;font-size:13px;color:var(--fg2);white-space:nowrap}
+.tag{display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:3px 8px;font-size:12px;font-weight:500;background:var(--card2);color:var(--fg2);border:1px solid var(--line);white-space:nowrap}
+.tag.blue{background:var(--blue-soft);color:#8FB0FF;border-color:transparent}
+.tag.green{background:var(--green-soft);color:var(--green);border-color:transparent}
+.tag.amber{background:var(--amber-soft);color:var(--amber);border-color:transparent}
+.tag.violet{background:var(--violet-soft);color:var(--violet);border-color:transparent}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:13px;flex:none;color:#fff}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;letter-spacing:-.01em;text-decoration:none}
+.logo-mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#2F6BFF,#7A5CFF);display:grid;place-items:center;font-size:14px;color:#fff}
+.view{display:none} .view.on{display:block}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--fg);color:#000;border-radius:var(--pill);padding:10px 18px;font-weight:600;font-size:14px;z-index:90;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+@media (prefers-reduced-motion:no-preference){.rise{animation:rise .5s cubic-bezier(.2,.8,.2,1) both}@keyframes rise{from{opacity:.001;transform:translateY(10px)}to{opacity:1;transform:none}}}
+
+/* ---------- landing ---------- */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(0,0,0,.72);backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid rgba(255,255,255,.06)}
+.nav-in{max-width:1180px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:20px}
+.nav-links{display:flex;gap:22px;margin-left:auto;font-size:14px;color:var(--fg2)}
+.nav-links a{text-decoration:none} .nav-links a:hover{color:var(--fg)}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px}
+.hero{position:relative;padding-block:84px 40px;text-align:center;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:-20% -10% auto;height:620px;background:radial-gradient(50% 55% at 50% 0%,rgba(47,107,255,.32),transparent 70%),radial-gradient(30% 40% at 78% 10%,rgba(122,92,255,.22),transparent 70%);pointer-events:none}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:var(--pill);padding:6px 14px 6px 8px;font-size:13px;color:var(--fg2);background:rgba(255,255,255,.03)}
+.eyebrow b{background:var(--blue);color:#fff;border-radius:var(--pill);padding:2px 8px;font-size:11px;letter-spacing:.04em}
+.h-display{font-family:var(--display);font-weight:700;letter-spacing:-.035em;line-height:1.02;font-size:clamp(42px,7.4vw,92px);margin:22px auto 18px;max-width:14ch;text-wrap:balance}
+.h-display .it{font-size:1.08em;color:#C9D7FF}
+.lede{font-size:clamp(16px,1.6vw,19px);color:var(--fg2);max-width:46ch;margin:0 auto}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:22px}
+.cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+.preview{margin-top:56px;border:1px solid var(--line);border-radius:var(--r-lg);background:linear-gradient(180deg,#0E0E11,#09090B);overflow:hidden;text-align:left;box-shadow:0 40px 120px -40px rgba(47,107,255,.35)}
+.ptabs{display:flex;gap:6px;padding:14px;border-bottom:1px solid var(--line);overflow-x:auto}
+.ptab{border:0;background:transparent;color:var(--muted);border-radius:var(--pill);padding:8px 14px;font-size:13px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.ptab .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5}
+.ptab[aria-selected="true"]{background:var(--card2);color:var(--fg)}
+.ptab[aria-selected="true"] .dot{background:var(--blue);opacity:1}
+.pbody{padding:20px;min-height:360px}
+.prow{display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);margin-bottom:8px}
+.prow .meta{flex:1;min-width:0}
+.prow .meta b{display:block;font-weight:600}
+.prow .meta span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.section{padding-block:96px 0}
+.s-head{text-align:center;margin-bottom:40px}
+.s-head h2{font-family:var(--display);font-weight:700;letter-spacing:-.03em;font-size:clamp(32px,4.6vw,56px);line-height:1.04;margin:10px 0 12px;text-wrap:balance}
+.kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.bento{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.bento.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.bento,.bento.three{grid-template-columns:minmax(0,1fr)}}
+.bcard{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);padding:26px;display:flex;flex-direction:column;gap:14px;min-width:0;overflow:hidden}
+.bcard .num{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bcard h3{margin:0;font-family:var(--display);font-size:22px;letter-spacing:-.02em}
+.bcard p{margin:0;color:var(--fg2)}
+.mini{border:1px solid var(--line);border-radius:var(--r);background:var(--bg2);padding:14px;display:flex;flex-direction:column;gap:10px;margin-top:auto}
+.mini-row{display:flex;align-items:center;gap:10px;font-size:13px}
+.bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;flex:1}
+.bar i{display:block;height:100%;background:var(--blue);border-radius:6px}
+.vs{display:grid;grid-template-columns:1.1fr 1fr 1fr;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.vs > div{padding:18px 20px;border-top:1px solid var(--line)}
+.vs .h{border-top:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--bg2)}
+.vs .task{font-weight:600}
+.vs .ours{background:rgba(47,107,255,.06);color:var(--fg)}
+.vs .hand{color:var(--muted)}
+@media (max-width:760px){.vs{grid-template-columns:minmax(0,1fr)}.vs .h:not(:first-child){display:none}.vs .hand::before{content:"By hand · ";color:var(--fg2)}.vs .ours::before{content:"With us · ";color:#8FB0FF}.vs > div{border-top:0}.vs .task{border-top:1px solid var(--line)}}
+.trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.trust{grid-template-columns:minmax(0,1fr)}}
+.trust .bcard h3{font-size:19px}
+.faq{max-width:760px;margin:0 auto}
+.faq details{border-bottom:1px solid var(--line);padding:18px 0}
+.faq summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:16px}
+.faq summary::after{content:"+";color:var(--muted);font-size:20px;line-height:1}
+.faq details[open] summary::after{content:"–"}
+.faq p{color:var(--fg2);margin:10px 0 0}
+.cta-band{margin-top:96px;border-radius:28px;padding:72px 24px;text-align:center;background:radial-gradient(60% 90% at 50% 100%,rgba(47,107,255,.45),transparent 70%),linear-gradient(180deg,#0B0B0E,#06060A);border:1px solid var(--line)}
+.cta-band h2{font-family:var(--display);font-size:clamp(34px,5vw,64px);letter-spacing:-.035em;line-height:1.02;margin:0 0 14px;text-wrap:balance}
+footer{padding-block:56px;color:var(--muted);font-size:13px}
+.foot{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:24px}
+
+/* ---------- apply (onboarding) ---------- */
+.apply{min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(60% 40% at 50% 0%,rgba(47,107,255,.14),transparent 70%),var(--bg)}
+.apply-top{padding:18px 20px;display:flex;align-items:center;justify-content:space-between}
+.apply-main{flex:1;display:grid;place-items:center;padding:20px 16px 80px}
+.step{width:100%;max-width:520px}
+.step .count{font-size:13px;color:var(--muted);margin-bottom:8px;font-variant-numeric:tabular-nums}
+.progress{display:flex;gap:6px;margin-bottom:28px}
+.progress i{flex:1;height:3px;border-radius:3px;background:var(--line)}
+.progress i.on{background:var(--blue)}
+.step h1{font-family:var(--display);font-size:clamp(30px,5vw,42px);letter-spacing:-.03em;line-height:1.06;margin:0 0 8px}
+.step .help{color:var(--fg2);margin:0 0 22px}
+.field{width:100%;background:var(--card);border:1px solid var(--line2);border-radius:var(--r);padding:15px 16px;font-size:16px;color:var(--fg)}
+.field:focus{border-color:var(--blue);outline:none;box-shadow:0 0 0 4px var(--blue-soft)}
+.field::placeholder{color:#5F5F69}
+.step-actions{display:flex;gap:10px;margin-top:16px}
+.step-actions .btn.primary{flex:1;border-radius:var(--r);padding:15px}
+.back{width:52px;border-radius:var(--r);border:1px solid var(--line2);background:var(--card)}
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+.pick button{border:1px solid var(--line2);background:var(--card);border-radius:var(--pill);padding:9px 14px;font-size:14px;color:var(--fg2)}
+.pick button[aria-pressed="true"]{background:var(--fg);color:#000;border-color:var(--fg)}
+.pick button[disabled]{opacity:.38;cursor:not-allowed}
+.pick-label{font-size:13px;color:var(--muted);margin:18px 0 8px}
+.soon{font-size:11px;color:var(--muted);margin-left:4px}
+.reveal{text-align:center;max-width:460px}
+.reveal-card{width:220px;height:290px;margin:0 auto 28px;border-radius:26px;border:1px solid var(--line2);background:radial-gradient(80% 60% at 50% 110%,rgba(47,107,255,.65),transparent 70%),linear-gradient(180deg,#14141A,#07070A);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 30px 80px -30px rgba(47,107,255,.6)}
+.reveal-card b{font-family:var(--display);font-size:64px;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.reveal-card span{font-size:11px;letter-spacing:.2em;color:var(--fg2)}
+.reveal h1{font-family:var(--display);font-size:clamp(30px,5vw,40px);letter-spacing:-.03em;line-height:1.08;margin:0 0 10px}
+.auth{display:flex;flex-direction:column;gap:10px;margin-top:24px}
+.auth .btn{border-radius:var(--r);padding:14px}
+.gdot{width:16px;height:16px;border-radius:50%;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--line2);border-top-color:var(--blue);margin:0 auto 16px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- app shell ---------- */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--bg2);padding:16px 12px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.ws{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--card)}
+.ws .sq{width:28px;height:28px;border-radius:8px;background:var(--fg);color:#000;display:grid;place-items:center;font-weight:700;font-size:12px}
+.raise{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:12px;display:flex;flex-direction:column;gap:10px}
+.raise-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.rings{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;text-align:center}
+.ring{--p:0;width:46px;height:46px;border-radius:50%;margin:0 auto;display:grid;place-items:center;background:conic-gradient(var(--c,var(--blue)) calc(var(--p)*1%),var(--line) 0);position:relative}
+.ring::before{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--card)}
+.ring b{position:relative;font-size:13px;font-variant-numeric:tabular-nums}
+.rings small{display:block;font-size:11px;color:var(--muted);margin-top:4px}
+.nav-group{display:flex;flex-direction:column;gap:2px}
+.nav-group .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#5F5F69;padding:6px 10px 4px;font-weight:600}
+.nitem{display:flex;align-items:center;gap:10px;border:0;background:transparent;color:var(--fg2);border-radius:10px;padding:9px 10px;font-size:14px;text-align:left;width:100%}
+.nitem:hover{background:var(--card);color:var(--fg)}
+.nitem[aria-current="page"]{background:var(--card2);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line)}
+.nitem .ic{width:18px;text-align:center;opacity:.85}
+.nitem .badge{margin-left:auto;background:var(--blue);color:#fff;border-radius:6px;font-size:11px;padding:1px 6px;font-weight:700}
+.nitem.soonitem{opacity:.5}
+.nitem.soonitem::after{content:"Soon";margin-left:auto;font-size:10px;border:1px solid var(--line2);border-radius:6px;padding:1px 5px}
+.demo-card{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);margin-top:auto}
+.demo-card .thumb{height:76px;background:radial-gradient(60% 80% at 50% 120%,rgba(47,107,255,.6),transparent 70%),#0C0C10;display:grid;place-items:center}
+.demo-card .thumb span{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.9);color:#000;display:grid;place-items:center;font-size:11px}
+.demo-card div:last-child{padding:10px 12px;font-size:13px}
+.me{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.main{min-width:0;padding:28px clamp(16px,3vw,40px) 120px}
+.page{max-width:980px;margin:0 auto}
+.ph h1{font-family:var(--display);font-size:30px;letter-spacing:-.025em;margin:0}
+.ph h1 small{color:var(--muted);font-weight:500}
+.ph p{color:var(--fg2);margin:6px 0 0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:22px 0 16px}
+@media (max-width:900px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font-family:var(--display);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat .v small{font-size:14px;color:var(--muted);font-weight:500}
+.stat.hl{background:linear-gradient(135deg,rgba(47,107,255,.22),rgba(47,107,255,.05));border-color:rgba(47,107,255,.35)}
+.search{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:11px 14px;color:var(--muted);margin:16px 0 12px}
+.search input{flex:1;background:transparent;border:0;color:var(--fg);font-size:14px;min-width:0}
+.search input:focus{outline:none}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.fbtn{border:1px solid var(--line2);background:var(--card);border-radius:10px;padding:7px 12px;font-size:13px;color:var(--fg2);display:flex;gap:6px;align-items:center}
+.fbtn.on{background:var(--fg);color:#000;border-color:var(--fg)}
+.list{border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.lrow{display:flex;align-items:center;gap:14px;padding:14px 16px;border-top:1px solid var(--line)}
+.lrow:first-child{border-top:0}
+.lrow:hover{background:var(--card2)}
+.lrow .who{flex:1;min-width:0}
+.lrow .who b{font-weight:600}
+.lrow .who .sub{font-size:13px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.lrow .fit{font-size:13px;color:var(--fg2);margin-top:6px;max-width:58ch}
+.lrow .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.lrow .right{display:flex;align-items:center;gap:10px;flex:none}
+.cheque{text-align:right;min-width:86px}
+.cheque b{display:block;font-variant-numeric:tabular-nums}
+.cheque small{font-size:11px;color:var(--muted)}
+.checkbox{width:18px;height:18px;border-radius:5px;border:1px solid var(--line2);background:transparent;flex:none}
+.dock{position:fixed;left:calc(248px + 50% - 124px);transform:translateX(-50%);bottom:22px;z-index:30;display:flex;gap:6px;background:rgba(23,23,26,.9);backdrop-filter:blur(14px);border:1px solid var(--line2);border-radius:var(--pill);padding:6px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.dock .ibtn{width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:var(--fg2)}
+.dock .ibtn:hover{background:var(--card2)}
+.pager{display:flex;justify-content:center;gap:6px;margin-top:16px}
+.pager button{min-width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg2)}
+.pager button.on{background:var(--fg);color:#000}
+/* kanban */
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:12px;overflow-x:auto;padding-bottom:10px;margin-top:20px}
+.col{border:1px solid var(--line);border-radius:16px;background:var(--bg2);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:340px}
+.col-h{display:flex;align-items:center;gap:8px;padding:4px 6px 6px;font-weight:600;font-size:14px}
+.col-h .d{width:8px;height:8px;border-radius:50%}
+.col-h small{margin-left:auto;color:var(--muted);font-weight:500}
+.kcard{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px;display:flex;flex-direction:column;gap:8px}
+.kcard .top{display:flex;gap:10px;align-items:center}
+.kcard .top .av{width:30px;height:30px;font-size:11px}
+.kcard .top b{font-size:14px;display:block}
+.kcard .top span{font-size:12px;color:var(--muted)}
+.kcard .acts{display:flex;gap:6px;flex-wrap:wrap}
+.kcard .acts button{border:1px solid var(--line2);background:transparent;border-radius:8px;font-size:12px;padding:4px 8px;color:var(--fg2)}
+.drop{border:1px dashed var(--line2);border-radius:12px;padding:18px;text-align:center;color:#5F5F69;font-size:13px}
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;display:flex;justify-content:flex-end}
+.drawer{width:min(520px,100%);height:100%;background:var(--bg2);border-left:1px solid var(--line);display:flex;flex-direction:column}
+.dr-h{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center}
+.dr-h .who{flex:1;min-width:0}
+.dr-h .who b{display:block}
+.dr-h .who span{font-size:13px;color:var(--muted)}
+.xbtn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line2);background:transparent;color:var(--fg2)}
+.dr-b{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.why{border:1px solid rgba(47,107,255,.35);background:var(--blue-soft);border-radius:14px;padding:12px 14px;font-size:14px}
+.why .src{font-size:12px;color:#8FB0FF;margin-top:6px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:9px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button[aria-selected="true"]{background:var(--fg);color:#000}
+.acc{border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.acc > button{width:100%;display:flex;align-items:center;gap:10px;justify-content:space-between;background:transparent;border:0;padding:13px 14px;font-weight:600;text-align:left}
+.acc > button small{font-weight:500;color:var(--muted)}
+.acc .in{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+.lab{font-size:12px;color:var(--muted)}
+.ed{background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:12px;font-size:14px;line-height:1.6;white-space:pre-wrap;outline:none;color:var(--fg)}
+.ed:focus{border-color:var(--blue)}
+.check{background:var(--amber-soft);border-bottom:2px solid var(--amber);border-radius:3px;padding:0 2px}
+.wc{font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+.dr-f{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.dr-f .btn{flex:1}
+/* modal */
+.modal-scrim{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:70;display:grid;place-items:center;padding:16px}
+.modal{width:min(820px,100%);display:grid;grid-template-columns:1fr 1fr;border-radius:24px;overflow:hidden;border:1px solid var(--line2);background:var(--bg2)}
+@media (max-width:760px){.modal{grid-template-columns:minmax(0,1fr)}.modal .art{min-height:220px}}
+.modal .art{position:relative;padding:22px;display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(70% 60% at 30% 110%,rgba(47,107,255,.7),transparent 70%),radial-gradient(50% 50% at 90% 0%,rgba(122,92,255,.35),transparent 70%),#08080C}
+.modal .art h3{font-family:var(--display);font-size:30px;letter-spacing:-.03em;line-height:1.05;margin:0}
+.modal .copy{padding:28px;display:flex;flex-direction:column;gap:14px}
+.modal .copy h2{font-family:var(--display);font-size:32px;letter-spacing:-.03em;line-height:1.05;margin:0}
+.sendgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.sendgrid i{height:22px;border-radius:6px;background:var(--line);display:grid;place-items:center;font-style:normal;font-size:11px;color:var(--muted)}
+.sendgrid i.ok{background:var(--green-soft);color:var(--green)}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.form{grid-template-columns:minmax(0,1fr)}}
+.form label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--fg2)}
+.form .full{grid-column:1/-1}
+.panel{border:1px solid var(--line);border-radius:18px;background:var(--card);padding:18px;display:flex;flex-direction:column;gap:14px;margin-top:16px}
+.panel h3{margin:0;font-size:16px}
+.presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.presets button{border:1px solid var(--line2);background:var(--bg2);border-radius:12px;padding:12px;text-align:left;font-size:13px;color:var(--fg2)}
+.presets button b{display:block;color:var(--fg);font-size:14px;margin-bottom:2px}
+.presets button[aria-pressed="true"]{border-color:var(--blue);background:var(--blue-soft)}
+.review-pill{position:fixed;right:14px;top:calc(64px + env(safe-area-inset-top,0px));z-index:95;display:flex;gap:6px;background:rgba(23,23,26,.92);border:1px solid var(--line2);border-radius:var(--pill);padding:5px;backdrop-filter:blur(10px)}
+.review-pill button{border:0;background:transparent;color:var(--fg2);border-radius:var(--pill);padding:7px 12px;font-size:12px;font-weight:600}
+.review-pill button.on{background:var(--fg);color:#000}
+
+/* phone */
+@media (max-width:860px){
+  .nav-links{display:none}
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line);z-index:40;background:rgba(10,10,11,.96);backdrop-filter:blur(14px);overflow:visible}
+  .side > :not(.nav-group.primary){display:none}
+  .nav-group.primary{flex-direction:row;flex:1;gap:2px}
+  .nav-group.primary .lbl,.nav-group.primary .soonitem{display:none}
+  .nitem{flex-direction:column;gap:2px;font-size:11px;padding:6px 2px;justify-content:center;text-align:center;position:relative}
+  .nitem .badge{position:absolute;top:2px;right:18%;margin:0}
+  .main{padding-bottom:140px}
+  .dock{left:50%;bottom:78px}
+  .lrow{flex-wrap:wrap}
+  .lrow .right{width:100%;justify-content:space-between;padding-left:52px}
+  .review-pill{display:none} /* on a phone, move through the flow itself: Start raising, Log in, the logo */
+}
+</style>
+
+<!-- ============ LANDING ============ -->
+<section class="view on" id="v-landing" aria-label="Landing page">
+  <header class="nav"><div class="nav-in">
+    <a class="logo" href="#/"><span class="logo-mark">F</span>Fundraising OS</a>
+    <nav class="nav-links" aria-label="Main"><a href="#how">How it works</a><a href="#stack">What you get</a><a href="#trust">Safety</a><a href="#faq">FAQ</a></nav>
+    <a class="btn ghost sm" href="#/app">Log in</a><a class="btn primary sm" href="#/apply">Start raising</a>
+  </div></header>
+
+  <div class="wrap">
+    <div class="hero">
+      <span class="eyebrow rise"><b>NEW</b> For Indian founders · AI, Climate & Deeptech</span>
+      <h1 class="h-display rise">Your next 20 investors, <span class="it">with emails ready.</span></h1>
+      <p class="lede rise">Tell us your company and your round. We match investors who back startups like yours, write the first email to each, and remind you to follow up. You send every email yourself, from your own Gmail.</p>
+      <div class="chips rise"><span class="chip">Pre-seed to Series A</span><span class="chip">₹25L – ₹10Cr rounds</span><span class="chip">600+ Indian investors</span><span class="chip">Funds, angels & networks</span></div>
+      <div class="cta-row rise"><a class="btn primary" href="#/apply">Find my investors →</a><button class="btn ghost" data-toast="Demo video goes here">▶ Watch demo</button></div>
+
+      <div class="preview rise" aria-label="Product preview">
+        <div class="ptabs" role="tablist">
+          <button class="ptab" role="tab" aria-selected="true" data-pt="0"><span class="dot"></span>Match investors</button>
+          <button class="ptab" role="tab" aria-selected="false" data-pt="1"><span class="dot"></span>Write emails</button>
+          <button class="ptab" role="tab" aria-selected="false" data-pt="2"><span class="dot"></span>Track your pipeline</button>
+          <button class="ptab" role="tab" aria-selected="false" data-pt="3"><span class="dot"></span>Follow up on time</button>
+        </div>
+        <div class="pbody" id="pbody"></div>
+      </div>
+    </div>
+
+    <section class="section" id="how">
+      <div class="s-head"><span class="kicker">How it works</span><h2>You write the ask. <span class="it">We do the legwork.</span></h2><p class="lede">Four fields, about a minute. No deck, no Gmail permission, no sign-up before you see your list.</p></div>
+      <div class="bento three">
+        <div class="bcard"><span class="num">01</span><h3>Tell us your round</h3><p>Company, sector, stage and how much you're raising. That's all we need to start.</p>
+          <div class="mini"><div class="mini-row"><span class="muted" style="width:70px">Company</span>Ledgerly</div><div class="mini-row"><span class="muted" style="width:70px">Sector</span>AI</div><div class="mini-row"><span class="muted" style="width:70px">Stage</span>Seed</div><div class="mini-row"><span class="muted" style="width:70px">Raising</span>₹1–3 Cr</div></div></div>
+        <div class="bcard"><span class="num">02</span><h3>Get matched, with reasons</h3><p>Investors who back your sector, stage and cheque size in India. Each one shows why, and where that came from.</p>
+          <div class="mini"><div class="mini-row"><span class="av" style="background:#3B4CCA;width:28px;height:28px;font-size:11px">VA</span><span style="flex:1">Verdant Arc Capital</span><span class="tag green">Strong fit</span></div><div class="mini-row"><span class="av" style="background:#7A3FB8;width:28px;height:28px;font-size:11px">KS</span><span style="flex:1">Kabir Sethi · angel</span><span class="tag green">Strong fit</span></div><div class="mini-row"><span class="av" style="background:#B8673F;width:28px;height:28px;font-size:11px">NS</span><span style="flex:1">Northlight Seed</span><span class="tag blue">Good fit</span></div></div></div>
+        <div class="bcard"><span class="num">03</span><h3>Edit, send, follow up</h3><p>Each email is written to that investor. Edit it, open it in your Gmail, press send. We remind you on day 3 and day 10.</p>
+          <div class="mini"><div class="mini-row"><span style="flex:1">Outreach</span><span class="muted">8 sent</span></div><div class="sendgrid"><i class="ok">✓</i><i class="ok">✓</i><i class="ok">✓</i><i>➤</i><i>➤</i><i>➤</i><i>➤</i><i>➤</i><i></i><i></i><i></i><i></i></div><div class="mini-row" style="color:var(--green)">3 replies · 1 meeting booked</div></div></div>
+      </div>
+    </section>
+
+    <section class="section" id="stack">
+      <div class="s-head"><span class="kicker">What you get</span><h2>Your whole raise, <span class="it">in one tab.</span></h2></div>
+      <div class="bento">
+        <div class="bcard"><span class="num">01</span><h3>Investors who actually fit</h3><p>Funds, angels and angel networks active in India, filtered by sector, stage, cheque size and city. Researched from their own websites, with the date we last checked.</p>
+          <div class="mini"><div class="mini-row"><span style="flex:1">AI · Seed · ₹1–3 Cr</span><span class="muted">42 matched</span></div><div class="mini-row"><span class="muted" style="width:96px">Thesis found</span><div class="bar"><i style="width:87%"></i></div><span class="muted">87%</span></div><div class="mini-row"><span class="muted" style="width:96px">Recent deal</span><div class="bar"><i style="width:65%"></i></div><span class="muted">65%</span></div></div></div>
+        <div class="bcard"><span class="num">02</span><h3>Emails that sound like you</h3><p>Short, specific, and every claim about the investor comes from their record. Anything we can't source is marked <span class="check">check this</span> before you send.</p>
+          <div class="mini"><div class="mini-row"><b>Ledgerly × Verdant Arc: seed round</b></div><div class="mini-row muted">You back seed-stage AI tools for finance teams…</div><div class="mini-row"><span class="tag">94 words</span><span class="tag green">2 sourced facts</span></div></div></div>
+        <div class="bcard"><span class="num">03</span><h3>A pipeline that updates itself</h3><p>Planned, sent, replied, meeting, passed. Mark a reply and that investor's follow-ups stop.</p>
+          <div class="mini"><div class="mini-row"><span class="tag">Planned 12</span><span class="tag blue">Sent 8</span><span class="tag green">Replied 3</span><span class="tag violet">Meeting 1</span></div></div></div>
+        <div class="bcard"><span class="num">04</span><h3>Follow-ups, already written</h3><p>A short nudge on day 3 and day 10, each adding something new. Never sent to anyone who already replied.</p>
+          <div class="mini"><div class="mini-row"><span style="flex:1">3 follow-ups due today</span><span class="tag amber">Due</span></div></div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="s-head"><span class="kicker">The grunt work</span><h2>Do it by hand, <span class="it">or before lunch.</span></h2></div>
+      <div class="vs">
+        <div class="h">Task</div><div class="h">By hand</div><div class="h">With Fundraising OS</div>
+        <div class="task">Find investors who fit</div><div class="hand">Late nights on Google; half of it is out of date.</div><div class="ours">Matched to your sector, stage and cheque, with a reason for each.</div>
+        <div class="task">Research each one</div><div class="hand">An hour per fund, reading portfolios one by one.</div><div class="ours">Thesis, recent deals and how to pitch them, with sources.</div>
+        <div class="task">Write the first email</div><div class="hand">20 minutes each, or a generic ChatGPT draft.</div><div class="ours">Written to that investor, ready for you to edit.</div>
+        <div class="task">Follow up and track replies</div><div class="hand">A spreadsheet you stop updating by week two.</div><div class="ours">Day 3 and day 10 nudges, and a pipeline that stays current.</div>
+      </div>
+    </section>
+
+    <section class="section" id="trust">
+      <div class="s-head"><span class="kicker">In your control</span><h2>Nothing goes out <span class="it">without you.</span></h2></div>
+      <div class="trust">
+        <div class="bcard"><h3>You press send</h3><p>We never send email for you. Every email opens in your own Gmail, and you send it from there.</p></div>
+        <div class="bcard"><h3>Every fact has a source</h3><p>Claims about an investor come from their record, with a link. If we can't source it, we don't write it.</p></div>
+        <div class="bcard"><h3>Your details stay yours</h3><p>Used only to match investors and write your drafts. No sign-up until you choose to save your list.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <div class="s-head"><span class="kicker">FAQ</span><h2>Questions founders ask</h2></div>
+      <div class="faq">
+        <details><summary>Where do the investors come from?</summary><p>A researched list of funds, angels and angel networks that back Indian startups, each checked against their own website. Every record shows the date it was last checked.</p></details>
+        <details><summary>Will it send emails from my account?</summary><p>No. You open each email in your own Gmail and press send yourself. We don't ask for Gmail access.</p></details>
+        <details><summary>Which sectors do you cover?</summary><p>AI, Climate and Deeptech first, plus sector-agnostic investors who back them. More sectors are coming.</p></details>
+        <details><summary>Do I need a deck?</summary><p>No. Four fields get you a matched list and your first email. You can add a deck link later.</p></details>
+        <details><summary>What does it cost?</summary><p>Free while we're in beta.</p></details>
+      </div>
+    </section>
+
+    <div class="cta-band"><h2>Start your raise <span class="it">tonight.</span></h2><p class="lede" style="margin-bottom:26px">Four fields. Your first matched investor and email in about a minute.</p><a class="btn white" href="#/apply">Find my investors →</a></div>
+    <footer><div class="foot"><a class="logo" href="#/"><span class="logo-mark">F</span>Fundraising OS</a><span>Built for Indian founders · Made-up data in this demo</span></div></footer>
+  </div>
+</section>
+
+<!-- ============ APPLY ============ -->
+<section class="view" id="v-apply" aria-label="Get started">
+  <div class="apply">
+    <div class="apply-top"><a class="logo" href="#/"><span class="logo-mark">F</span>Fundraising OS</a><a class="btn ghost sm" href="#/">Exit</a></div>
+    <div class="apply-main" id="apply-main"></div>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<section class="view" id="v-app" aria-label="Dashboard">
+  <div class="app">
+    <aside class="side">
+      <a class="logo" href="#/"><span class="logo-mark">F</span>Fundraising OS</a>
+      <div class="ws"><span class="sq">LE</span><div style="flex:1;min-width:0"><b style="font-size:14px">Ledgerly</b><div class="muted" style="font-size:12px">Seed · ₹1–3 Cr</div></div><span class="muted">⇅</span></div>
+      <div class="raise"><div class="raise-top"><span>Your raise</span><span>this week</span></div>
+        <div class="rings"><div><div class="ring" style="--p:40"><b>8</b></div><small>Sent</small></div><div><div class="ring" style="--p:38;--c:var(--green)"><b>3</b></div><small>Replied</small></div><div><div class="ring" style="--p:12;--c:var(--violet)"><b>1</b></div><small>Meeting</small></div></div></div>
+      <div class="nav-group primary">
+        <span class="lbl">Raise</span>
+        <button class="nitem" data-page="outreach"><span class="ic">➤</span>Outreach<span class="badge" id="due-badge">3</span></button>
+        <button class="nitem" data-page="pipeline"><span class="ic">▦</span>Pipeline</button>
+        <button class="nitem" data-page="investors"><span class="ic">◎</span>Investors</button>
+        <button class="nitem" data-page="profile"><span class="ic">◐</span>Profile</button>
+        <span class="lbl">Coming soon</span>
+        <button class="nitem soonitem" data-toast="Parked for after v1"><span class="ic">▤</span>Data room</button>
+        <button class="nitem soonitem" data-toast="Parked for after v1"><span class="ic">▭</span>Pitch decks</button>
+        <button class="nitem soonitem" data-toast="Parked for after v1"><span class="ic">₹</span>Govt schemes</button>
+      </div>
+      <div class="demo-card"><div class="thumb"><span>▶</span></div><div><b>Watch the demo</b><div class="muted">2 minutes</div></div></div>
+      <div class="me"><span class="av" style="width:30px;height:30px;font-size:11px;background:#2F6BFF">NK</span><div style="flex:1"><b style="font-size:13px">Neha Kulkarni</b><div class="muted" style="font-size:12px">Free beta</div></div></div>
+    </aside>
+    <main class="main"><div class="page" id="page"></div></main>
+  </div>
+  <div class="dock" id="dock" hidden>
+    <button class="ibtn" title="Writing style" data-act="style">⚙</button>
+    <button class="btn ghost sm" data-page-go="investors">+ Add investors</button>
+    <button class="btn primary sm" data-act="next">Open next in Gmail ↗</button>
+  </div>
+</section>
+
+<div id="layer"></div>
+<div class="review-pill" role="group" aria-label="Jump to screen for review">
+  <button data-jump="#/">Landing</button><button data-jump="#/apply">Sign-up</button><button data-jump="#/app">Dashboard</button>
+</div>
+
+<script>
+/* ---------------- made-up demo data ---------------- */
+const COLORS=["#3B4CCA","#7A3FB8","#B8673F","#2E8A6E","#B83F6A","#4F7FB8","#8A6E2E","#5C3FB8","#3F8AB8","#B85C3F","#6E8A2E","#3FB89A"];
+const INV=[
+ {id:1,name:"Verdant Arc Capital",person:"Meera Iyer",role:"Partner",type:"Fund",city:"Bengaluru",cheque:"₹50L–2Cr",stages:["Pre-seed","Seed"],sectors:["AI","B2B SaaS"],fit:"Backs seed-stage AI tools for finance teams; led two B2B SaaS seed rounds in 2026.",src:"verdantarc.example/about · checked 9 Oct",level:"Strong fit",status:"draft",email:"meera@verdantarc.example"},
+ {id:2,name:"Kabir Sethi",person:"Kabir Sethi",role:"Angel · ex-founder",type:"Angel",city:"Mumbai",cheque:"₹10–35L",stages:["Pre-seed"],sectors:["AI","Fintech"],fit:"Leads pre-seed rounds in B2B software; three fintech tools in his portfolio.",src:"kabirsethi.example · checked 9 Oct",level:"Strong fit",status:"draft",email:"kabir@sethi.example"},
+ {id:3,name:"Northlight Seed Fund",person:"Arjun Rao",role:"Principal",type:"Fund",city:"New Delhi",cheque:"₹1–3Cr",stages:["Seed"],sectors:["AI","Sector-agnostic"],fit:"Thesis names accounting and compliance automation for small businesses.",src:"northlight.example/thesis · checked 9 Oct",level:"Good fit",status:"draft",email:"pitch@northlight.example"},
+ {id:4,name:"Tidewater Ventures",person:"Sana Qureshi",role:"Managing Partner",type:"Fund",city:"Bengaluru",cheque:"₹2–8Cr",stages:["Seed","Pre-Series A"],sectors:["Sector-agnostic"],fit:"Sector-agnostic seed fund; cheque size matches your round.",src:"tidewater.example · checked 9 Oct",level:"Good fit",status:"sent",email:"sana@tidewater.example",sent:"Sent 3 days ago"},
+ {id:5,name:"Lattice Partners",person:"Rohan Mehta",role:"Partner",type:"Fund",city:"Pune",cheque:"₹25L–1Cr",stages:["Pre-seed","Seed"],sectors:["AI","Fintech"],fit:"Portfolio includes two SME fintech tools; invests at pre-seed and seed.",src:"lattice.example/portfolio · checked 9 Oct",level:"Good fit",status:"sent",email:"rohan@lattice.example",sent:"Sent 10 days ago"},
+ {id:6,name:"Saffron Peak Angels",person:"Divya Nair",role:"Network lead",type:"Network",city:"Hyderabad",cheque:"₹25L–1.5Cr",stages:["Pre-seed","Seed"],sectors:["AI","Deeptech"],fit:"Angel network whose members back AI for small business.",src:"saffronpeak.example · checked 9 Oct",level:"Good fit",status:"replied",email:"divya@saffronpeak.example"},
+ {id:7,name:"Coral Bay Capital",person:"Vikram Shah",role:"Partner",type:"Fund",city:"Mumbai",cheque:"₹50L–2Cr",stages:["Seed"],sectors:["Fintech","AI"],fit:"Seed fund focused on fintech infrastructure in India.",src:"coralbay.example · checked 9 Oct",level:"Good fit",status:"meeting",email:"vikram@coralbay.example"},
+ {id:8,name:"Monsoon Ventures",person:"Ishaan Kapoor",role:"Principal",type:"Fund",city:"Bengaluru",cheque:"₹25L–1Cr",stages:["Pre-seed"],sectors:["AI","Climate"],fit:"Pre-seed fund; AI and climate are named focus areas.",src:"monsoon.example · checked 9 Oct",level:"Possible fit",status:"planned",email:"ishaan@monsoon.example"},
+ {id:9,name:"Harbor Line Fund",person:"Neel Bose",role:"Partner",type:"Fund",city:"Chennai",cheque:"₹1–4Cr",stages:["Seed","Pre-Series A"],sectors:["B2B SaaS"],fit:"B2B SaaS seed fund; said it isn't investing in fintech this quarter.",src:"harborline.example · checked 9 Oct",level:"Possible fit",status:"passed",email:"neel@harborline.example"},
+ {id:10,name:"Gulmohar Launchpad",person:"Ritu Sen",role:"Program lead",type:"Accelerator",city:"Gurugram",cheque:"₹25–50L",stages:["Idea","Pre-seed"],sectors:["Sector-agnostic"],fit:"Accelerator with a ₹25–50L cheque; next cohort opens in November.",src:"gulmohar.example/apply · checked 9 Oct",level:"Possible fit",status:"planned",email:null,form:"gulmohar.example/apply"},
+];
+const STATUS={planned:{t:"Planned",c:"",d:"#85858F"},draft:{t:"Draft ready",c:"blue",d:"#2F6BFF"},sent:{t:"Sent",c:"",d:"#B4B4BC"},due:{t:"Follow-up due",c:"amber",d:"#F5B544"},replied:{t:"Replied",c:"green",d:"#3DDC84"},meeting:{t:"Meeting",c:"violet",d:"#A98BFF"},passed:{t:"Passed",c:"",d:"#5F5F69"}};
+const SECTORS=[["AI",1],["Climate & Energy",1],["Deeptech",1],["Fintech",0],["B2B SaaS",0],["Healthtech",0],["Consumer & D2C",0],["Edtech",0],["Agritech",0],["Mobility & EV",0],["Gaming & Media",0],["Web3",0]];
+const STAGES=["Idea","Pre-seed","Seed","Pre-Series A","Series A"];
+const ASKS=["₹25–50L","₹50L–1Cr","₹1–3 Cr","₹3–5 Cr","₹5–10 Cr"];
+const st={company:"",name:"",sectors:[],stage:"",ask:"",step:0,page:"outreach",filter:"all",style:"warm"};
+const ini=n=>n.split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+function toast(t){const el=document.createElement("div");el.className="toast";el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2200)}
+function av(i,size){return `<span class="av" style="background:${COLORS[(i.id-1)%COLORS.length]}${size?`;width:${size}px;height:${size}px;font-size:${Math.round(size/3)}px`:''}">${ini(i.type==="Angel"?i.person:i.name)}</span>`}
+
+/* ---------------- landing preview tabs ---------------- */
+function ptab(n){
+  document.querySelectorAll(".ptab").forEach((b,i)=>b.setAttribute("aria-selected",i===n));
+  const rows=INV.slice(0,5);
+  let h="";
+  if(n===0) h=`<div class="search" style="margin:0 0 12px">⌕ <span>Search investors by name, sector or city</span></div>`+rows.map(i=>`<div class="prow">${av(i)}<div class="meta"><b>${esc(i.name)}</b><span>${esc(i.fit)}</span></div><span class="tag">${i.stages[0]}</span><b style="font-variant-numeric:tabular-nums;min-width:78px;text-align:right">${i.cheque}</b><span class="tag ${i.level==="Strong fit"?"green":"blue"}">${i.level}</span></div>`).join("");
+  if(n===1) h=`<div class="bento"><div class="bcard" style="padding:18px"><span class="lab">To</span><b>meera@verdantarc.example</b><span class="lab">Subject</span><b>Ledgerly × Verdant Arc: seed round</b><div class="ed" style="min-height:150px">Hi Meera,\n\nLedgerly reads a small business's bank statements and drafts the GST return for its CA to approve.\n\nEight CA firms are on our pilot, and two have asked to pay.\n\nYou back seed-stage AI tools for finance teams. We're raising ₹2 Cr…</div></div><div class="bcard" style="padding:18px"><span class="lab">Why this investor</span><div class="why">Backs seed-stage AI tools for finance teams.<div class="src">Source: verdantarc.example/about · checked 9 Oct</div></div><span class="lab">Follow-ups</span><div class="prow" style="margin:0"><div class="meta"><b>Follow-up #1</b><span>3 days after, if no reply</span></div></div><div class="prow" style="margin:0"><div class="meta"><b>Follow-up #2</b><span>7 days after that</span></div></div></div></div>`;
+  if(n===2) h=`<div class="board" style="margin:0">${["planned","sent","replied","meeting"].map(s=>`<div class="col" style="min-height:260px"><div class="col-h"><span class="d" style="background:${STATUS[s].d}"></span>${STATUS[s].t}<small>${INV.filter(i=>i.status===s||(s==="sent"&&i.status==="draft")).length}</small></div>${INV.filter(i=>i.status===s||(s==="sent"&&i.status==="draft")).slice(0,3).map(i=>`<div class="kcard"><div class="top">${av(i)}<div><b>${esc(i.name)}</b><span>${i.cheque}</span></div></div></div>`).join("")}</div>`).join("")}</div>`;
+  if(n===3) h=`<div class="prow">${av(INV[3])}<div class="meta"><b>${INV[3].name}</b><span>Sent 3 days ago · follow-up #1 written</span></div><span class="tag amber">Due today</span><button class="btn primary sm">Open in Gmail ↗</button></div><div class="prow">${av(INV[4])}<div class="meta"><b>${INV[4].name}</b><span>Sent 10 days ago · follow-up #2 written</span></div><span class="tag amber">Due today</span><button class="btn ghost sm">Open</button></div><div class="prow">${av(INV[5])}<div class="meta"><b>${INV[5].name}</b><span>Replied yesterday · follow-ups stopped</span></div><span class="tag green">Replied</span></div>`;
+  $("#pbody").innerHTML=h;
+}
+
+/* ---------------- apply flow ---------------- */
+function renderApply(){
+  const s=st.step, m=$("#apply-main");
+  const prog=`<div class="progress">${[0,1,2,3].map(i=>`<i class="${i<=s?'on':''}"></i>`).join("")}</div>`;
+  if(s===0) m.innerHTML=`<div class="step rise">${prog}<div class="count">1 of 4</div><h1>What's your startup called?</h1><p class="help">Or your idea's working name. You can change it anytime.</p><input id="i-co" class="field" placeholder="Your startup" value="${esc(st.company)}" autocomplete="organization"><div class="step-actions"><button class="btn primary" id="go" ${st.company?'':'disabled'}>Continue →</button></div></div>`;
+  if(s===1) m.innerHTML=`<div class="step rise">${prog}<div class="count">2 of 4</div><h1>What's your name?</h1><p class="help">We sign the investor emails with your name.</p><input id="i-nm" class="field" placeholder="Neha Kulkarni" value="${esc(st.name)}" autocomplete="name"><div class="step-actions"><button class="back" data-back aria-label="Back">←</button><button class="btn primary" id="go" ${st.name?'':'disabled'}>Continue →</button></div></div>`;
+  if(s===2) m.innerHTML=`<div class="step rise">${prog}<div class="count">3 of 4</div><h1>What space are you in?</h1><p class="help">${st.sectors.length?st.sectors.length+" selected":"Tap all that fit. This is how we match you to investors."}</p><div class="pick">${SECTORS.map(([n,on])=>`<button aria-pressed="${st.sectors.includes(n)}" data-sec="${n}" ${on?'':'disabled'}>${n}${on?'':'<span class="soon">soon</span>'}</button>`).join("")}</div><div class="step-actions"><button class="back" data-back aria-label="Back">←</button><button class="btn primary" id="go" ${st.sectors.length?'':'disabled'}>Continue →</button></div></div>`;
+  if(s===3) m.innerHTML=`<div class="step rise">${prog}<div class="count">4 of 4</div><h1>Tell us about your round.</h1><p class="help">So we only show investors whose cheque fits.</p><div class="pick-label">Stage</div><div class="pick">${STAGES.map(n=>`<button aria-pressed="${st.stage===n}" data-stage="${n}">${n}</button>`).join("")}</div><div class="pick-label">Raising</div><div class="pick">${ASKS.map(n=>`<button aria-pressed="${st.ask===n}" data-ask="${n}">${n}</button>`).join("")}</div><p class="muted" style="font-size:13px;margin-top:18px">For Indian startups only. Used only to match investors and write your drafts. Nothing is sent without you.</p><div class="step-actions"><button class="back" data-back aria-label="Back">←</button><button class="btn primary" id="go" ${st.stage&&st.ask?'':'disabled'}>Find my investors →</button></div></div>`;
+  if(s===4){m.innerHTML=`<div class="step reveal rise"><div class="spinner"></div><h1 style="font-size:24px">Matching ${esc(st.company||"your startup")}…</h1><p class="muted">Checking 611 investors for sector, stage and cheque size</p></div>`;setTimeout(()=>{if(st.step===4){st.step=5;renderApply()}},1500)}
+  if(s===5) m.innerHTML=`<div class="step reveal rise"><div class="reveal-card"><span class="logo" style="font-size:12px;margin-bottom:10px"><span class="logo-mark" style="width:20px;height:20px;font-size:10px">F</span>Fundraising OS</span><b>42</b><span>MATCHES</span></div><h1>${esc(st.company||"Ledgerly")}'s investors are ready</h1><p class="fg2">We matched you with 42 investors in India who back ${esc((st.sectors[0]||"AI"))} at ${esc(st.stage||"Seed")}, and wrote your first email. Save your list to see it.</p><div class="auth"><button class="btn white" data-signin><span class="gdot"></span>Continue with Google</button><button class="btn ghost" data-signin>✉ Continue with email</button></div><p class="muted" style="font-size:12px;margin-top:14px">We only use your account to sign you in.</p></div>`;
+  if(s===6){m.innerHTML=`<div class="step reveal rise"><div class="spinner"></div><p class="fg2">Setting up your workspace…</p></div>`;setTimeout(()=>{if(st.step===6){location.hash="#/app";setTimeout(firstEmailsModal,350)}},1200)}
+  const inp=m.querySelector(".field");
+  if(inp){inp.focus();inp.addEventListener("input",e=>{if(s===0)st.company=e.target.value.trim();if(s===1)st.name=e.target.value.trim();$("#go").disabled=!e.target.value.trim()});inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.value.trim()){st.step++;renderApply()}})}
+}
+
+/* ---------------- app pages ---------------- */
+function statusOf(i){return i.status==="sent"?"due":i.status}
+function outreachPage(){
+  const rows=INV.filter(i=>["draft","sent","replied","meeting"].includes(i.status));
+  const f=st.filter, shown=rows.filter(i=>f==="all"||statusOf(i)===f);
+  return `<div class="ph"><h1>Outreach</h1><p>Your emails and follow-ups. Open one, edit it, and send it from your Gmail.</p></div>
+  <div class="stats"><div class="stat"><span class="k">Emails sent</span><span class="v">8 <small>this week</small></span></div><div class="stat hl"><span class="k">Follow-ups due</span><span class="v">2 <small>today</small></span></div><div class="stat"><span class="k">Replies</span><span class="v">3 <small>38%</small></span></div><div class="stat"><span class="k">Drafts ready</span><span class="v">3 <small>to review</small></span></div></div>
+  <div class="search">⌕ <input placeholder="Search by investor, firm or city" aria-label="Search outreach"></div>
+  <div class="filters">${[["all","All"],["draft","Draft ready"],["due","Follow-up due"],["replied","Replied"],["meeting","Meeting"]].map(([k,t])=>`<button class="fbtn ${f===k?'on':''}" data-filter="${k}">${t}</button>`).join("")}</div>
+  <div class="list">${shown.map(i=>{const s=statusOf(i);return `<div class="lrow" data-open="${i.id}" role="button" tabindex="0"><span class="checkbox" aria-hidden="true"></span>${av(i)}<div class="who"><b>${esc(i.person)}</b> <span class="muted">· ${esc(i.name)}</span><div class="sub"><span>${esc(i.city)}</span><span>${i.sent||(s==="draft"?"First email written":s==="replied"?"Replied yesterday":"Call on Tue 13 Oct")}</span></div></div><div class="right"><span class="tag ${STATUS[s].c}">${STATUS[s].t}</span><button class="btn ${s==="draft"||s==="due"?"primary":"ghost"} sm" data-open="${i.id}">${s==="draft"?"Review":s==="due"?"Send follow-up":"Open"}</button></div></div>`}).join("")||`<div class="lrow"><div class="who muted">Nothing here yet.</div></div>`}</div>`;
+}
+function pipelinePage(){
+  const cols=["planned","draft","sent","replied","meeting","passed"];
+  return `<div class="ph"><h1>Pipeline <small>· ${INV.length}</small></h1><p>Every investor on your list, by where they are. Tap a card to move it.</p></div>
+  <div class="board">${cols.map(c=>{const items=INV.filter(i=>i.status===c);return `<div class="col"><div class="col-h"><span class="d" style="background:${STATUS[c].d}"></span>${c==="draft"?"Ready to send":STATUS[c].t}<small>${items.length}</small></div>${items.map(i=>`<div class="kcard"><div class="top">${av(i,30)}<div><b>${esc(i.name)}</b><span>${esc(i.person)} · ${i.cheque}</span></div></div><div class="acts">${cols.filter(x=>x!==c&&x!=="draft").slice(0,3).map(x=>`<button data-move="${i.id}" data-to="${x}">→ ${STATUS[x].t}</button>`).join("")}</div></div>`).join("")||`<div class="drop">Nothing here</div>`}</div>`}).join("")}</div>`;
+}
+function investorsPage(){
+  return `<div class="ph"><h1>Investors <small>· 42 matched</small></h1><p>Funds, angels and networks in India that fit Ledgerly's sector, stage and cheque. Updated 9 Oct 2026.</p></div>
+  <div class="search">⌕ <input placeholder="Search by name, sector or city" aria-label="Search investors"></div>
+  <div class="filters"><button class="fbtn">Type ▾</button><button class="fbtn on">Sector · AI ▾</button><button class="fbtn on">Stage · Seed ▾</button><button class="fbtn">Cheque ▾</button><button class="fbtn">City ▾</button><button class="fbtn">Has email ▾</button><button class="fbtn" aria-label="Clear filters">✕</button></div>
+  <div class="list">${INV.map(i=>`<div class="lrow">${av(i)}<div class="who"><b>${esc(i.name)}</b> <span class="tag" style="margin-left:4px">${i.type}</span><div class="sub"><span>📍 ${esc(i.city)}</span><span>${esc(i.person)}, ${esc(i.role)}</span><span>${i.email?"✉ email listed":"Pitch form only"}</span></div><div class="fit">${esc(i.fit)}</div><div class="tags">${i.stages.map(s=>`<span class="tag">${s}</span>`).join("")}${i.sectors.map(s=>`<span class="tag blue">${s}</span>`).join("")}<span class="tag ${i.level==="Strong fit"?"green":""}">${i.level}</span></div></div><div class="right"><div class="cheque"><b>${i.cheque}</b><small>cheque size</small></div>${["planned","passed"].includes(i.status)?`<button class="btn primary sm" data-write="${i.id}">Write email</button>`:`<span class="tag green">✓ In pipeline</span>`}<button class="btn ghost sm" data-toast="Not a fit: removed from your list">✕</button></div></div>`).join("")}</div>
+  <div class="pager"><button>‹</button><button class="on">1</button><button>2</button><button>3</button><button>4</button><button>›</button></div>`;
+}
+function profilePage(){
+  return `<div class="ph"><h1>Profile</h1><p>Used to write every email so it sounds like you. Asked once; change it anytime.</p></div>
+  <div class="panel"><h3>About you and Ledgerly</h3><div class="form">
+    <label>Your name<input class="field" value="Neha Kulkarni"></label><label>Company<input class="field" value="Ledgerly"></label>
+    <label class="full">One line on your background<input class="field" placeholder="e.g. Ran a 40-client CA practice for five years"></label>
+    <label class="full">One line on what Ledgerly does<input class="field" placeholder="e.g. Drafts GST returns from bank statements for CA firms"></label>
+    <label>Website<input class="field" placeholder="ledgerly.in"></label><label>Deck link (optional)<input class="field" placeholder="https://"></label>
+  </div></div>
+  <div class="panel"><h3>Your round</h3><div class="form"><label>Sector<input class="field" value="AI"></label><label>Stage<input class="field" value="Seed"></label><label>Raising<input class="field" value="₹1–3 Cr"></label><label>City<input class="field" value="Bengaluru"></label></div></div>
+  <div class="panel"><h3>Shareable startup profile <span class="tag">Coming soon</span></h3><p class="fg2" style="margin:0">One link with your one-liner, traction, team and ask, to send instead of attachments.</p></div>`;
+}
+function renderApp(){
+  document.querySelectorAll("[data-page]").forEach(b=>b.setAttribute("aria-current",b.dataset.page===st.page?"page":"false"));
+  $("#page").innerHTML=({outreach:outreachPage,pipeline:pipelinePage,investors:investorsPage,profile:profilePage})[st.page]();
+  $("#dock").hidden=st.page!=="outreach";
+  $("#due-badge").textContent=INV.filter(i=>["draft","sent"].includes(i.status)).length;
+}
+
+/* ---------------- drawer: email editor ---------------- */
+function body(i){return `Hi ${i.person.split(" ")[0]},\n\nLedgerly reads a small business's bank statements and drafts the GST return for its CA to approve, so one CA firm can handle three times the clients.\n\nEight CA firms are on our pilot, and two have asked to pay. I ran a 40-client CA practice for five years before starting Ledgerly.\n\n${i.fit.split(";")[0].replace(/^Backs/,"You back").replace(/^Leads/,"You lead").replace(/^Thesis names/,"Your thesis names")}. <span class="check" title="No source found for this line">You were early in Finvue's seed round</span>. We're raising ₹2 Cr to reach 100 firms.\n\nCould I send the deck, or take 20 minutes next week?\n\nNeha Kulkarni\nFounder, Ledgerly`}
+function openDrawer(id){
+  const i=INV.find(x=>x.id==id), s=statusOf(i);
+  $("#layer").innerHTML=`<div class="scrim" data-close><div class="drawer" role="dialog" aria-label="Email to ${esc(i.person)}">
+   <div class="dr-h">${av(i)}<div class="who"><b>${esc(i.person)} · ${esc(i.name)}</b><span>${esc(i.role)} · ${esc(i.city)} · ${i.cheque}</span></div><button class="xbtn" data-close aria-label="Close">✕</button></div>
+   <div class="dr-b">
+     <div class="why"><b>Why ${esc(i.name)}</b><div style="margin-top:4px">${esc(i.fit)}</div><div class="src">Source: ${esc(i.src)}</div></div>
+     <div class="seg" role="tablist"><button role="tab" aria-selected="true">✉ Email</button><button role="tab" aria-selected="false" data-toast="LinkedIn messages are parked for after v1">in LinkedIn · soon</button></div>
+     <div class="acc"><button data-acc>Initial email <small>${s==="draft"?"Ready to review":"Sent"}</small></button><div class="in">
+       <span class="lab">To</span><div class="ed" style="padding:10px 12px">${i.email||"No email listed · use their pitch form: "+i.form}</div>
+       <span class="lab">Subject</span><div class="ed" contenteditable="true" style="padding:10px 12px">Ledgerly × ${esc(i.name.split(" ")[0])}: seed round</div>
+       <span class="lab">Email</span><div class="ed" contenteditable="true" id="mailbody">${body(i)}</div>
+       <div class="wc"><span>98 words · under 120 ✓</span><span style="color:var(--amber)">1 line needs a source</span></div>
+     </div></div>
+     <div class="acc"><button data-acc>Follow-up #1 <small>3 days after, if no reply ▾</small></button><div class="in" hidden><div class="ed" contenteditable="true">Hi ${i.person.split(" ")[0]}, a quick update since my last note: a third CA firm has started paying. Happy to share the deck if useful.\n\nNeha</div></div></div>
+     <div class="acc"><button data-acc>Follow-up #2 <small>7 days after that ▾</small></button><div class="in" hidden><div class="ed" contenteditable="true">Hi ${i.person.split(" ")[0]}, closing the loop on Ledgerly's seed round. If now isn't the right time, no worries at all.\n\nNeha</div></div></div>
+   </div>
+   <div class="dr-f"><button class="btn primary" data-gmail="${i.id}">Open in Gmail ↗</button><button class="btn ghost" data-toast="Email copied">Copy</button><button class="btn ghost" data-sent="${i.id}">Mark as sent</button></div>
+  </div></div>`;
+}
+function stylePanel(){
+  $("#layer").innerHTML=`<div class="scrim" data-close><div class="drawer" role="dialog" aria-label="Writing style"><div class="dr-h"><div class="who"><b>Writing style</b><span>How we write every email for you</span></div><button class="xbtn" data-close aria-label="Close">✕</button></div>
+  <div class="dr-b"><span class="lab">Start from a preset</span><div class="presets">${[["warm","Warm & concise","Friendly, under 100 words"],["data","Direct & data-led","Leads with your numbers"],["founder","Founder story","Leads with why you"],["formal","Formal","For family offices and CVCs"]].map(([k,t,d])=>`<button aria-pressed="${st.style===k}" data-style="${k}"><b>${t}</b>${d}</button>`).join("")}</div>
+  <span class="lab">Anything we should always say or avoid?</span><textarea class="field" rows="3" placeholder="e.g. Always mention our IIT Kanpur co-founder. Never say 'disrupt'."></textarea>
+  <span class="lab">Sign-off</span><input class="field" value="Neha Kulkarni, Founder, Ledgerly"></div>
+  <div class="dr-f"><button class="btn primary" data-close>Save style</button></div></div></div>`;
+}
+function firstEmailsModal(){
+  $("#layer").innerHTML=`<div class="modal-scrim"><div class="modal rise" role="dialog" aria-label="Your first emails"><div class="art"><span class="logo" style="font-size:14px"><span class="logo-mark">F</span>Fundraising OS</span>
+   <div class="mini" style="background:rgba(0,0,0,.55)"><div class="mini-row"><span style="flex:1">Outreach</span><span class="muted">3 ready</span></div><div class="sendgrid"><i class="ok">✓</i><i class="ok">✓</i><i class="ok">✓</i><i></i><i></i><i></i></div><div class="mini-row" style="color:var(--green)">Every fact sourced · nothing sent</div></div>
+   <h3>Raise on <span class="it">your</span> terms.</h3></div>
+   <div class="copy"><span class="tag blue" style="align-self:flex-start">✉ Your emails</span><h2>We wrote your first three emails</h2><p class="fg2" style="margin:0">We matched investors to Ledgerly and wrote a personal email to the top three. Read them, change anything, and send them from your Gmail when you're happy.</p><button class="btn white" style="margin-top:auto;border-radius:14px;padding:14px" data-close>Show me my emails →</button></div></div></div>`;
+}
+
+/* ---------------- router + events ---------------- */
+function route(){
+  const h=location.hash||"#/";
+  // in-page anchors (#how, #faq) only exist on the landing page: just scroll to them
+  if(!h.startsWith("#/")){const el=document.getElementById(h.slice(1));if(el)el.scrollIntoView({behavior:"smooth"});return}
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  document.querySelectorAll("[data-jump]").forEach(b=>b.classList.toggle("on",b.dataset.jump===(h.startsWith("#/apply")?"#/apply":h.startsWith("#/app")?"#/app":"#/")));
+  if(h.startsWith("#/apply")){$("#v-apply").classList.add("on");if(st.step>4)st.step=0;renderApply()}
+  else if(h.startsWith("#/app")){$("#v-app").classList.add("on");renderApp()}
+  else{$("#v-landing").classList.add("on")}
+  $("#layer").innerHTML="";window.scrollTo(0,0);
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-open],[data-close],a");if(!t)return;
+  if(t.dataset.close!==undefined&&(e.target===t||t.tagName==="BUTTON")){$("#layer").innerHTML="";return}
+  if(t.dataset.toast){toast(t.dataset.toast);return}
+  if(t.dataset.jump){location.hash=t.dataset.jump;return}
+  if(t.dataset.pt){ptab(+t.dataset.pt);return}
+  if(t.id==="go"){st.step++;renderApply();return}
+  if(t.dataset.back!==undefined){st.step--;renderApply();return}
+  if(t.dataset.sec){const n=t.dataset.sec;st.sectors=st.sectors.includes(n)?st.sectors.filter(x=>x!==n):[...st.sectors,n];renderApply();return}
+  if(t.dataset.stage){st.stage=t.dataset.stage;renderApply();return}
+  if(t.dataset.ask){st.ask=t.dataset.ask;renderApply();return}
+  if(t.dataset.signin!==undefined){st.step=6;renderApply();return}
+  if(t.dataset.page){st.page=t.dataset.page;st.filter="all";renderApp();window.scrollTo(0,0);return}
+  if(t.dataset.pageGo){st.page=t.dataset.pageGo;renderApp();return}
+  if(t.dataset.filter){st.filter=t.dataset.filter;renderApp();return}
+  if(t.dataset.open){openDrawer(t.dataset.open);return}
+  if(t.dataset.acc!==undefined){const p=t.nextElementSibling;p.hidden=!p.hidden;return}
+  if(t.dataset.gmail){toast("Opens Gmail with To, subject and body filled in");return}
+  if(t.dataset.sent){const i=INV.find(x=>x.id==t.dataset.sent);i.status="sent";i.sent="Sent just now";$("#layer").innerHTML="";renderApp();toast(`Marked as sent to ${i.person}. Follow-up due in 3 days.`);return}
+  if(t.dataset.move){INV.find(x=>x.id==t.dataset.move).status=t.dataset.to;renderApp();return}
+  if(t.dataset.write){const i=INV.find(x=>x.id==t.dataset.write);i.status="draft";openDrawer(i.id);renderApp();return}
+  if(t.dataset.act==="style"){stylePanel();return}
+  if(t.dataset.act==="next"){const i=INV.find(x=>x.status==="draft");if(i)openDrawer(i.id);else toast("No drafts waiting");return}
+  if(t.dataset.style){st.style=t.dataset.style;document.querySelectorAll("[data-style]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.style===st.style));return}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#layer").innerHTML="";if(e.key==="Enter"&&e.target.matches(".lrow[data-open]"))openDrawer(e.target.dataset.open)});
+window.addEventListener("hashchange",route);
+ptab(0);route();
+</script>

@@ -1,144 +1,123 @@
 # DESIGN.md
 
-> Built from `product-thinking/06`, `07`, `08`. Sections 1, 2 and 6 are the parts only you can write: my drafts are marked **[guess, review]**. Sections 3, 4, 5 come from chapters 2 and 3. Nothing is left blank.
+> **Locked: v4, 12 Oct 2026.** The reference is `references/prototypes/demo-v4-dark.html` (also at https://claude.ai/artifact/QTPxFwD3SKpCeE2FAaj9pM). When this file and the prototype disagree, this file wins; ask before guessing.
 > Rule for the agent: if a choice isn't covered here, ask instead of guessing.
 
-## 1. The feeling, in labels
+## 1. The feeling
 
-- Investor row: six fixed slots in the same order (name, geography, cheque size, stages, fit reason, action), one coloured button at the right, so a founder can scan 20 investors in seconds **[guess, review]**
-- Fit reason: one grey line under each investor name saying why they match, so she can check the AI's work without opening anything **[guess, review]**
-- Primary button: the only filled, coloured element on the screen, so the thumb knows where to go **[guess, review]**
-- Email draft: plain white card, large readable body, editable in place, so it feels like her own Gmail and not a new tool **[guess, review]**
-- Error and empty states: one plain sentence and two exits, never a blank page or a code **[guess, review]**
+- Calm and in control at 11 PM: one clear next move on every screen, never a wall of options.
+- Proof before trust: every investor shows why, with a source and a date.
+- Premium and dark, like GrowthX; big confident type, like Apple; one italic serif word for emotion, like Boketto.
+- Hero emotion: **"The best-prepared founders don't wing their raise. Neither should you."**
 
-## 2. References, one per component
+## 2. Colour and type (tokens; use the names, never raw values)
 
-- **Investor list / row:** `references/openvc-investor-list.jpg`
-  Take: the fixed six-slot row, the count in the header, the "last updated" line, one coloured action button per row whose label depends on the investor.
-  Ignore: the map, the dark promo banner between rows, the chat bubble, numbered stage chips.
-- **Error state:** Visible.vc 404 page (visible.vc/404, screenshot to add in `references/visible-404.jpg`)
-  Take: plain words saying what happened, two exits ("Back to website", "Log into Visible").
-  Ignore: dark theme, outlined serif "404".
-- **Primary and secondary buttons:** Visible.vc home (screenshot to add in `references/visible-home.jpg`)
-  Take: two levels, one filled and one outlined.
-  Ignore: green, the two-audience cards.
-- **Email draft card:** to find: a Gmail compose window or Superhuman screenshot, by hand. **[yours to do: no reference chosen yet]**
-  Take: compose box with subject and body, nothing else on the page.
-  Ignore: toolbar, attachments, formatting row.
-- **Tracker row with status chip:** to find: a CRM pipeline or Linear list, searched with a label ("status chips in a list, one line per row") on Mobbin or Pinterest. **[yours to do]**
-- **Empty state:** to find on Mobbin ("empty state, first action"). **[yours to do]**
+| Token | Value | Use |
+|---|---|---|
+| `--bg` / `--bg2` | #050507 / #0B0B0E | Page / side panels |
+| `--card` / `--card2` | #111115 / #17171C | Cards / hover, selected |
+| `--line` / `--line2` | #24242B / #33333C | Borders |
+| `--fg` / `--fg2` / `--muted` | #F4F4F6 / #B6B6C0 / #83838F | Text levels |
+| `--blue` | #3D7BFF | The one main action per screen; active states |
+| `--blue-ink` / `--blue-soft` | #9DBBFF / blue at 14% | Links, highlight on dark |
+| `--gold` | #E9C46A | **Top picks only** (cards, medals, "Pick of the week") |
+| `--green` / `--amber` / `--red` | #3DDC84 / #F5B544 / #FF6B6B | Done, due or "check this", error or conflict |
+| Logo mark | conic blue → #7B5CFF | Logo only |
 
-Keep references in one direction; screenshot each one with its label written beside it.
+- Dark only. No light theme in v1.
+- Fonts: **Inter Tight** for headings, **Inter** for body, **Instrument Serif italic** for one emphasised phrase per heading, **JetBrains Mono** for small labels and kickers.
+- Sizes: display 40–88 (landing hero only), page title 30, card heading 15–22, body 15, small 12–13.
+- Radius: 14 on cards, 22 on big panels, pill on buttons and chips. Spacing steps 8 / 16 / 24 / 40.
+- Contrast: body text at least 4.5:1 on its background.
 
-## 3. Type and colour
+## 3. Words (plain English for Indian first-time founders)
 
-- Font: Inter, one typeface
-- Sizes: display 40 for the headline (one per screen), heading 20, body 16. No other sizes without asking.
-- Text: #1A1A1A on #FAF8F5 (muted #5C5C5C for fit reasons and dates; cards #FFFFFF)
-- Accent: #B4451F, only on the main action. Red #B3261E only for errors.
-- Space: 8, 16, 24, 40. Radius 12 on cards and buttons, nothing else rounded.
-- Contrast of every text and button pair at least 4.5:1 (checked by calculation).
-- Tokens: define each value once in code as a named token and use only the names, never raw values.
+Use these words, never the ones on the right.
 
-## 4. Screens
+| Say | Never |
+|---|---|
+| Investors for you | Matches, deal flow |
+| Match score | Fit Score, rating algorithm |
+| Full research | Dossier |
+| What they invest in | Thesis (founder side) |
+| Who can reach you | Door policy |
+| Confirmed by investor / Checked by our team / Researched | Claimed, vetted |
+| Founders who want to talk to investors | Startups raising, deals, listings |
+| Ask for a conversation | Request deck & intro, invest |
+| I sent it | Mark as sent |
 
-Flow: Start -> Results -> Draft -> Tracker, plus a Save your list sheet. Full wireflow with error exits: `product-thinking/07-screens-and-states.md`. Phone first, check at 360 px, 390 px and laptop. Same screens on a laptop, wider; no separate desktop layout.
+Buttons say what happens next ("Open email", "Send follow-up"), never "Submit" or "Get started". Errors say what happened and offer two ways forward.
 
-### Start
-- For: a founder opening the link for the first time, on her phone, at night
-- Top to bottom: one line on what this does; four fields (company as text; sector, stage and ask size as dropdowns, ask in ₹ ranges); "For Indian startups" line; data line; one button
-- Main action: Find my investors -> Results
-- Empty, first visit: this is the screen; fields empty with hints
-- Empty, coming back: skip to Tracker if a list exists
-- Loading: button says "Finding...", fields lock
-- Error: sector has no match: "We don't have investors for [sector] yet. These three are closest." Exits: pick one, or Edit my details
-- Done: hands off to Results
-- If the AI answer is wrong: n/a, no AI output here
+## 4. Components
 
-### Results
-- For: a founder who wants proof it understood her
-- Top to bottom: header with company, count and "Investor list updated [latest source date]"; 20 cards with name, fit reason, cheque size, stage, Write email
-- Main action: Write email on the top card -> Draft
-- Empty, first visit / coming back: not reachable
-- Loading: progress bar with honest steps, her details stay on screen
-- Error: after 15 seconds, "This is taking longer than it should. Your details are saved." Exits: Try again, Edit my details
-- Done: 20 cards, or fewer with "Only 12 fit. We'd rather show 12 right ones than pad the list."
-- If the AI answer is wrong: Not a fit removes the card; the fit reason shows why it was picked
+- **Match score dial:** a 0–100 ring. Gold at 85 and above, blue at 70–84, grey below 70.
+- **Top pick card (gold):** a face or logo, name, rating, badges, the dial and a 1–2 line reason. Then "Why they fit" (4 bullets), "Watch out" (2), and "What to say" (in Full research). Sources line with the check date. Top picks only.
+- **Compact top-pick row (Today):** medal, face or logo, name, cheque, one-line reason, rating, badges, a small dial, and Email / Why buttons.
+- **Badges** (earned): ⚡ Replies in 2 days · ♥ Founder favourite · ◆ Leads rounds · ✦ Clear feedback · ▲ Active this month · 1 Writes first cheques. At most 3 on a card.
+- **Medals:** gold, silver and bronze for ranks 1–3 in leaderboards and top picks.
+- **Verification ladder:** ◌ Researched → ◐ Checked by our team → ● Confirmed by investor.
+- **Faces and logos:** fund logo from the fund's own site. People show their own photo only once they confirm their profile; until then, initials or an illustrated face. Never photos taken from LinkedIn.
+- **Email panel:** To, Subject, Body (editable). Lines from her profile are highlighted blue; unsourced claims get an amber "check this". Word count. Buttons: Open in Gmail (main), Copy, I sent it.
+- **Pipeline row:** face or logo, the next action and why, a status tag, a due chip (red for today, amber for later), one action button, and "Status ▾".
+- **"Coming soon" tag:** small mono "SOON" label; the button is shown but does nothing except a toast.
 
-### Draft
-- For: a founder deciding whether to send this in her name
-- Top to bottom: investor name and fit reason; editable email card (subject, body); sources line for any claim; buttons
-- Main action: Open in Gmail -> Gmail; she sends there. Then Mark as sent. Secondary: Copy email
-- Empty, first visit: never empty
-- Empty, coming back: shows the sent email read-only, plus the follow-up if due
-- Loading: "Writing to [Investor]..." then a single fade-in of the draft
-- Error: Gmail won't open: "Gmail wouldn't open this one. Your email is copied, paste it into a new message." Exits: Copy again, Back to list
-- Done: "Marked as sent to [Investor]. Next: [Investor 2]." Main action Write next email
-- If the AI answer is wrong: edit in place; unsourced claims highlighted "Check this"; Rewrite this line; Skip this investor
+## 5. Screens
 
-### Tracker
-- For: a founder coming back on a second day
-- Top to bottom: "3 follow-ups due"; Due group on top with follow-ups already written; the rest grouped by status
-- Main action: Send follow-up on the first due row -> Draft
-- Empty, first visit: not reachable
-- Empty, coming back: "Nothing sent yet. Your first email is one tap away." Button Open Results
-- Loading: grey placeholder rows in the same shape
-- Error: "We couldn't load your list. It's saved, try again." Exits: Try again, Back to Start
-- Done: "You're up to date. Next check: [date]."
-- If the AI answer is wrong: status chips changeable in one tap; replied stops follow-ups
-- Status changes are optimistic; AI steps never are
+**Landing.** A founder/investor toggle. Hero: **"First round? Send your first investor email *in 10 minutes.*"** (hook A from the Hook lab; B and C stay as tests). Then:
+- the 3 steps with honest times (2, 3 and 5 minutes) and a live preview of step 2
+- 6 pain cards, in founders' own words
+- the hero-emotion band
+- the first two weeks with real times
+- "Not a generic list. Tailored to you."
+- "They will ask these. Are you ready?"
+- competition preview, picks of the week with medals and badges
+- built for India, coming soon, FAQ, final call to action
 
-### About you (sheet)
-- For: a founder who just tapped Write email for the first time
-- Top to bottom: "So the email sounds like you."; four short fields (your name, one line on your background, company website, one line on what the company does); one button
-- Main action: Write my email -> Draft. Asked once; editable later from the Draft screen
-- Loading: n/a. Error: a field too long: say the limit. Done: closes to Draft, loading
+**Founder sign-up (4 steps, with a "time left" chip).** Startup name → your name → sector (AI, Climate, Deeptech open; others "soon") → stage and raise. Then the matching screen, and the reveal: "That took 4 minutes. Your first email is ready." Then Google or email sign-in, then the optional Gmail connect.
 
-### Save your list (sheet)
-- For: a founder who just marked her first email sent
-- Top to bottom: "Save your list so it's here tomorrow."; one button: Continue with Google
-- Main action: Save my list -> Tracker
-- Loading: "Saving..." Error: "Couldn't save. Your list is still on this screen." Exits: Try again, Not now. Done: closes to Tracker
+**Founder app.** The sidebar, in order, and what each screen does:
+- **Today:** do-this-next card, compact top picks, today's list with time per task, round so far, Q&A readiness, news, data room score
+- **Investors for you:** gold top picks, then tabs: All, Founder-friendly, Funds, Angels, Backed a competitor
+- **Pipeline:** stage counters, then Your move / Waiting on them / Meetings / Closed
+- **Inbox:** Gmail, investor emails only, with a suggested reply
+- **Competition:** summary, table, feature comparison, positioning map with the gap, strengths and weak spots, who funds the space, your angles, your answer, news
+- **Investor Q&A:** 10 groups, answers drafted from her profile, locked ones say what's missing, 2-minute pitch, call prep
+- **Data room:** checklist with Add buttons, readiness score, who opened it, create buttons (soon), living data room (soon)
+- **Profile:** company one-liner builder, founders (with LinkedIn), numbers that unlock answers, company details, "let investors find you"
+- **Coming soon:** Templates, Learning, Blog
 
-## 5. The first screen's words (written by me, not the AI)
+Bottom left: watch-demo card, Gmail status, and the avatar menu (Settings, Integrations, Chat, Log out). A "Chat with us" button floats on every app screen.
 
-Placeholders from me; rewrite them in your own words after the interviews. **[guess, review]**
-- Headline: Your next 20 investors, with emails ready.
-- Under it: Enter your company and round. We match investors who fit and write the first email. You edit it and send from your own Gmail.
-- Button: Find my investors
+**Settings.** Founder tabs:
+- account
+- email and signature (one-liner and founder line on by default)
+- writing style
+- integrations: Gmail and Google Calendar now; Drive, Notion, Slack, WhatsApp, LinkedIn and CRMs "soon"
+- notifications
+- usage
+- privacy and data (download, delete)
+- help and chat
 
-## 6. Principles (kept, not tactics)
+Investors get account, **team members**, who can reach you, integrations, notifications, privacy and help.
 
-**[guess, review]** each, from the work so far; add one on the day you make a correction.
-- One filled coloured button per screen, and it is the main action.
-- Every AI claim about an investor shows where it came from, or is marked "check this".
-- Nothing is sent, and nothing leaves her control, without her pressing send.
-- Every error says what happened in plain words and offers two ways forward.
+**Investor side.** Join in 3 steps: work email → "Is this still what you invest in?" (pre-filled) → who can reach you, plus inviting the team. App screens:
+- Founders for you (conversation requests, round details hidden)
+- Saved
+- This week
+- Your reviews
+- Your profile
+
+## 6. States (every screen)
+
+Empty: one sentence plus the next action. Loading: grey shapes of the real layout, and honest steps for AI work ("Checking 611 investors…"). Error: plain words and two ways forward. Done: say what happened and what's next ("I sent it" → "First follow-up on day 3").
+
+## 7. Principles
+
+- One blue button per screen, and it's the main action.
+- Gold means "top pick". Nothing else is gold.
+- Every claim about an investor shows its source, or is marked "check this".
+- Nothing is sent without her pressing send in Gmail.
+- Plain words over clever ones (section 3).
+- Phone first at 360–390 px; laptop is the same screens, wider; the sidebar becomes a bottom tab bar on phones.
+- We're a research and outreach service, not a marketplace: no public "raising" listings, and round details are shared only when the founder accepts.
 - Optimistic about saving her data, honest about the AI: she sees the wait.
-- Words on buttons say what happens next, never "Get started" or "Submit".
-- Works first on a phone at 360 px; the laptop is the same screen, wider.
-- Added on day _: (fill in each time you correct the agent)
-
-## The correction loop (daily)
-
-Reference -> hand over (image plus your words) -> build one component -> label what's off -> add a principle to section 6 only if it holds on every screen -> next screen. One-off fixes stay out of this file.
-
-## Add to AGENTS.md
-
-```
-Before building or changing any screen, read DESIGN.md and follow it. If a choice isn't covered here, ask me instead of guessing.
-```
-
-If the project also has CLAUDE.md, its first line is `@AGENTS.md`.
-
-## Send to Shaktimaan
-
-```
-Shaktimaan, here's my DESIGN.md for Build Sprint. Check it the way the Design
-thinking pages on the dashboard teach: labels instead of vague words, one
-reference per component with what to take and what to ignore, one font, a few
-sizes and the colours, every screen with its empty, loading, error and done
-states, first-screen words that say the outcome, and principles that hold on
-every screen. Tell me the weakest part first and make me rewrite it. Don't write
-it for me.
-```

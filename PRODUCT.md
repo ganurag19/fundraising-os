@@ -104,7 +104,7 @@ From opening the link to the first value:
 4. She edits the email and opens it in Gmail. Nothing has been sent until she presses send. removes: "what if it's wrong?"
 5. She saves her list and marks the email sent. removes: "will I lose this?"
 
-Login: not before step 3. Asked at step 5, when she wants to keep her list, because saving it is the reason to sign up.
+Login: after the 4 sign-up steps and matching, on the reveal screen ("Your first email is ready"), before she reads it. Changed with the v4 design on 12 Oct 2026: she's seen her score and match count, so signing in protects something she already values.
 What we don't ask on day one: deck, DD documents, Drive, Gmail permission, LinkedIn, profile, tour.
 What we ask later, and when: just before her first draft, once: her name, one line on her background, the company website and one line on what it does, so the email sounds like her; her deck after a meeting is booked (parked, not this sprint).
 

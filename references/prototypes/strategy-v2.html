@@ -1,0 +1,228 @@
+<title>Fundraising OS Strategy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one long reading column with a sticky section index on wide screens; tables scroll in their own box.
+   Same dark system as the v2 prototype so the two read as one set. Dark only by choice. */
+:root{color-scheme:dark;--bg:#050507;--card:#111115;--card2:#17171C;--line:#24242B;--fg:#F4F4F6;--fg2:#B6B6C0;--muted:#83838F;--blue:#3D7BFF;--blue-ink:#9DBBFF;--gold:#E9C46A;--green:#3DDC84;--amber:#F5B544;--red:#FF6B6B;
+ --display:"Inter Tight","Inter",system-ui,sans-serif;--body:"Inter",system-ui,sans-serif;--serif:"Instrument Serif",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0;padding-inline:16px;padding-block:40px 80px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}.toc{display:none}}
+.toc{position:sticky;top:24px;align-self:start;display:flex;flex-direction:column;gap:2px;font-size:13px}
+.toc a{color:var(--muted);text-decoration:none;padding:5px 8px;border-radius:7px}
+.toc a:hover{color:var(--fg);background:var(--card)}
+main{min-width:0;display:flex;flex-direction:column;gap:64px}
+header h1{font-family:var(--display);font-size:clamp(38px,6vw,64px);letter-spacing:-.035em;line-height:1.02;margin:12px 0 14px;text-wrap:balance}
+.it{font-family:var(--serif);font-style:italic;font-weight:400;color:#CFDCFF}
+.kicker{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:18px;color:var(--fg2);max-width:62ch;margin:0}
+section h2{font-family:var(--display);font-size:32px;letter-spacing:-.025em;margin:8px 0 12px;line-height:1.1;text-wrap:balance}
+section > p{color:var(--fg2);max-width:66ch;margin:0 0 16px}
+h3{font-size:17px;margin:0 0 6px}
+.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.links a{color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:9px 14px;font-size:14px;font-weight:600;background:var(--card)}
+.links a.p{background:var(--blue);border-color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:760px){.grid,.grid.three{grid-template-columns:minmax(0,1fr)}}
+.card{border:1px solid var(--line);border-radius:18px;background:var(--card);padding:18px;min-width:0}
+.card p{margin:0;color:var(--fg2);font-size:15px}
+.card ul{margin:8px 0 0;padding-left:18px;color:var(--fg2);font-size:15px;display:flex;flex-direction:column;gap:4px}
+.card.gold{border-color:rgba(233,196,106,.4);background:linear-gradient(180deg,rgba(233,196,106,.08),transparent 50%),var(--card)}
+.card.red{border-color:rgba(255,107,107,.35)}
+.tag{display:inline-block;font:600 11px/1 var(--mono);letter-spacing:.06em;border-radius:6px;padding:4px 7px;background:var(--card2);color:var(--fg2);margin-bottom:8px}
+.tag.g{background:rgba(61,220,132,.12);color:var(--green)} .tag.a{background:rgba(245,181,68,.13);color:var(--amber)} .tag.r{background:rgba(255,107,107,.12);color:var(--red)} .tag.b{background:rgba(61,123,255,.14);color:var(--blue-ink)} .tag.y{background:rgba(233,196,106,.12);color:var(--gold)}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line);background:#0B0B0E;white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--fg2)}
+td b{color:var(--fg)}
+tr:last-child td{border-bottom:0}
+.us td{background:rgba(61,123,255,.07)}
+.steps{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.step{display:grid;grid-template-columns:64px minmax(0,1fr);gap:14px;padding:16px 18px;border-top:1px solid var(--line);background:var(--card)}
+.step:first-child{border-top:0}
+.step .n{font:600 13px/1.4 var(--mono);color:var(--blue-ink)}
+.step p{margin:0;color:var(--fg2);font-size:15px}
+.weights{display:flex;flex-direction:column;gap:8px}
+.w{display:grid;grid-template-columns:170px minmax(0,1fr) 44px;gap:10px;align-items:center;font-size:14px}
+@media (max-width:600px){.w{grid-template-columns:120px minmax(0,1fr) 40px}}
+.bar{height:7px;border-radius:7px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;background:var(--blue);border-radius:7px}
+.w b{text-align:right;font-variant-numeric:tabular-nums}
+.phase{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.phase{grid-template-columns:minmax(0,1fr)}}
+.phase .card h3{font-family:var(--display);font-size:20px}
+.when{font:600 12px/1 var(--mono);color:var(--gold)}
+ol.next{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;color:var(--fg2)}
+ol.next b{color:var(--fg)}
+.note{font-size:13px;color:var(--muted)}
+.sources a{color:var(--blue-ink)}
+.sources li{font-size:14px;color:var(--fg2)}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Sections">
+  <a href="#v2">What v2 adds</a><a href="#limits">The hard limits</a><a href="#vetting">Vetted investors</a><a href="#investors">Investor side</a><a href="#score">Fit Score</a><a href="#comp">Competition & news</a><a href="#room">Data room</a><a href="#moats">Moats</a><a href="#landscape">Landscape</a><a href="#india">Winning India</a><a href="#roadmap">Roadmap</a><a href="#next">Next steps</a>
+</nav>
+<main>
+<header>
+  <span class="kicker">Fundraising OS · v2 thinking · 11 Oct 2026</span>
+  <h1>From a contact list to <span class="it">the operating system</span> for an Indian raise.</h1>
+  <p class="lede">What v2 adds and why, the limits we have to design around, how we earn a "vetted investors" number, the investor side, the moats, and how we win India. Read it next to the prototype.</p>
+  <div class="links"><a class="p" href="https://claude.ai/artifact/LJ2FcQSddSRPBy16mLuC7p">Open the v2 prototype →</a><a href="https://claude.ai/artifact/TzPjiD7Bq1EKYSRLAmVfCB">v1 for comparison</a></div>
+</header>
+
+<section id="v2"><span class="kicker">01</span><h2>What v2 adds, and the idea behind each</h2>
+<p>v1 copied RoundFunded's shape: a list first. v2 turns it around. The founder lands on <b>one next action</b>, and every number on screen explains itself.</p>
+<div class="scroll"><table><thead><tr><th>Feature</th><th>What it does</th><th>Why it's 10x for the founder</th></tr></thead><tbody>
+<tr><td><b>Today</b> home</td><td>Day count of the raise, one "next best move", a short task list, the funnel, news and data room readiness</td><td>Replaces "what do I do now?" at 11 PM. RoundFunded opens on a list; we open on a decision.</td></tr>
+<tr><td><b>Top picks</b> with Fit Score</td><td>3 gold cards: a 0–100 dial, a 1–2 line reason and 4–5 sourced bullets. Only top picks get the full rationale.</td><td>Trust. She can check our work in ten seconds before she risks a first impression.</td></tr>
+<tr><td><b>Investor dossier</b></td><td>Thesis, recent deals, how to pitch, reply rate on the platform, competitor check, verification level</td><td>The hour of research per fund, done and dated.</td></tr>
+<tr><td><b>Competitor conflict flag</b></td><td>Investors who backed a competitor are flagged and scored lower, not hidden</td><td>Saves the most wasted emails, and few tools do it.</td></tr>
+<tr><td><b>Inbox</b> (Gmail, optional)</td><td>Only investor threads, matched to the pipeline, with a suggested reply that uses her data room numbers</td><td>Replies stop getting lost; the pipeline updates itself.</td></tr>
+<tr><td><b>Competition</b> table + news</td><td>Competitors, what they raised, who backed them, an editable "how you differ"; news ranked by pitch relevance</td><td>Answers the investor question she dreads, before the call.</td></tr>
+<tr><td><b>Data room</b> pack</td><td>India-specific checklist, readiness score, share link, viewer list, "10 questions investors will ask"</td><td>Second meetings come faster when the room is complete.</td></tr>
+<tr><td><b>This week</b> leaderboards</td><td>Most responsive investors, most active per sector, most saved startups (investor side only)</td><td>A weekly content hook for LinkedIn, and a reason investors keep their profiles current.</td></tr>
+<tr><td><b>Investor side</b></td><td>3-step claim flow, thesis-matched deal feed, door policy, saved startups, investor stats</td><td>Makes the database live, and turns it into a marketplace.</td></tr>
+<tr><td><b>Landing v2</b></td><td>Founder/investor toggle, a live "try it" in the hero, a 14-day plan, the Fit Score breakdown, competition preview, leaderboard</td><td>Shows the product working before sign-up, and doesn't read like RoundFunded.</td></tr>
+</tbody></table></div>
+<p class="note" style="margin-top:10px">Also changed: a ⌘K command bar, the gold reserved for top picks only, and investor marks generated from each fund's name (the real fund logo goes there; see limits).</p>
+</section>
+
+<section id="limits"><span class="kicker">02</span><h2>The hard limits, and how v2 designs around them</h2>
+<p>Four of your asks run into legal, licensing or privacy walls. None kills the idea. Each changes how we build it.</p>
+<div class="grid">
+ <div class="card red"><span class="tag r">GMAIL INBOX</span><h3>Reading mail needs Google's security assessment</h3><p>Sending only (<code>gmail.send</code>) is a "sensitive" scope: Google verification, no paid audit. Reading threads needs a "restricted" scope, which triggers a CASA security assessment. It's paid (roughly $675 to $5,400 depending on level), renewed every year, and can take weeks to months. Until then: 100-user cap and a warning screen.</p><ul><li><b>v1:</b> compose link (no permissions)</li><li><b>v1.5:</b> send-only scope + replies marked by hand or via a BCC tracking address</li><li><b>v2:</b> read-only investor threads after CASA, once paying users justify it</li></ul></div>
+ <div class="card red"><span class="tag r">CRUNCHBASE</span><h3>No scraping. A licence, or our own sources.</h3><p>Crunchbase's terms bar automated collection and resale; the API is paid and needs a commercial licence to show data inside our product. Same for Tracxn and OpenVC.</p><ul><li><b>Now:</b> competitors' own websites, public funding news (Inc42, Entrackr, YourStory feeds), founder-added competitors, AI summaries with links</li><li><b>Later:</b> price a Crunchbase or Tracxn API licence once revenue covers it</li></ul></div>
+ <div class="card red"><span class="tag r">FACES & LOGOS</span><h3>Logos yes, faces only with consent</h3><p>A fund's logo from its own website is fine to show as identification. Investors' personal photos from LinkedIn or elsewhere are not ours to reuse, and DPDP Act consent rules apply to personal data.</p><ul><li><b>Funds:</b> logo or favicon from their domain, with a generated mark as fallback</li><li><b>People:</b> initials until they claim a profile and upload a photo</li></ul></div>
+ <div class="card red"><span class="tag r">PUBLIC LISTINGS</span><h3>A "raising now" leaderboard can look like a public offer</h3><p>Indian private placements go to a limited, pre-identified group (at most 200 a year), and SEBI has acted against platforms that turned private placements into public offers. So a Product Hunt-style public board of who's raising is risky.</p><ul><li>Public boards rank <b>investors</b> (responsiveness, activity), never offers</li><li>"Most saved startups" and round details are visible <b>only to verified investors</b>, opt-in for founders</li><li>We never handle money, allotments or terms. <b>Get a securities lawyer's view before launching the investor side.</b></li></ul></div>
+</div>
+<p class="note" style="margin-top:12px">Also: the DPDP Act 2023 applies to investor emails and founder data. We need a privacy notice, a purpose for every field, a way for any investor to correct or remove their record, and deletion on request.</p>
+</section>
+
+<section id="vetting"><span class="kicker">03</span><h2>Earning a "vetted investors" number</h2>
+<p>RoundFunded says "60,000+ vetted". A big number we can't explain is a liability. Ours is smaller, defined, and shown on every record.</p>
+<div class="grid three">
+ <div class="card"><span class="tag">◌ RESEARCHED</span><h3>Sourced from public pages</h3><p>Thesis, stages, cheque and portfolio from the investor's own site, with dated links. This is what last night's 148-investor run produced.</p></div>
+ <div class="card"><span class="tag b">◐ CHECKED</span><h3>Reviewed by our team</h3><p>A person confirms the fund is active (a dated deal in the last 12 months), the pitch route works, and the facts match the sources. It expires after 90 days.</p></div>
+ <div class="card gold"><span class="tag y">● CLAIMED</span><h3>Confirmed by the investor</h3><p>The investor signs in with their work email and confirms their thesis. This is the strongest trust signal, and it ranks higher for founders.</p></div>
+</div>
+<div class="steps" style="margin-top:14px">
+ <div class="step"><span class="n">WEEKLY</span><p><b>Discover.</b> New fund names from SEBI's AIF register, SIDBI's Fund of Funds list, angel network pages and funding news. Removes duplicates against what we have.</p></div>
+ <div class="step"><span class="n">WEEKLY</span><p><b>Research.</b> The same agent run as last night, at about $0.12 per investor on Sonnet. Facts without a source stay blank.</p></div>
+ <div class="step"><span class="n">DAILY</span><p><b>Check.</b> One person checks about 40 records a day from a queue, in roughly 2 minutes each. Low-confidence and high-traffic investors come first.</p></div>
+ <div class="step"><span class="n">ALWAYS</span><p><b>Signals.</b> Founder outcomes (bounces, replies, "not investing") feed back into freshness. A bounced email drops a record back to Researched.</p></div>
+</div>
+<p class="note" style="margin-top:10px">The public number is "Checked in the last 90 days". Target: 300 by launch, 1,000 by month 3. That's honest, explainable, and it grows every week.</p>
+</section>
+
+<section id="investors"><span class="kicker">04</span><h2>The investor side, kept as simple as possible</h2>
+<p>Investors join for one reason: fewer, better-fitting founders. Onboarding is three taps, because we've already done the research.</p>
+<div class="steps">
+ <div class="step"><span class="n">STEP 1</span><p><b>Sign in with work email</b> (Google Workspace or a sign-in link). If the email's domain matches a fund we researched, the claim is verified on the spot. Angels with personal email get one extra step: a LinkedIn URL plus a manual check, or a vouch from a claimed investor.</p></div>
+ <div class="step"><span class="n">STEP 2</span><p><b>Confirm the thesis.</b> Sectors, stages and cheque are pre-filled as chips; tap to fix. It takes 30 seconds, and it's the data that makes matching better for everyone.</p></div>
+ <div class="step"><span class="n">STEP 3</span><p><b>Door policy.</b> Maximum intros a week, what founders must include, and how close a fit to show. We enforce it on the founder side, which is why investors trust it.</p></div>
+</div>
+<div class="grid" style="margin-top:14px">
+ <div class="card"><h3>What investors get</h3><ul><li>A deal feed matched to their thesis, opt-in founders only</li><li>Data rooms with a readiness score</li><li>"Pass with a reason" in one tap</li><li>Their own responsiveness stats and badge</li></ul></div>
+ <div class="card"><h3>What we get</h3><ul><li>Verified, current thesis data (the moat)</li><li>Reply and outcome data</li><li>A reason for founders to pay: claimed investors who actually read</li></ul></div>
+</div>
+</section>
+
+<section id="score"><span class="kicker">05</span><h2>The Fit Score, defined</h2>
+<p>A score founders can argue with is a score they trust. Proposed weights, to tune against real reply data:</p>
+<div class="card"><div class="weights">
+ <div class="w"><span>Thesis match</span><div class="bar"><i style="width:30%"></i></div><b>30</b></div>
+ <div class="w"><span>Stage fit</span><div class="bar"><i style="width:20%"></i></div><b>20</b></div>
+ <div class="w"><span>Cheque fit</span><div class="bar"><i style="width:20%"></i></div><b>20</b></div>
+ <div class="w"><span>Recent activity</span><div class="bar"><i style="width:15%"></i></div><b>15</b></div>
+ <div class="w"><span>Responsiveness</span><div class="bar"><i style="width:10%"></i></div><b>10</b></div>
+ <div class="w"><span>Verification level</span><div class="bar"><i style="width:5%"></i></div><b>5</b></div>
+</div><p style="margin-top:12px">Penalties: backed a direct competitor (−25), marked "not investing" (excluded), bounced email (−15). Code computes the score; the AI only writes the reason and bullets, and only from the record.</p></div>
+</section>
+
+<section id="comp"><span class="kicker">06</span><h2>Competition & news: the workflow</h2>
+<div class="steps">
+ <div class="step"><span class="n">SEED</span><p>From her company name, website and one-liner, the AI proposes 5–8 competitors. She keeps, removes or adds.</p></div>
+ <div class="step"><span class="n">ENRICH</span><p>For each competitor: website summary, funding rounds from public news, backers (cross-checked with our investor database), team size range. Every cell links to its source.</p></div>
+ <div class="step"><span class="n">CONNECT</span><p>Backers of competitors are flagged in her matches. Investors who backed <i>adjacent</i> companies are boosted.</p></div>
+ <div class="step"><span class="n">WATCH</span><p>A weekly news scan on her sector, competitors, matched investors and policy, ranked High or Medium for her pitch, each with "how to use this".</p></div>
+ <div class="step"><span class="n">USE</span><p>Her "how you differ" lines feed the email drafts and the data room's competition slide.</p></div>
+</div>
+</section>
+
+<section id="room"><span class="kicker">07</span><h2>The data room pack, for an Indian seed round</h2>
+<div class="grid three">
+ <div class="card"><span class="tag">STORY</span><ul><li>One-liner & problem</li><li>Pitch deck (PDF or link)</li><li>Product demo (Loom)</li><li>Competition & how you differ</li></ul></div>
+ <div class="card"><span class="tag">PROOF</span><ul><li>Traction: MRR, growth, customers, retention</li><li>Customer references (3)</li><li>Team & advisors</li><li>The ask & use of funds, months of runway</li></ul></div>
+ <div class="card"><span class="tag">INDIA DOCS</span><ul><li>Certificate of incorporation, MoA/AoA</li><li>DPIIT recognition</li><li>Cap table & ESOP pool</li><li>Financial model; GST & ROC filings status</li><li>Past SHA/SSA, if any</li></ul></div>
+</div>
+<p class="note" style="margin-top:10px">Readiness score: story 25, proof 35, documents 25, completeness 15. Plus a viewer list, and "10 questions investors will ask", generated from her gaps.</p>
+</section>
+
+<section id="moats"><span class="kicker">08</span><h2>Moats: what gets harder to copy every month</h2>
+<div class="grid">
+ <div class="card gold"><span class="tag y">STRONGEST</span><h3>1 · Outcome data</h3><p>Who replied, how fast, who took meetings, who passed and why. Nobody else in India has reply and outcome data per investor. It makes the Fit Score better and powers the responsiveness rankings, and it compounds with every email sent.</p></div>
+ <div class="card gold"><span class="tag y">STRONGEST</span><h3>2 · Claimed investor profiles</h3><p>Once investors maintain their thesis and door policy here, our data is fresher than any scraped directory, and founders come because investors are here.</p></div>
+ <div class="card"><h3>3 · Sourced, dated India dataset</h3><p>Every fact linked and dated, checked by a person, with India-specific fields (DPIIT, SIDBI-backed funds, ₹ cheques, cities). Hard to fake, slow to copy.</p></div>
+ <div class="card"><h3>4 · Workflow lock-in</h3><p>Pipeline, inbox, data room and competition table in one place. Leaving means rebuilding the whole raise.</p></div>
+ <div class="card"><h3>5 · Distribution you already own</h3><p>GrowthX, IIT/IIM/IFC networks, incubators and the trainers we found. Founders arrive through trusted cohorts, not ads.</p></div>
+ <div class="card"><h3>6 · Trust as brand</h3><p>"Nothing sent without you", "every claim sourced", "India's rules": in a market wary of spam and shady listing platforms, that's a position, not a feature.</p></div>
+</div>
+</section>
+
+<section id="landscape"><span class="kicker">09</span><h2>Where we stand</h2>
+<div class="scroll"><table><thead><tr><th>Player</th><th>What they are</th><th>Gap we exploit</th></tr></thead><tbody>
+<tr class="us"><td><b>Fundraising OS</b></td><td>India-first, sourced matches, writing, pipeline, two-sided</td><td>Built on outcome data and claimed profiles</td></tr>
+<tr><td><b>RoundFunded</b></td><td>Global database, AI outreach, paid plans, sends from your inbox</td><td>Global and US-heavy; India is a filter, not the design; little rationale</td></tr>
+<tr><td><b>OpenVC</b></td><td>Free global investor directory</td><td>Directory only; no workflow, no writing, no outcomes</td></tr>
+<tr><td><b>LetsVenture / AngelList India</b></td><td>Regulated angel-fund platforms</td><td>Transaction-focused; not a founder's outreach system</td></tr>
+<tr><td><b>Tracxn / Venture Intelligence</b></td><td>Paid data for funds and corporates</td><td>Priced and built for investors, not founders</td></tr>
+<tr><td><b>Fundraising advisors</b></td><td>₹50k–2L a month, human, relationship-led</td><td>We do the 80% that's research and follow-up, at a fraction of the cost</td></tr>
+<tr><td><b>ChatGPT</b></td><td>One-off drafts</td><td>No investor data, no memory, no pipeline, no sources</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="india"><span class="kicker">10</span><h2>How we win India</h2>
+<div class="grid">
+ <div class="card"><h3>Wedge</h3><p>First-time founders raising pre-seed or seed (₹50L–₹5Cr) in AI, Climate and Deeptech. We own that corner before going broad: the best data for one corner beats average data for all.</p></div>
+ <div class="card"><h3>First 100 founders</h3><p>GrowthX Build Sprint cohorts, your IIT Delhi, FMS, IFC and Enactus network (200–300 reachable this week), and 5 incubators offering it free to their cohorts.</p></div>
+ <div class="card"><h3>Channels that compound</h3><ul><li><b>Incubator licences:</b> Startup India-recognised incubators and IIT/IIM cells get cohort seats</li><li><b>Trainers as partners:</b> the coaches we listed get a referral share</li><li><b>Content engine:</b> a weekly "Most responsive investors in India" post on LinkedIn</li><li><b>Investor-side pull:</b> every claimed investor tells founders "pitch me here"</li></ul></div>
+ <div class="card"><h3>Pricing (hypothesis, to test)</h3><ul><li>Founders: free list + 5 emails; then about ₹1,499–2,999 a month during an active raise (raises are seasonal, so offer a pause)</li><li>Incubators: per-cohort licence</li><li>Investors: always free (they're the supply)</li><li>Later: success-based data room or intro credits, never a cut of the round</li></ul></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>North-star metrics</h3><p><b>Founder replies per 10 emails sent</b> (quality of matching and writing) and <b>meetings booked per founder per month</b> (the job done). Secondary: checked investors, claimed investors, weekly active founders during a raise.</p></div>
+</section>
+
+<section id="roadmap"><span class="kicker">11</span><h2>Roadmap, in phases</h2>
+<div class="phase">
+ <div class="card"><span class="when">NOW · 1–2 WEEKS</span><h3>v1 live</h3><ul><li>The current milestones 1–8</li><li>v2's Today home and top-pick rationale (cheap, high value)</li><li>Gmail compose link</li><li>Research run: 148 → 300 checked</li></ul></div>
+ <div class="card"><span class="when">WEEKS 3–6</span><h3>v1.5</h3><ul><li>Fit Score + dossier</li><li>Competition table (websites + news)</li><li>Data room pack + share link</li><li>Gmail send-only, BCC reply tracking</li><li>SEBI AIF pilot research</li></ul></div>
+ <div class="card"><span class="when">MONTHS 2–3</span><h3>v2</h3><ul><li>Investor claim flow + deal feed (after legal review)</li><li>Leaderboards</li><li>Paid plan</li><li>Incubator licences</li></ul></div>
+ <div class="card"><span class="when">MONTHS 4–6</span><h3>v3</h3><ul><li>Gmail read-only after CASA</li><li>Licensed funding data</li><li>Outcome-trained matching</li><li>Investor updates, DD Q&A</li></ul></div>
+</div>
+</section>
+
+<section id="next"><span class="kicker">12</span><h2>Next steps</h2>
+<ol class="next">
+ <li><b>You review the v2 prototype</b> and mark what to keep, change or cut, screen by screen.</li>
+ <li><b>Decide the v1 cut.</b> My recommendation: ship the current v1 plan plus two v2 pieces: the <b>Today home</b> and <b>top picks with rationale</b>. Everything else in v2 goes on the roadmap. Big scope is the biggest risk this sprint.</li>
+ <li><b>Lock design.</b> I rewrite DESIGN.md for the dark v2 system (colours, type, gold for top picks, components) and update PLAN.md with the phases above.</li>
+ <li><b>Name and domain.</b> "Fundraising OS" is a placeholder.</li>
+ <li><b>Legal, before the investor side:</b> one hour with a securities lawyer on discovery listings, plus a DPDP privacy notice for the investor database.</li>
+ <li><b>Data:</b> spot-check the 148, then run the "checked" queue to 300 and the SEBI AIF pilot (50 funds).</li>
+ <li><b>Setup:</b> GitHub, Convex and the Claude key (the 20-minute list from before), then I start the landing page and milestone 1.</li>
+ <li><b>Market test in parallel:</b> show the v2 prototype to 3 founders and 2 investors this week. Ask each one: "Would you use this tonight?"</li>
+</ol>
+</section>
+
+<section class="sources"><span class="kicker">Sources</span><ul>
+ <li><a href="https://www.unipile.com/integrating-google-oauth-2-0-user-authentication-into-your-app/">Unipile: Google OAuth verification & Gmail API</a> · <a href="https://deepstrike.io/blog/google-casa-security-assessment-2025">DeepStrike: CASA assessment</a> · <a href="https://singhamandeep.com/category/google-youtube-api/">CASA Tier 2 requirements</a> · <a href="https://developer.nylas.com/docs/cookbook/use-cases/build/google-oauth-scopes.md">Nylas: Gmail scopes</a></li>
+ <li><a href="https://data.crunchbase.com/v3.1/docs/license-agreement">Crunchbase data licence (v3.1)</a> · <a href="https://webscraping.ai/faq/crunchbase-scraping/can-i-sell-the-data-i-scrape-from-crunchbase">Reselling scraped Crunchbase data</a></li>
+ <li><a href="https://www.outlookbusiness.com/markets/sebi-warns-against-unregulated-platforms-facilitating-trade-in-unlisted-securities">SEBI warns on unlisted securities platforms</a> · <a href="https://www.outlookbusiness.com/markets/sebi-directs-4-entities-to-cease-and-desist-from-offering-unlisted-debentures">SEBI cease-and-desist, Nov 2024</a> · <a href="https://www.5paisa.com/news/sebi-cracks-down-on-4-platforms-for-violating-securities-laws">5paisa summary</a></li>
+ <li><a href="https://www.openvc.app/legal">OpenVC terms</a> · <a href="https://www.roundfunded.com/en">RoundFunded</a></li>
+ <li class="note">Pricing, cost per investor and timelines are estimates. Legal points are a reading of public sources, not legal advice.</li>
+</ul></section>
+</main>
+</div>

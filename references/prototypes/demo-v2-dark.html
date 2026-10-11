@@ -1,0 +1,783 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fundraising OS v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* v2 layout: a "today first" app, not a list-first one. Founders land on one next action, top picks with gold
+   rationale cards and a fit dial; investors get a thesis-matched deal feed. Dark only, GrowthX black + blue,
+   gold reserved for "top pick", Instrument Serif italic as the one expressive accent. */
+:root{
+  color-scheme:dark;
+  --bg:#050507; --bg2:#0B0B0E; --card:#111115; --card2:#17171C; --line:#24242B; --line2:#33333C;
+  --fg:#F4F4F6; --fg2:#B6B6C0; --muted:#83838F; --dim:#5D5D68;
+  --blue:#3D7BFF; --blue-soft:rgba(61,123,255,.14); --blue-ink:#9DBBFF;
+  --gold:#E9C46A; --gold-soft:rgba(233,196,106,.12); --gold-line:rgba(233,196,106,.38);
+  --green:#3DDC84; --green-soft:rgba(61,220,132,.12); --amber:#F5B544; --amber-soft:rgba(245,181,68,.13);
+  --red:#FF6B6B; --red-soft:rgba(255,107,107,.12); --violet:#A98BFF; --violet-soft:rgba(169,139,255,.14);
+  --display:"Inter Tight","Inter",system-ui,sans-serif; --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Instrument Serif",Georgia,serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --r:14px; --r-lg:22px; --pill:999px;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font:15px/1.55 var(--body);margin:0;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+h1,h2,h3{text-wrap:balance}
+.it{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:0}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)} .fg2{color:var(--fg2)} .gold{color:var(--gold)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:var(--pill);padding:11px 18px;font-weight:600;border:1px solid transparent;white-space:nowrap;text-decoration:none}
+.btn.primary{background:var(--blue);color:#fff} .btn.primary:hover{filter:brightness(1.12)}
+.btn.white{background:var(--fg);color:#000}
+.btn.ghost{background:transparent;border-color:var(--line2)} .btn.ghost:hover{border-color:var(--fg2)}
+.btn.goldb{background:var(--gold);color:#1A1405}
+.btn.sm{padding:7px 13px;font-size:13px}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.tag{display:inline-flex;align-items:center;gap:5px;border-radius:7px;padding:3px 8px;font-size:12px;font-weight:500;background:var(--card2);color:var(--fg2);border:1px solid var(--line);white-space:nowrap}
+.tag.blue{background:var(--blue-soft);color:var(--blue-ink);border-color:transparent}
+.tag.green{background:var(--green-soft);color:var(--green);border-color:transparent}
+.tag.amber{background:var(--amber-soft);color:var(--amber);border-color:transparent}
+.tag.violet{background:var(--violet-soft);color:var(--violet);border-color:transparent}
+.tag.gold{background:var(--gold-soft);color:var(--gold);border-color:transparent}
+.tag.red{background:var(--red-soft);color:var(--red);border-color:transparent}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:var(--pill);padding:6px 12px;font-size:13px;color:var(--fg2);white-space:nowrap}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;letter-spacing:-.01em;text-decoration:none;font-size:16px}
+.logo-mark{width:28px;height:28px;border-radius:8px;background:conic-gradient(from 210deg,#3D7BFF,#7B5CFF,#3D7BFF);display:grid;place-items:center;font-size:13px;color:#fff;font-weight:800}
+.mark{flex:none;border-radius:11px;overflow:hidden;display:block}
+.view{display:none} .view.on{display:block}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--fg);color:#000;border-radius:var(--pill);padding:10px 18px;font-weight:600;font-size:14px;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px);text-align:center}
+@media (prefers-reduced-motion:no-preference){.rise{animation:rise .5s cubic-bezier(.2,.8,.2,1) both}@keyframes rise{from{opacity:.001;transform:translateY(8px)}to{opacity:1;transform:none}}}
+.grid-bg{background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:56px 56px}
+.verify{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600}
+.verify.v1{color:var(--fg2)} .verify.v2{color:var(--blue-ink)} .verify.v3{color:var(--green)}
+
+/* ---------- landing ---------- */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:rgba(5,5,7,.74);backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid rgba(255,255,255,.06)}
+.nav-in{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px}
+.aud{display:flex;background:var(--card);border:1px solid var(--line);border-radius:var(--pill);padding:3px;margin-left:auto}
+.aud button{border:0;background:transparent;border-radius:var(--pill);padding:7px 14px;font-size:13px;font-weight:600;color:var(--muted)}
+.aud button[aria-pressed="true"]{background:var(--fg);color:#000}
+.wrap{max-width:1200px;margin:0 auto;padding-inline:20px}
+.hero{position:relative;padding-block:72px 32px}
+.hero::before{content:"";position:absolute;inset:-30% -20% auto;height:720px;background:radial-gradient(40% 50% at 30% 10%,rgba(61,123,255,.28),transparent 70%),radial-gradient(30% 40% at 85% 0%,rgba(233,196,106,.12),transparent 70%);pointer-events:none;z-index:-1}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:48px;align-items:center}
+@media (max-width:980px){.hero-grid{grid-template-columns:minmax(0,1fr)}}
+.kicker{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.h-xl{font-family:var(--display);font-weight:700;letter-spacing:-.04em;line-height:.98;font-size:clamp(44px,7vw,96px);margin:18px 0 18px}
+.h-xl .it{color:#CFDCFF;font-size:1.06em}
+.lede{font-size:clamp(16px,1.5vw,19px);color:var(--fg2);max-width:48ch;margin:0}
+.cta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.proof{display:flex;gap:22px;flex-wrap:wrap;margin-top:30px;color:var(--muted);font-size:13px}
+.proof b{display:block;font-family:var(--display);font-size:24px;color:var(--fg);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.try{border:1px solid var(--line2);border-radius:26px;background:linear-gradient(180deg,rgba(23,23,28,.92),rgba(11,11,14,.92));padding:20px;box-shadow:0 50px 120px -50px rgba(61,123,255,.55);backdrop-filter:blur(8px)}
+.try-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.try .pick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pick button{border:1px solid var(--line2);background:var(--card);border-radius:var(--pill);padding:7px 12px;font-size:13px;color:var(--fg2)}
+.pick button[aria-pressed="true"]{background:var(--fg);color:#000;border-color:var(--fg)}
+.pick button[disabled]{opacity:.35;cursor:not-allowed}
+.live{display:flex;align-items:baseline;gap:8px;margin:12px 0}
+.live b{font-family:var(--display);font-size:44px;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
+.mini-inv{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg2);margin-top:8px}
+.mini-inv .meta{flex:1;min-width:0}
+.mini-inv .meta b{display:block;font-size:14px}
+.mini-inv .meta span{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.section{padding-block:104px 0}
+.s-head{max-width:760px;margin-bottom:40px}
+.s-head.c{text-align:center;margin-inline:auto}
+.h-l{font-family:var(--display);font-weight:700;letter-spacing:-.035em;font-size:clamp(34px,5vw,64px);line-height:1.02;margin:12px 0 14px}
+.timeline{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+@media (max-width:900px){.timeline{grid-template-columns:minmax(0,1fr)}}
+.tl{padding:22px;border-left:1px solid var(--line);background:var(--card);display:flex;flex-direction:column;gap:8px;min-width:0}
+.tl:first-child{border-left:0}
+@media (max-width:900px){.tl{border-left:0;border-top:1px solid var(--line)}.tl:first-child{border-top:0}}
+.tl .d{font:600 12px/1 var(--mono);color:var(--blue-ink)}
+.tl h3{margin:0;font-size:17px}
+.tl p{margin:0;font-size:14px;color:var(--fg2)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:stretch}
+@media (max-width:980px){.split{grid-template-columns:minmax(0,1fr)}}
+.panel{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);padding:22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel h3{margin:0;font-family:var(--display);font-size:22px;letter-spacing:-.02em}
+.panel p{margin:0;color:var(--fg2)}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar-row{display:grid;grid-template-columns:120px minmax(0,1fr) 36px;gap:10px;align-items:center;font-size:13px}
+.bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:6px;background:var(--blue)}
+.bar.g i{background:var(--gold)}
+.vs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.vs > div{padding:16px 18px;border-top:1px solid var(--line);min-width:0}
+.vs .h{border-top:0;font:600 11px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--bg2)}
+.vs .task{font-weight:600} .vs .hand{color:var(--muted)} .vs .ours{background:rgba(61,123,255,.06)}
+@media (max-width:760px){.vs{grid-template-columns:minmax(0,1fr)}.vs .h:not(:first-child){display:none}.vs > div{border-top:0}.vs .task{border-top:1px solid var(--line)}.vs .hand::before{content:"By hand · ";color:var(--fg2)}.vs .ours::before{content:"Here · ";color:var(--blue-ink)}}
+.board-lb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:980px){.board-lb{grid-template-columns:minmax(0,1fr)}}
+.lb-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.lb-row:first-of-type{border-top:0}
+.lb-row .rank{font:600 13px/1 var(--mono);width:22px;color:var(--muted)}
+.lb-row .meta{flex:1;min-width:0} .lb-row .meta b{display:block;font-size:14px} .lb-row .meta span{font-size:12px;color:var(--muted)}
+.vote{display:flex;flex-direction:column;align-items:center;border:1px solid var(--line2);border-radius:10px;padding:5px 9px;font-size:12px;background:var(--bg2);min-width:46px}
+.vote b{font-variant-numeric:tabular-nums}
+.vote.on{border-color:var(--blue);color:var(--blue-ink)}
+.faq{max-width:780px}
+.faq details{border-bottom:1px solid var(--line);padding:18px 0}
+.faq summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:16px}
+.faq summary::after{content:"+";color:var(--muted);font-size:20px;line-height:1}
+.faq details[open] summary::after{content:"–"}
+.faq p{color:var(--fg2);margin:10px 0 0}
+.cta-band{margin-top:104px;border-radius:30px;padding:76px 24px;text-align:center;border:1px solid var(--line);background:radial-gradient(50% 80% at 50% 100%,rgba(61,123,255,.5),transparent 70%),var(--bg2)}
+footer{padding-block:56px;color:var(--muted);font-size:13px}
+.foot{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;border-top:1px solid var(--line);padding-top:24px}
+body[data-aud="founder"] [data-aud-show="investor"],body[data-aud="investor"] [data-aud-show="founder"]{display:none!important}
+
+/* ---------- onboarding (both sides) ---------- */
+.flow{min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(60% 40% at 50% 0%,rgba(61,123,255,.14),transparent 70%),var(--bg)}
+.flow-top{padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.flow-main{flex:1;display:grid;place-items:center;padding:20px 16px 80px}
+.step{width:100%;max-width:540px}
+.progress{display:flex;gap:6px;margin-bottom:26px}
+.progress i{flex:1;height:3px;border-radius:3px;background:var(--line)} .progress i.on{background:var(--blue)}
+.step .count{font:500 12px/1 var(--mono);color:var(--muted);margin-bottom:10px}
+.step h1{font-family:var(--display);font-size:clamp(30px,5vw,42px);letter-spacing:-.03em;line-height:1.06;margin:0 0 8px}
+.step .help{color:var(--fg2);margin:0 0 20px}
+.field{width:100%;background:var(--card);border:1px solid var(--line2);border-radius:var(--r);padding:14px 16px;font-size:16px;color:var(--fg)}
+.field:focus{border-color:var(--blue);outline:none;box-shadow:0 0 0 4px var(--blue-soft)}
+.field::placeholder{color:var(--dim)}
+.step-actions{display:flex;gap:10px;margin-top:16px}
+.step-actions .btn.primary,.step-actions .btn.white{flex:1;border-radius:var(--r);padding:15px}
+.back{width:52px;border-radius:var(--r);border:1px solid var(--line2);background:var(--card)}
+.pick-label{font-size:13px;color:var(--muted);margin:16px 0 8px}
+.found{display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--line2);border-radius:16px;background:var(--card)}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--line2);border-top-color:var(--blue);margin:0 auto 16px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gdot{width:16px;height:16px;border-radius:50%;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)}
+.center{text-align:center}
+
+/* ---------- app shell ---------- */
+.app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--bg2);padding:14px 10px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.ws{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--card)}
+.ws .sq{width:28px;height:28px;border-radius:8px;background:var(--fg);color:#000;display:grid;place-items:center;font-weight:800;font-size:11px}
+.cmdk{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;color:var(--muted);font-size:13px;background:var(--card);width:100%;text-align:left}
+.cmdk kbd{margin-left:auto;font:500 11px var(--mono);border:1px solid var(--line2);border-radius:5px;padding:1px 5px}
+.ngroup{display:flex;flex-direction:column;gap:1px}
+.ngroup .lbl{font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:10px 10px 6px}
+.nitem{display:flex;align-items:center;gap:10px;border:0;background:transparent;color:var(--fg2);border-radius:9px;padding:8px 10px;font-size:14px;text-align:left;width:100%}
+.nitem:hover{background:var(--card);color:var(--fg)}
+.nitem[aria-current="page"]{background:var(--card2);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line)}
+.nitem .ic{width:18px;text-align:center;opacity:.8;font-size:13px}
+.nitem .badge{margin-left:auto;background:var(--blue);color:#fff;border-radius:6px;font-size:11px;padding:1px 6px;font-weight:700}
+.nitem .badge.g{background:var(--gold);color:#1A1405}
+.gmail-pill{display:flex;align-items:center;gap:8px;font-size:12px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;color:var(--fg2);margin-top:auto}
+.gmail-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.me{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.main{min-width:0;padding:26px clamp(16px,3vw,40px) 110px}
+.page{max-width:1040px;margin:0 auto}
+.ph{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.ph h1{font-family:var(--display);font-size:30px;letter-spacing:-.025em;margin:0}
+.ph h1 small{color:var(--muted);font-weight:500}
+.ph p{color:var(--fg2);margin:6px 0 0;max-width:62ch}
+.ph .acts{margin-left:auto;display:flex;gap:8px}
+.two{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+@media (max-width:1000px){.two{grid-template-columns:minmax(0,1fr)}}
+.card{border:1px solid var(--line);border-radius:18px;background:var(--card);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h3{margin:0;font-size:15px;display:flex;align-items:center;gap:8px}
+.card h3 .more{margin-left:auto;font-size:13px;font-weight:500;color:var(--muted);background:none;border:0}
+.focus{position:relative;overflow:hidden;border:1px solid rgba(61,123,255,.4);background:radial-gradient(90% 120% at 100% 0%,rgba(61,123,255,.28),transparent 60%),var(--card)}
+.focus h2{font-family:var(--display);font-size:26px;letter-spacing:-.025em;margin:0;line-height:1.15}
+.tasks{display:flex;flex-direction:column}
+.task{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.task:first-child{border-top:0}
+.task .ck{width:20px;height:20px;border-radius:6px;border:1px solid var(--line2);flex:none;background:transparent}
+.task .ck.done{background:var(--green);border-color:var(--green)}
+.task .meta{flex:1;min-width:0;font-size:14px}
+.task .meta span{display:block;font-size:12px;color:var(--muted)}
+.funnel{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;align-items:end;height:110px}
+.funnel div{border-radius:8px 8px 4px 4px;background:var(--blue-soft);display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:6px 2px;font-size:11px;color:var(--fg2);text-align:center}
+.funnel div b{font-family:var(--display);font-size:18px;color:var(--fg)}
+/* top pick */
+.picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:1000px){.picks{grid-template-columns:minmax(0,1fr)}}
+.pick-card{position:relative;border:1px solid var(--gold-line);border-radius:20px;background:linear-gradient(180deg,rgba(233,196,106,.09),rgba(17,17,21,0) 40%),var(--card);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.pick-card .rank{position:absolute;top:14px;right:14px;font:600 11px/1 var(--mono);color:var(--gold);letter-spacing:.08em}
+.pick-head{display:flex;gap:12px;align-items:center}
+.pick-head b{display:block;font-size:16px}
+.pick-head span{font-size:12px;color:var(--muted)}
+.dial{position:relative;width:64px;height:64px;flex:none}
+.dial svg{transform:rotate(-90deg)}
+.dial b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:20px;letter-spacing:-.02em}
+.why2{font-size:14px;line-height:1.5}
+.rat{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--fg2)}
+.rat li::marker{color:var(--gold)}
+.src{font-size:12px;color:var(--blue-ink)}
+.pick-acts{display:flex;gap:6px;margin-top:auto;flex-wrap:wrap}
+/* lists */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 12px}
+.search{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 14px;color:var(--muted);flex:1;min-width:220px}
+.search input{flex:1;background:transparent;border:0;color:var(--fg);font-size:14px;min-width:0}
+.search input:focus{outline:none}
+.fbtn{border:1px solid var(--line2);background:var(--card);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--fg2)}
+.fbtn.on{background:var(--fg);color:#000;border-color:var(--fg)}
+.views{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:12px;overflow-x:auto}
+.views button{border:0;background:transparent;padding:10px 12px;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.views button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--blue)}
+.list{border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.lrow{display:flex;align-items:center;gap:14px;padding:13px 16px;border-top:1px solid var(--line)}
+.lrow:first-child{border-top:0}
+.lrow:hover{background:var(--card2)}
+.lrow .who{flex:1;min-width:0}
+.lrow .who b{font-weight:600}
+.lrow .sub{font-size:13px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;margin-top:2px}
+.lrow .fit{font-size:13px;color:var(--fg2);margin-top:5px}
+.lrow .right{display:flex;align-items:center;gap:10px;flex:none}
+.score{font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums;font-size:18px;width:44px;text-align:right}
+.cheque{text-align:right;min-width:84px} .cheque b{display:block;font-variant-numeric:tabular-nums;font-size:14px} .cheque small{font-size:11px;color:var(--muted)}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font:600 11px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--bg2)}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scrollx{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.you td{background:rgba(61,123,255,.07)}
+.news{display:flex;flex-direction:column}
+.nrow{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.nrow:first-child{border-top:0}
+.nrow .when{font:500 12px/1.4 var(--mono);color:var(--muted);width:54px;flex:none}
+.nrow b{font-size:14px;display:block}
+.nrow span{font-size:12px;color:var(--muted)}
+/* inbox */
+.inbox{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);border:1px solid var(--line);border-radius:18px;overflow:hidden;min-height:520px;background:var(--card)}
+@media (max-width:860px){.inbox{grid-template-columns:minmax(0,1fr)}.thread-pane{display:none}.inbox.reading .thread-pane{display:flex}.inbox.reading .thread-list{display:none}}
+.thread-list{border-right:1px solid var(--line);overflow-y:auto}
+.th{display:flex;gap:10px;padding:13px 14px;border-bottom:1px solid var(--line);width:100%;text-align:left;background:transparent;border-left:0;border-right:0;border-top:0}
+.th:hover,.th[aria-selected="true"]{background:var(--card2)}
+.th .meta{flex:1;min-width:0}
+.th .meta b{font-size:14px;display:flex;gap:6px;align-items:center}
+.th .meta span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.th .unread{width:8px;height:8px;border-radius:50%;background:var(--blue);margin-top:6px;flex:none}
+.thread-pane{display:flex;flex-direction:column}
+.tp-h{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tp-b{flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.msg{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--bg2);font-size:14px;white-space:pre-wrap}
+.msg.them{border-color:rgba(61,123,255,.35)}
+.msg .from{font-size:12px;color:var(--muted);margin-bottom:6px;white-space:normal}
+.inbox .backbtn{display:none}
+@media (max-width:860px){.inbox.reading .backbtn{display:inline-flex}}
+.suggest{border:1px dashed var(--gold-line);border-radius:14px;padding:14px;background:var(--gold-soft);font-size:14px}
+/* drawer & modal */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;display:flex;justify-content:flex-end}
+.drawer{width:min(560px,100%);height:100%;background:var(--bg2);border-left:1px solid var(--line);display:flex;flex-direction:column}
+.dr-h{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center}
+.dr-h .who{flex:1;min-width:0} .dr-h .who b{display:block} .dr-h .who span{font-size:13px;color:var(--muted)}
+.xbtn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line2);background:transparent;color:var(--fg2)}
+.dr-b{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.dr-f{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.dr-f .btn{flex:1}
+.lab{font-size:12px;color:var(--muted)}
+.ed{background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:12px;font-size:14px;line-height:1.6;white-space:pre-wrap;outline:none;color:var(--fg)}
+.ed:focus{border-color:var(--blue)}
+.check{background:var(--amber-soft);border-bottom:2px solid var(--amber);border-radius:3px;padding:0 2px}
+.kv{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px 12px;font-size:14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.deal{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.deal:first-child{border-top:0}
+.deal .yr{font:500 12px var(--mono);color:var(--muted);width:44px}
+.ring-row{display:flex;gap:12px;flex-wrap:wrap}
+.statbox{flex:1;min-width:120px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card)}
+.statbox b{display:block;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.statbox span{font-size:12px;color:var(--muted)}
+.ladder{display:flex;gap:6px;flex-wrap:wrap}
+.ladder span{font-size:12px;border-radius:7px;padding:4px 8px;border:1px solid var(--line2);color:var(--dim)}
+.ladder span.on{color:var(--fg);border-color:var(--fg2)}
+.modal-scrim{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);z-index:70;display:grid;place-items:center;padding:16px}
+.modal{width:min(560px,100%);border-radius:24px;border:1px solid var(--line2);background:var(--bg2);padding:26px;display:flex;flex-direction:column;gap:14px}
+.modal h2{font-family:var(--display);font-size:28px;letter-spacing:-.025em;margin:0;line-height:1.1}
+.scopes{display:flex;flex-direction:column;gap:8px}
+.scope{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px}
+.scope b{display:block}
+.scope span{font-size:13px;color:var(--muted)}
+/* data room */
+.dr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.dr-grid{grid-template-columns:minmax(0,1fr)}}
+.ditem{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--card)}
+.ditem .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--card2);flex:none}
+.ditem .meta{flex:1;min-width:0;font-size:14px}
+.ditem .meta span{display:block;font-size:12px;color:var(--muted)}
+.state{font-size:12px;font-weight:600}
+.state.ok{color:var(--green)} .state.todo{color:var(--amber)} .state.miss{color:var(--red)}
+/* investor deal feed */
+.deal-card{border:1px solid var(--line);border-radius:20px;background:var(--card);padding:18px;display:flex;flex-direction:column;gap:12px}
+.deal-card .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:640px){.deal-card .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.metric{border:1px solid var(--line);border-radius:12px;padding:9px 10px;background:var(--bg2)}
+.metric b{display:block;font-family:var(--display);font-size:17px;font-variant-numeric:tabular-nums}
+.metric span{font-size:11px;color:var(--muted)}
+.review-pill{position:fixed;right:14px;top:calc(64px + env(safe-area-inset-top,0px));z-index:95;display:flex;gap:4px;background:rgba(23,23,28,.92);border:1px solid var(--line2);border-radius:var(--pill);padding:4px;backdrop-filter:blur(10px)}
+.review-pill button{border:0;background:transparent;color:var(--fg2);border-radius:var(--pill);padding:7px 11px;font-size:12px;font-weight:600}
+.review-pill button.on{background:var(--fg);color:#000}
+
+@media (max-width:860px){
+  .review-pill{display:none}
+  .nav .hide-sm{display:none}
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line);z-index:40;background:rgba(11,11,14,.96);backdrop-filter:blur(14px);overflow-x:auto}
+  .side > :not(.ngroup.primary){display:none}
+  .ngroup.primary{flex-direction:row;flex:1;gap:2px}
+  .ngroup.primary .lbl,.ngroup.primary .nitem.extra{display:none}
+  .nitem{flex-direction:column;gap:2px;font-size:11px;padding:6px 4px;justify-content:center;text-align:center;position:relative;min-width:62px}
+  .nitem .badge{position:absolute;top:0;right:10%;margin:0}
+  .main{padding-bottom:110px}
+  .lrow{flex-wrap:wrap} .lrow .right{width:100%;justify-content:space-between;padding-left:56px}
+  .ph .acts{margin-left:0}
+}
+</style>
+
+<script>document.body.dataset.aud="founder"</script>
+
+<!-- ================= LANDING ================= -->
+<section class="view on" id="v-landing">
+  <header class="nav"><div class="nav-in">
+    <a class="logo" href="#/"><span class="logo-mark">F</span>Fundraising OS</a>
+    <div class="aud" role="group" aria-label="I am a"><button aria-pressed="true" data-aud="founder">Founders</button><button aria-pressed="false" data-aud="investor">Investors</button></div>
+    <a class="btn ghost sm hide-sm" href="#/app/today">Log in</a>
+    <a class="btn primary sm" data-aud-show="founder" href="#/apply">Start raising</a>
+    <a class="btn primary sm" data-aud-show="investor" href="#/join">Join as investor</a>
+  </div></header>
+
+  <div class="wrap">
+    <!-- FOUNDER HERO -->
+    <div class="hero" data-aud-show="founder">
+      <div class="hero-grid">
+        <div>
+          <span class="kicker">For Indian founders · AI · Climate · Deeptech</span>
+          <h1 class="h-xl rise">Stop pitching strangers. <span class="it">Pitch your fits.</span></h1>
+          <p class="lede rise">Every investor we show you has backed something like yours, and we tell you exactly why, with sources. Then we write the email, remind you to follow up, and keep your pipeline honest.</p>
+          <div class="cta-row rise"><a class="btn primary" href="#/apply">Find my 20 investors →</a><a class="btn ghost" href="#/app/today">See a live workspace</a></div>
+          <div class="proof"><div><b>611</b>investors in the database</div><div><b>148</b>researched, with sources</div><div><b>₹25L–₹10Cr</b>rounds we match</div></div>
+        </div>
+        <div class="try rise" aria-label="Try it">
+          <div class="try-h"><span class="kicker">Try it · no sign-up</span><span class="tag gold">Live preview</span></div>
+          <div class="pick" id="try-sec"></div>
+          <div class="pick" id="try-stage"></div>
+          <div class="live"><b id="try-count">42</b><span class="fg2">investors fit. Top three:</span></div>
+          <div id="try-list"></div>
+          <a class="btn white" style="width:100%;margin-top:14px;border-radius:14px;padding:13px" href="#/apply">Write my first emails →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVESTOR HERO -->
+    <div class="hero" data-aud-show="investor">
+      <div class="hero-grid">
+        <div>
+          <span class="kicker">For VCs, angels & networks backing India</span>
+          <h1 class="h-xl rise">Deal flow that reads <span class="it">your thesis,</span> not your inbox.</h1>
+          <p class="lede rise">We already researched your fund. Claim your profile in two minutes and get startups that fit your sectors, stage and cheque, with their data room ready, and nothing you didn't ask for.</p>
+          <div class="cta-row rise"><a class="btn primary" href="#/join">Claim my profile →</a><a class="btn ghost" href="#/inv/feed">See the deal feed</a></div>
+          <div class="proof"><div><b>2 min</b>to claim and confirm</div><div><b>0</b>cold emails you didn't opt into</div><div><b>Free</b>for investors</div></div>
+        </div>
+        <div class="try rise">
+          <div class="try-h"><span class="kicker">This week for Verdant Arc</span><span class="tag blue">Thesis-matched</span></div>
+          <div id="inv-preview"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOUNDER SECTIONS -->
+    <div data-aud-show="founder">
+      <section class="section">
+        <div class="s-head"><span class="kicker">Your next 14 days</span><h2 class="h-l">3.5 months of runway. <span class="it">Here's the plan.</span></h2><p class="lede">Most founders lose months on investors who were never a fit. This is the two weeks we run with you instead.</p></div>
+        <div class="timeline">
+          <div class="tl"><span class="d">TONIGHT</span><h3>Your matched list</h3><p>Four fields in. Twenty investors out, each with a fit score and the reason.</p></div>
+          <div class="tl"><span class="d">DAY 1</span><h3>First 5 emails</h3><p>Written to each investor's thesis. You edit, then send from your Gmail.</p></div>
+          <div class="tl"><span class="d">DAY 3</span><h3>First follow-ups</h3><p>A short nudge with something new. Skipped for anyone who replied.</p></div>
+          <div class="tl"><span class="d">DAY 7</span><h3>Replies, in one place</h3><p>Investor replies land on your pipeline, with a suggested answer.</p></div>
+          <div class="tl"><span class="d">DAY 14</span><h3>Meetings booked</h3><p>Data room shared by link. You know who opened it.</p></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="split">
+          <div class="panel"><span class="kicker">The Fit Score</span><h3>Not a vibe. <span class="it">A breakdown.</span></h3><p>Every match is scored on five things you can check, and every claim links to where we found it.</p>
+            <div class="bars">
+              <div class="bar-row"><span>Thesis match</span><div class="bar"><i style="width:94%"></i></div><b>94</b></div>
+              <div class="bar-row"><span>Recent activity</span><div class="bar"><i style="width:88%"></i></div><b>88</b></div>
+              <div class="bar-row"><span>Cheque fit</span><div class="bar"><i style="width:91%"></i></div><b>91</b></div>
+              <div class="bar-row"><span>Stage fit</span><div class="bar"><i style="width:100%"></i></div><b>100</b></div>
+              <div class="bar-row"><span>No competitor</span><div class="bar g"><i style="width:100%"></i></div><b>✓</b></div>
+            </div></div>
+          <div class="panel"><span class="kicker">Research you'd never have time for</span><h3>A dossier on <span class="it">every</span> top pick.</h3><p>Thesis in their words, last three deals, how they like to be pitched, and whether they backed a competitor. All sourced, all dated.</p>
+            <div id="dossier-preview"></div></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="s-head"><span class="kicker">Know your market</span><h2 class="h-l">Know your competition <span class="it">before investors ask.</span></h2><p class="lede">Who else is building it, what they raised, who backed them, and the news that matters to your pitch, updated every week.</p></div>
+        <div class="scrollx"><table class="tbl" id="comp-preview"></table></div>
+      </section>
+
+      <section class="section">
+        <div class="s-head"><span class="kicker">The grunt work</span><h2 class="h-l">Weeks by hand. <span class="it">An evening here.</span></h2></div>
+        <div class="vs">
+          <div class="h">Task</div><div class="h">By hand</div><div class="h">With Fundraising OS</div>
+          <div class="task">Find investors who fit</div><div class="hand">Late-night Googling; half of it stale.</div><div class="ours">Matched and scored, India only, dated sources.</div>
+          <div class="task">Research each one</div><div class="hand">An hour per fund, tab after tab.</div><div class="ours">A dossier for every top pick.</div>
+          <div class="task">Map the competition</div><div class="hand">A slide you update the night before.</div><div class="ours">A live table, plus who backed them.</div>
+          <div class="task">Write and follow up</div><div class="hand">20 minutes per email, then you forget.</div><div class="ours">Drafted, reminded, tracked to reply.</div>
+          <div class="task">Data room</div><div class="hand">Ten attachments, ten versions.</div><div class="ours">One link, a readiness score, view alerts.</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="s-head"><span class="kicker">This week on Fundraising OS</span><h2 class="h-l">The most <span class="it">responsive</span> investors.</h2><p class="lede">Ranked by real replies to founders on the platform, not by brand. Updated every Monday.</p></div>
+        <div class="board-lb" id="lb-landing"></div>
+      </section>
+    </div>
+
+    <!-- INVESTOR SECTIONS -->
+    <div data-aud-show="investor">
+      <section class="section">
+        <div class="s-head"><span class="kicker">How it works</span><h2 class="h-l">Three taps. <span class="it">Then only fits.</span></h2></div>
+        <div class="timeline" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+          <div class="tl"><span class="d">01</span><h3>Sign in with your work email</h3><p>We match your domain to the profile we already researched.</p></div>
+          <div class="tl"><span class="d">02</span><h3>Confirm your thesis</h3><p>Sectors, stage and cheque come pre-filled. Fix what's wrong.</p></div>
+          <div class="tl"><span class="d">03</span><h3>Set your door policy</h3><p>How many intros a week, deck required or not, warm only. You decide.</p></div>
+        </div>
+      </section>
+      <section class="section">
+        <div class="split">
+          <div class="panel"><span class="kicker">Verified badge</span><h3>Founders trust <span class="it">claimed</span> profiles.</h3><p>Claimed investors get a green badge, rank higher for founders, and stop getting emails outside their thesis.</p><div class="ladder"><span class="on">◌ Researched</span><span class="on">◐ Checked by our team</span><span class="on">● Claimed by investor</span></div></div>
+          <div class="panel"><span class="kicker">Private by design</span><h3>Raising details stay <span class="it">behind the door.</span></h3><p>Startups' round details are visible only to signed-in, verified investors. Nothing about a raise is public.</p></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="section">
+      <div class="s-head"><span class="kicker">In your control</span><h2 class="h-l">Nothing leaves <span class="it">without you.</span></h2></div>
+      <div class="board-lb">
+        <div class="panel"><h3>You press send</h3><p>We draft. You send from your own Gmail. Connecting Gmail is optional and only reads investor threads.</p></div>
+        <div class="panel"><h3>Every claim has a source</h3><p>If we can't link it, we don't write it. Unsourced lines are flagged before you send.</p></div>
+        <div class="panel"><h3>Built for India's rules</h3><p>No public fundraising listings. Round details shared only with verified investors you choose.</p></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="s-head"><span class="kicker">FAQ</span><h2 class="h-l">Questions, answered</h2></div>
+      <div class="faq">
+        <details><summary>Where does the investor data come from?</summary><p>Funds' and angels' own websites, public deal news, and investors who claim their profiles. Every record shows its sources and the date it was last checked.</p></details>
+        <details><summary>Do you send emails for me?</summary><p>No. You send from your Gmail. If you connect Gmail, we only read threads with investors on your list, to update your pipeline.</p></details>
+        <details><summary>What does "verified" mean?</summary><p>Three levels: researched (sourced from public pages), checked (reviewed by our team in the last 90 days), and claimed (confirmed by the investor).</p></details>
+        <details><summary>Is my raise visible to the public?</summary><p>No. Your profile and round are shared only with investors you email or verified investors whose thesis fits, and you can turn that off.</p></details>
+        <details><summary>What does it cost?</summary><p>Free during beta for founders. Always free for investors.</p></details>
+      </div>
+    </section>
+
+    <div class="cta-band"><h2 class="h-l" style="margin-top:0">Your round has twenty names in it. <span class="it">Meet them.</span></h2><div class="cta-row" style="justify-content:center"><a class="btn white" href="#/apply">Start raising →</a><a class="btn ghost" href="#/join">I'm an investor</a></div></div>
+    <footer><div class="foot"><a class="logo" href="#/"><span class="logo-mark">F</span>Fundraising OS</a><span>Built in India · All names in this demo are made up</span></div></footer>
+  </div>
+</section>
+
+<!-- ================= FOUNDER ONBOARDING ================= -->
+<section class="view" id="v-apply"><div class="flow"><div class="flow-top"><a class="logo" href="#/"><span class="logo-mark">F</span>Fundraising OS</a><a class="btn ghost sm" href="#/">Exit</a></div><div class="flow-main" id="apply-main"></div></div></section>
+
+<!-- ================= INVESTOR ONBOARDING ================= -->
+<section class="view" id="v-join"><div class="flow"><div class="flow-top"><a class="logo" href="#/"><span class="logo-mark">F</span>Fundraising OS <span class="tag blue" style="margin-left:6px">Investors</span></a><a class="btn ghost sm" href="#/">Exit</a></div><div class="flow-main" id="join-main"></div></div></section>
+
+<!-- ================= APP (both sides) ================= -->
+<section class="view" id="v-app">
+  <div class="app">
+    <aside class="side" id="side"></aside>
+    <main class="main"><div class="page" id="page"></div></main>
+  </div>
+</section>
+
+<div id="layer"></div>
+<div class="review-pill" role="group" aria-label="Jump to"><button data-jump="#/">Landing</button><button data-jump="#/app/today">Founder app</button><button data-jump="#/join">Investor join</button><button data-jump="#/inv/feed">Investor app</button></div>
+
+<script>
+/* ======================= made-up demo data ======================= */
+const PAL=[["#3D7BFF","#7B5CFF"],["#E9C46A","#E07A5F"],["#2EC4B6","#3D7BFF"],["#FF6B9A","#A98BFF"],["#3DDC84","#2EC4B6"],["#F5B544","#FF6B6B"],["#7B5CFF","#FF6B9A"],["#4CC9F0","#3DDC84"]];
+function hash(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return h}
+/* fund logos: a generated geometric mark per firm (stand-in for the fund's real logo from its own website) */
+function mark(name,size=40,kind="fund"){
+  const h=hash(name),p=PAL[h%PAL.length],id="g"+h,sh=h%4,ini=name.split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  if(kind==="angel") return `<svg class="mark" width="${size}" height="${size}" viewBox="0 0 40 40" style="border-radius:50%" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p[0]}"/><stop offset="1" stop-color="${p[1]}"/></linearGradient></defs><rect width="40" height="40" fill="url(#${id})"/><circle cx="20" cy="16" r="7" fill="rgba(0,0,0,.28)"/><path d="M6 40c2-9 8-13 14-13s12 4 14 13z" fill="rgba(0,0,0,.28)"/></svg>`;
+  const shapes=[`<circle cx="20" cy="20" r="9" fill="#fff" opacity=".92"/>`,`<rect x="11" y="11" width="18" height="18" rx="4" fill="#fff" opacity=".92" transform="rotate(45 20 20)"/>`,`<path d="M20 9l11 20H9z" fill="#fff" opacity=".92"/>`,`<path d="M10 26a10 10 0 0 1 20 0z" fill="#fff" opacity=".92"/><rect x="10" y="27" width="20" height="3" rx="1.5" fill="#fff" opacity=".7"/>`];
+  return `<svg class="mark" width="${size}" height="${size}" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p[0]}"/><stop offset="1" stop-color="${p[1]}"/></linearGradient></defs><rect width="40" height="40" fill="url(#${id})"/>${shapes[sh]}</svg>`;
+}
+const INV=[
+ {id:1,name:"Verdant Arc Capital",person:"Meera Iyer",role:"Partner",type:"Fund",city:"Bengaluru",cheque:"₹50L–2Cr",stages:["Pre-seed","Seed"],sectors:["AI","Fintech"],score:94,status:"draft",v:3,email:"meera@verdantarc.example",
+  why:"Backs seed-stage AI tools for finance teams, and led two B2B SaaS seed rounds this year at your cheque size.",
+  rat:["Thesis names 'AI for finance and compliance teams'","Led Ploughline's ₹1.8 Cr seed in Mar 2026","Cheque ₹50L–2Cr sits inside your ₹1–3 Cr round","No competitor of Ledgerly in their portfolio","Replied to 7 of 9 founders on the platform, median 2 days"],
+  deals:[["2026","Ploughline","Seed · ₹1.8 Cr"],["2026","Tallyhawk","Pre-seed · ₹80L"],["2025","Kosha Health","Seed · ₹2 Cr"]],pitch:"Email with a deck link; prefers under 150 words",reply:"78%",days:"2d"},
+ {id:2,name:"Kabir Sethi",person:"Kabir Sethi",role:"Angel · ex-founder, fintech",type:"Angel",city:"Mumbai",cheque:"₹10–35L",stages:["Pre-seed"],sectors:["AI","Fintech"],score:89,status:"draft",v:2,email:"kabir@sethi.example",
+  why:"Leads pre-seed rounds in B2B software, and built and sold a payments company, so he knows your buyer.",
+  rat:["Leads rounds (not just follows), per his own site","Three SME fintech tools in his portfolio","Ex-founder of a payments company sold in 2023","Cheque fits as a lead for a pre-seed close"],
+  deals:[["2026","Udhaar Labs","Pre-seed · ₹30L"],["2025","Ginger Ledger","Pre-seed · ₹25L"]],pitch:"Warm intro preferred; replies to short cold emails",reply:"64%",days:"3d"},
+ {id:3,name:"Northlight Seed Fund",person:"Arjun Rao",role:"Principal",type:"Fund",city:"New Delhi",cheque:"₹1–3Cr",stages:["Seed"],sectors:["AI","Sector-agnostic"],score:86,status:"draft",v:2,email:"pitch@northlight.example",
+  why:"Their thesis page names accounting and compliance automation for small businesses as a 2026 focus.",
+  rat:["Thesis: 'compliance automation for Bharat SMEs'","Writes ₹1–3 Cr seed cheques, your exact range","Active: two seed deals since July 2026","Portfolio has a GST tool for retailers, adjacent not competing"],
+  deals:[["2026","Bahi Books","Seed · ₹2.5 Cr"],["2026","Kirana OS","Seed · ₹1.2 Cr"]],pitch:"Pitch form or pitch@ email",reply:"41%",days:"6d"},
+ {id:4,name:"Tidewater Ventures",person:"Sana Qureshi",role:"Managing Partner",type:"Fund",city:"Bengaluru",cheque:"₹2–8Cr",stages:["Seed","Pre-Series A"],sectors:["Sector-agnostic"],score:78,status:"sent",v:3,email:"sana@tidewater.example",sent:"3 days ago",why:"Sector-agnostic seed fund; cheque matches your round."},
+ {id:5,name:"Lattice Partners",person:"Rohan Mehta",role:"Partner",type:"Fund",city:"Pune",cheque:"₹25L–1Cr",stages:["Pre-seed","Seed"],sectors:["AI","Fintech"],score:76,status:"sent",v:1,email:"rohan@lattice.example",sent:"10 days ago",why:"Portfolio includes two SME fintech tools."},
+ {id:6,name:"Saffron Peak Angels",person:"Divya Nair",role:"Network lead",type:"Network",city:"Hyderabad",cheque:"₹25L–1.5Cr",stages:["Pre-seed","Seed"],sectors:["AI","Deeptech"],score:74,status:"replied",v:2,email:"divya@saffronpeak.example",why:"Members back AI for small business."},
+ {id:7,name:"Coral Bay Capital",person:"Vikram Shah",role:"Partner",type:"Fund",city:"Mumbai",cheque:"₹50L–2Cr",stages:["Seed"],sectors:["Fintech","AI"],score:72,status:"meeting",v:3,email:"vikram@coralbay.example",why:"Seed fund focused on fintech infrastructure."},
+ {id:8,name:"Monsoon Ventures",person:"Ishaan Kapoor",role:"Principal",type:"Fund",city:"Bengaluru",cheque:"₹25L–1Cr",stages:["Pre-seed"],sectors:["AI","Climate"],score:69,status:"planned",v:1,email:"ishaan@monsoon.example",why:"AI and climate are named focus areas."},
+ {id:9,name:"Gulmohar Launchpad",person:"Ritu Sen",role:"Program lead",type:"Accelerator",city:"Gurugram",cheque:"₹25–50L",stages:["Idea","Pre-seed"],sectors:["Sector-agnostic"],score:63,status:"planned",v:2,email:null,why:"Next cohort opens in November."},
+ {id:10,name:"Harbor Line Fund",person:"Neel Bose",role:"Partner",type:"Fund",city:"Chennai",cheque:"₹1–4Cr",stages:["Seed"],sectors:["B2B SaaS"],score:58,status:"passed",v:1,email:"neel@harborline.example",why:"Backed Kharcha AI, a direct competitor.",conflict:true},
+];
+const COMP=[
+ {name:"Ledgerly",you:true,what:"Drafts GST returns from bank statements for CA firms",stage:"Seed (raising)",raised:"₹40L",last:"Pre-seed · 2025",backers:"Angels",diff:"CA-firm workflow; multi-client"},
+ {name:"Kharcha AI",what:"AI bookkeeping for small businesses, direct to owner",stage:"Seed",raised:"₹6 Cr",last:"Seed · Jun 2026",backers:"Harbor Line Fund",diff:"Sells to SMEs, not CAs"},
+ {name:"ReconBook",what:"Bank reconciliation for mid-size finance teams",stage:"Series A",raised:"₹42 Cr",last:"Series A · Feb 2026",backers:"Two global funds",diff:"Enterprise; no GST filing"},
+ {name:"TaxTara",what:"GST filing app for freelancers",stage:"Pre-seed",raised:"₹1.2 Cr",last:"Pre-seed · Aug 2026",backers:"Angel network",diff:"Individuals, not firms"},
+];
+const NEWS=[["2d","GSTN to require e-invoicing for businesses above ₹2 Cr turnover from April","Policy · raises demand for automated filing","High"],["5d","Kharcha AI raises ₹6 Cr seed led by Harbor Line Fund","Competitor round · cite as market proof","High"],["1w","Report: 40% of Indian SMEs still file GST through a CA","Market data · use on your market slide","Medium"],["2w","Verdant Arc's partner writes on 'AI for back-office India'","Investor signal · mention in your email","Medium"]];
+const STARTUPS=[
+ {name:"Ledgerly",line:"Drafts GST returns from bank statements for CA firms",sector:"AI · Fintech",stage:"Seed",ask:"₹2 Cr",city:"Bengaluru",m:[["₹3.2L","MRR"],["+22%","MoM"],["8","CA firms"],["2","founders"]],score:93,saves:41,team:"Ex-CA practice owner · IIT Kanpur engineer"},
+ {name:"Kiln Labs",line:"Retrofit burners that cut coal use in brick kilns by 18%",sector:"Climate",stage:"Seed",ask:"₹3 Cr",city:"Lucknow",m:[["₹9L","MRR"],["62","kilns"],["18%","coal saved"],["3","founders"]],score:81,saves:37,team:"Kiln operator family · combustion PhD"},
+ {name:"Orbitwise",line:"Thermal-imaging payloads for Indian smallsats",sector:"Deeptech",stage:"Pre-seed",ask:"₹1.5 Cr",city:"Bengaluru",m:[["2","LOIs"],["₹0","revenue"],["TRL 6","tech"],["4","founders"]],score:72,saves:29,team:"Ex-ISRO payload engineers"},
+];
+const ST={planned:["Planned","",'#83838F'],draft:["Ready to send","blue",'#3D7BFF'],sent:["Sent","","#B6B6C0"],replied:["Replied","green","#3DDC84"],meeting:["Meeting","violet","#A98BFF"],passed:["Passed","","#5D5D68"]};
+const VER={1:["◌","Researched","v1"],2:["◐","Checked","v2"],3:["●","Claimed","v3"]};
+const S={step:0,company:"",name:"",sectors:[],stage:"",ask:"",tryS:"AI",tryStage:"Seed",gmail:false,mode:"founder",page:"today",thread:0,j:0,matchView:"top"};
+const $=s=>document.querySelector(s);
+const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+const inv=id=>INV.find(i=>i.id==id);
+function toast(t){const el=document.createElement("div");el.className="toast";el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
+function m(i,s=40){return mark(i.type==="Angel"?i.person:i.name,s,i.type==="Angel"?"angel":"fund")}
+function dial(score,size=64,col){const r=26,c=2*Math.PI*r,o=c*(1-score/100);col=col||(score>=85?"#E9C46A":score>=70?"#3D7BFF":"#83838F");
+  return `<div class="dial" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 64 64"><circle cx="32" cy="32" r="${r}" fill="none" stroke="#24242B" stroke-width="6"/><circle cx="32" cy="32" r="${r}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${o}"/></svg><b style="font-size:${size/3.2}px">${score}</b></div>`}
+function ver(i){const v=VER[i.v];return `<span class="verify ${v[2]}" title="${v[1]}">${v[0]} ${v[1]}</span>`}
+
+/* ======================= landing ======================= */
+function renderTry(){
+  const secs=[["AI",1],["Climate",1],["Deeptech",1],["Fintech",0],["Consumer",0]],stages=["Pre-seed","Seed","Pre-Series A"];
+  $("#try-sec").innerHTML=secs.map(([n,on])=>`<button aria-pressed="${S.tryS===n}" data-try-s="${n}" ${on?"":"disabled"}>${n}${on?"":" · soon"}</button>`).join("");
+  $("#try-stage").innerHTML=stages.map(n=>`<button aria-pressed="${S.tryStage===n}" data-try-st="${n}">${n}</button>`).join("");
+  const counts={AI:{"Pre-seed":38,"Seed":42,"Pre-Series A":19},Climate:{"Pre-seed":21,"Seed":24,"Pre-Series A":11},Deeptech:{"Pre-seed":17,"Seed":20,"Pre-Series A":9}};
+  $("#try-count").textContent=counts[S.tryS][S.tryStage];
+  const pool=INV.filter(i=>i.rat).concat(INV.slice(3,6));
+  const off=S.tryS==="AI"?0:S.tryS==="Climate"?2:1;
+  $("#try-list").innerHTML=[0,1,2].map(k=>{const i=pool[(k+off)%pool.length];return `<div class="mini-inv">${m(i,36)}<div class="meta"><b>${esc(i.name)}</b><span>${esc(i.why)}</span></div>${dial(Math.max(70,i.score-k*2-off*3),44)}</div>`}).join("");
+}
+function renderLandingBits(){
+  $("#dossier-preview").innerHTML=`<div class="mini-inv">${m(INV[0],40)}<div class="meta"><b>${INV[0].name}</b><span>${ver(INV[0])} · ${INV[0].city} · ${INV[0].cheque}</span></div>${dial(94,48)}</div><ul class="rat" style="margin-top:6px">${INV[0].rat.slice(0,4).map(r=>`<li>${esc(r)}</li>`).join("")}</ul><span class="src">Sources: verdantarc.example/thesis · Inc42, Mar 2026 · checked 9 Oct</span>`;
+  $("#comp-preview").innerHTML=compTable(true);
+  $("#lb-landing").innerHTML=leaderboards();
+  $("#inv-preview").innerHTML=STARTUPS.map(s=>`<div class="mini-inv">${mark(s.name,36)}<div class="meta"><b>${s.name} <span class="tag" style="margin-left:4px">${s.stage} · ${s.ask}</span></b><span>${esc(s.line)}</span></div>${dial(s.score,44)}</div>`).join("")+`<p class="muted" style="font-size:12px;margin:12px 0 0">Visible only to verified investors. Founders choose to be discoverable.</p>`;
+}
+function compTable(short){
+  return `<thead><tr><th>Company</th><th>What they do</th><th>Stage</th><th class="num">Raised</th><th>Last round</th><th>Backed by</th>${short?"":"<th>How you differ</th>"}</tr></thead><tbody>${COMP.map(c=>`<tr class="${c.you?"you":""}"><td><div style="display:flex;gap:10px;align-items:center">${mark(c.name,28)}<b>${c.name}</b>${c.you?'<span class="tag blue">You</span>':""}</div></td><td class="fg2">${esc(c.what)}</td><td>${c.stage}</td><td class="num">${c.raised}</td><td class="muted">${c.last}</td><td>${c.backers==="Harbor Line Fund"?`<span class="tag red">Harbor Line Fund</span>`:esc(c.backers)}</td>${short?"":`<td contenteditable="true" class="fg2">${esc(c.diff)}</td>`}</tr>`).join("")}</tbody>`;
+}
+function leaderboards(){
+  const lists=[["Most responsive this week",INV.filter(i=>i.reply).concat(INV[5],INV[6]).slice(0,5),i=>i.reply?`${i.reply} reply rate`:"62% reply rate"],["Most active in AI",[INV[2],INV[0],INV[7],INV[4],INV[1]],(i,k)=>`${4-Math.min(k,3)} deals in 90 days`],["Most saved startups",null]];
+  return lists.map(([t,arr,fn])=>`<div class="panel"><h3 style="font-size:18px">${t}</h3>${arr?arr.map((i,k)=>`<div class="lb-row"><span class="rank">${k+1}</span>${m(i,32)}<div class="meta"><b>${esc(i.name)}</b><span>${fn(i,k)}</span></div>${k===0?'<span class="tag gold">#1</span>':""}</div>`).join(""):STARTUPS.map((s,k)=>`<div class="lb-row"><span class="rank">${k+1}</span>${mark(s.name,32)}<div class="meta"><b>${s.name}</b><span>${s.sector} · saved by ${s.saves} investors</span></div><button class="vote ${k===0?"on":""}" data-toast="Investors vote; visible to verified investors only">▲<b>${s.saves}</b></button></div>`).join("")}</div>`).join("");
+}
+
+/* ======================= founder onboarding ======================= */
+const SECTORS=[["AI",1],["Climate & Energy",1],["Deeptech",1],["Fintech",0],["B2B SaaS",0],["Healthtech",0],["Consumer & D2C",0],["Agritech",0],["Mobility & EV",0]];
+function renderApply(){
+  const s=S.step,mm=$("#apply-main"),prog=`<div class="progress">${[0,1,2,3].map(i=>`<i class="${i<=s?"on":""}"></i>`).join("")}</div>`;
+  if(s===0) mm.innerHTML=`<div class="step rise">${prog}<div class="count">STEP 1 OF 4</div><h1>What are you building?</h1><p class="help">Your startup's name. We'll find your website and competitors from it.</p><input class="field" id="f" placeholder="e.g. Ledgerly" value="${esc(S.company)}"><div class="step-actions"><button class="btn primary" id="go" ${S.company?"":"disabled"}>Continue →</button></div></div>`;
+  if(s===1) mm.innerHTML=`<div class="step rise">${prog}<div class="count">STEP 2 OF 4</div><h1>Who's raising?</h1><p class="help">Your name signs every email.</p><input class="field" id="f" placeholder="Neha Kulkarni" value="${esc(S.name)}"><div class="step-actions"><button class="back" data-back>←</button><button class="btn primary" id="go" ${S.name?"":"disabled"}>Continue →</button></div></div>`;
+  if(s===2) mm.innerHTML=`<div class="step rise">${prog}<div class="count">STEP 3 OF 4</div><h1>What space are you in?</h1><p class="help">${S.sectors.length?S.sectors.length+" selected":"Pick all that fit. AI, Climate and Deeptech open first."}</p><div class="pick">${SECTORS.map(([n,on])=>`<button aria-pressed="${S.sectors.includes(n)}" data-sec="${n}" ${on?"":"disabled"}>${n}${on?"":" · soon"}</button>`).join("")}</div><div class="step-actions"><button class="back" data-back>←</button><button class="btn primary" id="go" ${S.sectors.length?"":"disabled"}>Continue →</button></div></div>`;
+  if(s===3) mm.innerHTML=`<div class="step rise">${prog}<div class="count">STEP 4 OF 4</div><h1>Tell us about the round.</h1><p class="help">So every investor we show can write your size of cheque.</p><div class="pick-label">Stage</div><div class="pick">${["Idea","Pre-seed","Seed","Pre-Series A","Series A"].map(n=>`<button aria-pressed="${S.stage===n}" data-stage="${n}">${n}</button>`).join("")}</div><div class="pick-label">Raising</div><div class="pick">${["₹25–50L","₹50L–1Cr","₹1–3 Cr","₹3–5 Cr","₹5–10 Cr"].map(n=>`<button aria-pressed="${S.ask===n}" data-ask="${n}">${n}</button>`).join("")}</div><p class="muted" style="font-size:13px;margin-top:18px">Indian startups only. Used to match and draft. Nothing is sent without you.</p><div class="step-actions"><button class="back" data-back>←</button><button class="btn primary" id="go" ${S.stage&&S.ask?"":"disabled"}>Find my investors →</button></div></div>`;
+  if(s===4){mm.innerHTML=`<div class="step center rise"><div class="spinner"></div><h1 style="font-size:24px">Reading 611 investors for ${esc(S.company||"you")}…</h1><ul class="rat" style="text-align:left;max-width:360px;margin:16px auto 0;list-style:none;padding:0"><li class="fg2">✓ Sector and stage</li><li class="fg2">✓ Cheque size against your round</li><li class="fg2">✓ Checking for your competitors in their portfolios</li><li>… Ranking and writing reasons</li></ul></div>`;setTimeout(()=>{if(S.step===4){S.step=5;renderApply()}},1800)}
+  if(s===5) mm.innerHTML=`<div class="step center rise"><div style="display:flex;justify-content:center;gap:-10px;margin-bottom:18px">${INV.slice(0,5).map((i,k)=>`<span style="margin-left:${k?-12:0}px;border-radius:50%;box-shadow:0 0 0 3px var(--bg)">${m(i,52)}</span>`).join("")}</div><span class="kicker gold">42 matched · 3 top picks</span><h1 style="margin-top:12px">${esc(S.company||"Ledgerly")}'s round has <span class="it">a shortlist.</span></h1><p class="fg2">Your top pick scores 94 out of 100. We wrote the first three emails. Save your workspace to see them.</p><div style="display:flex;flex-direction:column;gap:10px;margin-top:22px"><button class="btn white" style="border-radius:14px;padding:14px" data-signin><span class="gdot"></span>Continue with Google</button><button class="btn ghost" style="border-radius:14px;padding:14px" data-signin>✉ Continue with email</button></div></div>`;
+  if(s===6){mm.innerHTML=`<div class="step center rise"><div class="spinner"></div><p class="fg2">Building your workspace…</p></div>`;setTimeout(()=>{if(S.step===6){location.hash="#/app/today";setTimeout(()=>gmailModal(true),400)}},1100)}
+  bindField(s,v=>{if(s===0)S.company=v;if(s===1)S.name=v},renderApply,()=>{S.step++;renderApply()});
+}
+function bindField(s,set,rerender,next){const f=document.getElementById("f");if(!f)return;f.focus();f.oninput=e=>{set(e.target.value.trim());document.getElementById("go").disabled=!e.target.value.trim()};f.onkeydown=e=>{if(e.key==="Enter"&&e.target.value.trim())next()}}
+
+/* ======================= investor onboarding ======================= */
+function renderJoin(){
+  const s=S.j,mm=$("#join-main"),prog=`<div class="progress">${[0,1,2].map(i=>`<i class="${i<=s?"on":""}"></i>`).join("")}</div>`;
+  if(s===0) mm.innerHTML=`<div class="step rise">${prog}<div class="count">STEP 1 OF 3</div><h1>Sign in with your <span class="it">work</span> email.</h1><p class="help">We match your email's domain to the fund profile we already researched. No forms.</p><div style="display:flex;flex-direction:column;gap:10px"><button class="btn white" style="border-radius:14px;padding:14px" data-j="1"><span class="gdot"></span>Continue with Google Workspace</button><input class="field" placeholder="you@yourfund.com"><button class="btn ghost" style="border-radius:14px;padding:14px" data-j="1">Email me a sign-in link</button></div><p class="muted" style="font-size:13px;margin-top:14px">Angels without a fund email: sign in with any email and we'll verify you with one extra step.</p></div>`;
+  if(s===1) mm.innerHTML=`<div class="step rise">${prog}<div class="count">STEP 2 OF 3</div><div class="found">${mark("Verdant Arc Capital",52)}<div style="flex:1"><b>We found Verdant Arc Capital</b><div class="muted" style="font-size:13px">verdantarc.example · Bengaluru · researched 9 Oct</div></div><span class="tag green">Match</span></div><h1 style="margin-top:22px">Is this <span class="it">still</span> your thesis?</h1><p class="help">Pre-filled from your website. Tap to fix anything.</p><div class="pick-label">Sectors</div><div class="pick">${["AI","Fintech","B2B SaaS","Climate","Deeptech","Health"].map((n,k)=>`<button aria-pressed="${k<3}" data-tog>${n}</button>`).join("")}</div><div class="pick-label">Stages</div><div class="pick">${["Pre-seed","Seed","Pre-Series A","Series A"].map((n,k)=>`<button aria-pressed="${k<2}" data-tog>${n}</button>`).join("")}</div><div class="pick-label">Cheque</div><div class="pick">${["₹25–50L","₹50L–2Cr","₹2–5Cr","₹5Cr+"].map((n,k)=>`<button aria-pressed="${k===1}" data-tog>${n}</button>`).join("")}</div><div class="step-actions"><button class="back" data-jb>←</button><button class="btn primary" data-j="2">Looks right →</button></div></div>`;
+  if(s===2) mm.innerHTML=`<div class="step rise">${prog}<div class="count">STEP 3 OF 3</div><h1>Set your <span class="it">door policy.</span></h1><p class="help">Founders only reach you on your terms. Change it anytime.</p><div class="pick-label">Intros per week, at most</div><div class="pick">${["5","10","20","No limit"].map((n,k)=>`<button aria-pressed="${k===1}" data-tog>${n}</button>`).join("")}</div><div class="pick-label">Founders must include</div><div class="pick">${["Deck link","Traction numbers","Data room","Nothing extra"].map((n,k)=>`<button aria-pressed="${k<2}" data-tog>${n}</button>`).join("")}</div><div class="pick-label">Show me startups that are</div><div class="pick">${["Only fits (score 80+)","Fits and near-fits","Everything in my sectors"].map((n,k)=>`<button aria-pressed="${k===0}" data-tog>${n}</button>`).join("")}</div><div class="step-actions"><button class="back" data-jb>←</button><button class="btn primary" data-j="3">Claim my profile →</button></div></div>`;
+  if(s===3) mm.innerHTML=`<div class="step center rise"><div style="width:88px;height:88px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);font-size:38px;color:var(--green)">●</div><h1>You're <span class="it">claimed.</span></h1><p class="fg2">Verdant Arc Capital now shows a green badge to founders. Three startups this week fit your thesis.</p><a class="btn white" style="margin-top:20px;border-radius:14px;padding:14px 24px" href="#/inv/feed">See my deal feed →</a></div>`;
+}
+
+/* ======================= founder app pages ======================= */
+const FNAV=[["today","◎","Today"],["matches","★","Matches","3","g"],["inbox","✉","Inbox","2"],["pipeline","▦","Pipeline"],["competition","⚔","Competition"],["dataroom","▤","Data room"],["profile","◐","Profile"]];
+const INAV=[["feed","◎","Deal feed","3"],["saved","★","Saved"],["leaders","▲","This week"],["iprofile","◐","My profile"]];
+function side(){
+  const fo=S.mode==="founder",nav=fo?FNAV:INAV;
+  return `<a class="logo" href="#/"><span class="logo-mark">F</span>Fundraising OS</a>
+  <div class="ws">${fo?`<span class="sq">LE</span>`:mark("Verdant Arc Capital",28)}<div style="flex:1;min-width:0"><b style="font-size:14px">${fo?"Ledgerly":"Verdant Arc"}</b><div class="muted" style="font-size:12px">${fo?"Seed · ₹1–3 Cr · Day 12":"● Claimed · Fund"}</div></div></div>
+  <button class="cmdk" data-toast="Command bar: jump to any investor, startup or email">⌕ Search or jump to… <kbd>⌘K</kbd></button>
+  <div class="ngroup primary"><span class="lbl">${fo?"Your raise":"Investor"}</span>${nav.map(([k,ic,t,b,bc],idx)=>`<button class="nitem ${fo&&idx>4?"extra":""}" data-page="${k}" aria-current="${S.page===k?"page":"false"}"><span class="ic">${ic}</span>${t}${b?`<span class="badge ${bc||""}">${b}</span>`:""}</button>`).join("")}</div>
+  ${fo?`<button class="gmail-pill" data-gmail-modal>${S.gmail?`<span class="dot"></span>Gmail connected · investor threads only`:`<span class="dot" style="background:var(--amber)"></span>Connect Gmail to track replies`}</button>`:`<div class="gmail-pill"><span class="dot"></span>Door policy: 10 intros/week</div>`}
+  <div class="me">${fo?`<span class="sq" style="width:30px;height:30px;border-radius:50%;background:#3D7BFF;color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700">NK</span>`:mark("Meera Iyer",30,"angel")}<div style="flex:1"><b style="font-size:13px">${fo?"Neha Kulkarni":"Meera Iyer"}</b><div class="muted" style="font-size:12px">${fo?"Founder · Free beta":"Partner"}</div></div><button class="btn ghost sm" data-switch title="Switch side">⇄</button></div>`;
+}
+function today(){
+  const picks=INV.filter(i=>i.rat);
+  return `<div class="ph"><div><span class="kicker">Day 12 of your raise · Sat 11 Oct</span><h1 style="margin-top:8px">Good evening, Neha.</h1><p>3 investors replied this week. Two follow-ups are due, and your best match hasn't heard from you yet.</p></div></div>
+  <div class="two">
+   <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+    <div class="card focus"><span class="kicker" style="color:var(--blue-ink)">Next best move</span><h2>Send your email to Meera at Verdant Arc. <span class="it">She's your 94.</span></h2><p class="fg2" style="margin:0">She led a seed round like yours in March, and replies to most founders within two days.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-email="1">Review the email →</button><button class="btn ghost" data-dossier="1">Read her dossier</button></div></div>
+    <div class="card"><h3>Today's list <span class="tag" style="margin-left:4px">4 left</span></h3><div class="tasks">
+      <div class="task"><span class="ck"></span><div class="meta">Send to Meera Iyer, Verdant Arc<span>Top pick · email ready</span></div><button class="btn primary sm" data-email="1">Review</button></div>
+      <div class="task"><span class="ck"></span><div class="meta">Follow up with Sana Qureshi, Tidewater<span>Sent 3 days ago · follow-up #1 written</span></div><button class="btn ghost sm" data-email="4">Open</button></div>
+      <div class="task"><span class="ck"></span><div class="meta">Reply to Divya Nair, Saffron Peak<span>She asked for your MRR trend</span></div><button class="btn ghost sm" data-page="inbox">Reply</button></div>
+      <div class="task"><span class="ck"></span><div class="meta">Add your cap table to the data room<span>Readiness 72 → 81</span></div><button class="btn ghost sm" data-page="dataroom">Add</button></div>
+      <div class="task"><span class="ck done"></span><div class="meta" style="color:var(--muted);text-decoration:line-through">Book call with Vikram Shah, Coral Bay<span>Tue 13 Oct, 4 pm</span></div></div>
+    </div></div>
+    <div class="card"><h3>Top picks <button class="more" data-page="matches">All 42 →</button></h3><div class="picks">${picks.map((i,k)=>miniPick(i,k)).join("")}</div></div>
+   </div>
+   <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+    <div class="card"><h3>Your round</h3><div class="funnel">${[["Planned",12,1],["Sent",8,.7],["Replied",3,.42],["Meeting",1,.25],["Term sheet",0,.12]].map(([t,n,h])=>`<div style="height:${Math.max(h*100,18)}%"><b>${n}</b>${t}</div>`).join("")}</div><p class="muted" style="font-size:13px;margin:0">Reply rate 38%. Founders on the platform average 24%.</p></div>
+    <div class="card"><h3>For your pitch this week <button class="more" data-page="competition">All news →</button></h3><div class="news">${NEWS.slice(0,3).map(n=>`<div class="nrow"><span class="when">${n[0]}</span><div><b>${esc(n[1])}</b><span>${esc(n[2])}</span></div></div>`).join("")}</div></div>
+    <div class="card"><h3>Data room <span class="tag amber" style="margin-left:4px">72 / 100</span></h3><div class="bar"><i style="width:72%"></i></div><p class="muted" style="font-size:13px;margin:0">Missing: cap table, financial model. Viewed by 2 investors this week.</p><button class="btn ghost sm" data-page="dataroom" style="align-self:flex-start">Finish it →</button></div>
+   </div>
+  </div>`;
+}
+function miniPick(i,k){return `<div class="pick-card" style="padding:14px"><span class="rank">#${k+1}</span><div class="pick-head">${m(i,38)}<div style="min-width:0"><b style="font-size:14px">${esc(i.name)}</b><span>${i.cheque}</span></div></div><div style="display:flex;gap:10px;align-items:center">${dial(i.score,48)}<span class="fg2" style="font-size:13px">${esc(i.why.split(",")[0])}</span></div><button class="btn ghost sm" data-dossier="${i.id}">Why →</button></div>`}
+function pickCard(i,k){
+  return `<div class="pick-card rise"><span class="rank">TOP PICK #${k+1}</span>
+   <div class="pick-head">${m(i,48)}<div style="min-width:0"><b>${esc(i.name)}</b><span>${esc(i.person)} · ${esc(i.role)}</span><div>${ver(i)}</div></div></div>
+   <div style="display:flex;gap:14px;align-items:center">${dial(i.score)}<div class="why2">${esc(i.why)}</div></div>
+   <ul class="rat">${i.rat.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>
+   <span class="src">Sources: ${i.type==="Angel"?"kabirsethi.example":esc(i.name.split(" ")[0].toLowerCase())+".example/thesis"} · deal news · checked 9 Oct</span>
+   <div class="pick-acts"><button class="btn goldb sm" data-email="${i.id}">Write email</button><button class="btn ghost sm" data-dossier="${i.id}">Full dossier</button><button class="btn ghost sm" data-toast="Removed. We'll learn from this.">Not a fit</button></div></div>`;
+}
+function matches(){
+  const rest=INV.filter(i=>!i.rat);
+  return `<div class="ph"><div><h1>Matches <small>· 42</small></h1><p>Ranked by Fit Score for Ledgerly · AI · Seed · ₹1–3 Cr. Investors who backed a competitor are flagged, not hidden.</p></div><div class="acts"><button class="btn ghost sm" data-toast="Exports your matches to Google Sheets (later)">Export</button></div></div>
+  <div class="views" role="tablist">${[["top","★ Top picks"],["all","All matches"],["funds","Funds"],["angels","Angels & networks"],["conflict","⚠ Backed a competitor"]].map(([k,t])=>`<button role="tab" aria-selected="${S.matchView===k}" data-mv="${k}">${t}</button>`).join("")}</div>
+  ${S.matchView==="top"?`<div class="picks">${INV.filter(i=>i.rat).map(pickCard).join("")}</div><h3 style="margin:26px 0 10px;font-size:15px">Also strong</h3>`:""}
+  <div class="toolbar"><div class="search">⌕ <input placeholder="Search name, firm, city or portfolio company" aria-label="Search matches"></div><button class="fbtn on">Score 70+</button><button class="fbtn">Cheque ▾</button><button class="fbtn">City ▾</button><button class="fbtn">Leads rounds</button><button class="fbtn">Claimed only</button></div>
+  <div class="list">${(S.matchView==="top"?rest:S.matchView==="conflict"?INV.filter(i=>i.conflict):S.matchView==="angels"?INV.filter(i=>i.type!=="Fund"):S.matchView==="funds"?INV.filter(i=>i.type==="Fund"):INV).map(i=>`<div class="lrow">${m(i,42)}<div class="who"><b>${esc(i.name)}</b> <span class="muted" style="font-size:13px">· ${esc(i.type)}</span><div class="sub"><span>📍 ${esc(i.city)}</span><span>${i.stages.join(", ")}</span>${ver(i)}</div><div class="fit">${i.conflict?`<span class="tag red">⚠ Backed Kharcha AI</span> `:""}${esc(i.why)}</div></div><div class="right"><div class="cheque"><b>${i.cheque}</b><small>cheque</small></div><span class="score" style="color:${i.score>=85?"var(--gold)":i.score>=70?"var(--fg)":"var(--muted)"}">${i.score}</span><button class="btn ${i.status==="planned"?"primary":"ghost"} sm" data-dossier="${i.id}">${i.status==="planned"?"Review":"Open"}</button></div></div>`).join("")}</div>`;
+}
+const THREADS=[
+ {inv:6,sub:"Re: Ledgerly × Saffron Peak: seed round",snip:"Thanks Neha, this is interesting. Could you share your MRR trend for the last 6 months?",unread:1,stage:"replied",msgs:[["me","You · 4 days ago","Hi Divya,\n\nLedgerly reads a small business's bank statements and drafts the GST return for its CA to approve…\n\nNeha"],["them","Divya Nair · yesterday","Thanks Neha, this is interesting. Our AI-for-SMB members would want to see it.\n\nCould you share your MRR trend for the last 6 months, and how many CA firms are paying?\n\nDivya"]],sug:"Hi Divya,\n\nThanks! MRR went from ₹1.1L in April to ₹3.2L in September (22% a month). 8 CA firms are live and 2 are paying; both renewed for 12 months.\n\nThe full chart is in our data room: [link]\n\nHappy to walk your members through it this week.\n\nNeha"},
+ {inv:7,sub:"Re: Ledgerly: quick call?",snip:"Tuesday 4 pm works. I'll send an invite.",unread:1,stage:"meeting",msgs:[["them","Vikram Shah · 2 days ago","Tuesday 4 pm works. I'll send an invite.\n\nVikram"]],sug:"Great, see you Tuesday. I'll share the deck beforehand.\n\nNeha"},
+ {inv:4,sub:"Ledgerly × Tidewater: seed round",snip:"No reply yet · follow-up #1 is due today",unread:0,stage:"sent",msgs:[["me","You · 3 days ago","Hi Sana,\n\nLedgerly reads a small business's bank statements…\n\nNeha"]],sug:"Hi Sana, a quick update since my note: a third CA firm started paying this week. Happy to share the deck if useful.\n\nNeha"},
+];
+function inbox(){
+  if(!S.gmail) return `<div class="ph"><div><h1>Inbox</h1><p>Investor replies, matched to your pipeline automatically.</p></div></div><div class="card focus" style="max-width:640px"><span class="kicker" style="color:var(--blue-ink)">Optional</span><h2>Connect Gmail to see replies here.</h2><p class="fg2" style="margin:0">We only read threads with investors on your list. We never send, delete or read anything else. Without Gmail, mark replies by hand in Pipeline.</p><button class="btn primary" style="align-self:flex-start" data-gmail-modal>Connect Gmail</button></div>`;
+  const t=THREADS[S.thread],i=inv(t.inv);
+  return `<div class="ph"><div><h1>Inbox <small>· investor threads</small></h1><p>Only emails with investors on your list. Replies move them on your pipeline.</p></div><div class="acts"><span class="tag green">● neha@ledgerly.example</span></div></div>
+  <div class="inbox ${S.reading?"reading":""}"><div class="thread-list">${THREADS.map((x,k)=>{const j=inv(x.inv);return `<button class="th" aria-selected="${k===S.thread}" data-thread="${k}">${m(j,36)}<div class="meta"><b>${esc(j.person)} <span class="tag ${ST[x.stage][1]}">${ST[x.stage][0]}</span></b><span style="color:var(--fg2)">${esc(x.sub)}</span><span>${esc(x.snip)}</span></div>${x.unread?'<span class="unread"></span>':""}</button>`}).join("")}</div>
+   <div class="thread-pane"><div class="tp-h"><button class="btn ghost sm backbtn" data-unthread aria-label="Back to threads">←</button>${m(i,32)}<div style="flex:1;min-width:0"><b>${esc(i.person)} · ${esc(i.name)}</b><div class="muted" style="font-size:12px">${esc(t.sub)}</div></div><button class="btn ghost sm" data-toast="Moved to Meeting">→ Meeting</button><button class="btn ghost sm" data-toast="Marked passed; follow-ups stopped">Passed</button></div>
+   <div class="tp-b">${t.msgs.map(([w,f,b])=>`<div class="msg ${w}"><div class="from">${esc(f)}</div>${esc(b)}</div>`).join("")}
+    <div class="suggest"><div class="lab" style="color:var(--gold);margin-bottom:6px">✦ Suggested reply · uses your data room numbers</div><div class="ed" contenteditable="true" style="background:var(--bg2)">${esc(t.sug)}</div><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn primary sm" data-toast="Opens this reply in Gmail for you to send">Reply in Gmail ↗</button><button class="btn ghost sm" data-toast="Copied">Copy</button><button class="btn ghost sm" data-toast="Rewriting shorter…">Make it shorter</button></div></div></div></div></div>`;
+}
+function pipeline(){
+  const cols=["planned","draft","sent","replied","meeting","passed"];
+  return `<div class="ph"><div><h1>Pipeline <small>· ${INV.length}</small></h1><p>Every investor by where they stand. ${S.gmail?"Replies move cards automatically.":"Connect Gmail and replies move cards for you."}</p></div></div>
+  <div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:12px;overflow-x:auto;padding-bottom:10px">${cols.map(c=>{const it=INV.filter(i=>i.status===c);return `<div style="border:1px solid var(--line);border-radius:16px;background:var(--bg2);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:360px"><div style="display:flex;gap:8px;align-items:center;font-weight:600;font-size:14px;padding:4px 6px"><span style="width:8px;height:8px;border-radius:50%;background:${ST[c][2]}"></span>${ST[c][0]}<small class="muted" style="margin-left:auto">${it.length}</small></div>${it.map(i=>`<div style="border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;gap:10px;align-items:center">${m(i,30)}<div style="min-width:0"><b style="font-size:14px;display:block">${esc(i.name)}</b><span class="muted" style="font-size:12px">${i.cheque} · ${i.score}</span></div></div><div style="display:flex;gap:6px;flex-wrap:wrap">${cols.filter(x=>x!==c&&x!=="draft").slice(0,3).map(x=>`<button class="tag" style="cursor:pointer" data-move="${i.id}" data-to="${x}">→ ${ST[x][0]}</button>`).join("")}</div></div>`).join("")||`<div style="border:1px dashed var(--line2);border-radius:12px;padding:18px;text-align:center;color:var(--dim);font-size:13px">Nothing here</div>`}</div>`}).join("")}</div>`;
+}
+function competition(){
+  return `<div class="ph"><div><h1>Competition</h1><p>Who else is building this, what they raised and who backed them. Edit "How you differ"; it feeds your emails and deck.</p></div><div class="acts"><button class="btn ghost sm" data-toast="Add a competitor by name or website">+ Add competitor</button></div></div>
+  <div class="scrollx"><table class="tbl">${compTable(false)}</table></div>
+  <p class="muted" style="font-size:12px;margin:8px 0 22px">Sources: company websites, public funding news (Inc42, Entrackr, YourStory), and what you add. Checked weekly. Funding data from licensed providers can be added later.</p>
+  <div class="two"><div class="card"><h3>News that matters to your pitch</h3><div class="news">${NEWS.map(n=>`<div class="nrow"><span class="when">${n[0]}</span><div style="flex:1"><b>${esc(n[1])}</b><span>${esc(n[2])}</span></div><span class="tag ${n[3]==="High"?"gold":""}">${n[3]}</span></div>`).join("")}</div></div>
+  <div class="card"><h3>Investors and your competitors</h3><div class="lrow" style="padding:10px 0;border:0">${m(INV[9],36)}<div class="who"><b>Harbor Line Fund</b><div class="fit"><span class="tag red">Backed Kharcha AI</span> Unlikely to back you too. We lowered their score.</div></div></div><div class="lrow" style="padding:10px 0">${m(INV[2],36)}<div class="who"><b>Northlight Seed Fund</b><div class="fit"><span class="tag green">Adjacent</span> Backed Bahi Books, a retailer GST tool. Knows the space without competing.</div></div></div><p class="muted" style="font-size:13px;margin:0">Investors who looked at this space but didn't invest are often your warmest leads.</p></div></div>`;
+}
+function dataroom(){
+  const items=[["Pitch deck","PDF · v3 · updated 2 days ago","ok","▭"],["One-liner & problem","Filled","ok","✎"],["Traction","MRR, growth, customers · from your numbers","ok","↗"],["Team","2 founders · LinkedIn links","ok","◐"],["The ask & use of funds","₹2 Cr · 18 months runway","ok","₹"],["Cap table","Not added","miss","▦"],["Financial model","Not added","miss","∑"],["Incorporation & DPIIT certificate","DPIIT added · incorporation missing","todo","§"],["Customer references","1 of 3","todo","☺"],["Product demo","Loom link","ok","▶"]];
+  return `<div class="ph"><div><h1>Data room</h1><p>One link with everything an Indian seed investor asks for. We score it before they see it.</p></div><div class="acts"><button class="btn primary sm" data-toast="Link copied: ledgerly.fos.example/room">Copy share link</button></div></div>
+  <div class="two"><div style="display:flex;flex-direction:column;gap:12px;min-width:0"><div class="dr-grid">${items.map(([t,s,st,ic])=>`<div class="ditem"><span class="ic">${ic}</span><div class="meta"><b>${t}</b><span>${s}</span></div><span class="state ${st}">${st==="ok"?"✓ Ready":st==="todo"?"In progress":"Missing"}</span></div>`).join("")}</div></div>
+  <div style="display:flex;flex-direction:column;gap:12px;min-width:0"><div class="card"><h3>Readiness</h3><div style="display:flex;gap:14px;align-items:center">${dial(72,84,"#F5B544")}<div class="fg2" style="font-size:14px">Add your cap table and financial model to reach 90. Most Indian seed funds ask for both before a second meeting.</div></div><div class="bars">${[["Story",90],["Traction",85],["Team",80],["Ask",88],["Documents",40]].map(([t,v])=>`<div class="bar-row" style="grid-template-columns:90px minmax(0,1fr) 30px"><span>${t}</span><div class="bar"><i style="width:${v}%"></i></div><b>${v}</b></div>`).join("")}</div></div>
+  <div class="card"><h3>Who viewed it</h3>${[[INV[6],"Coral Bay · 6 min · read traction twice","2h"],[INV[5],"Saffron Peak · 3 min · opened deck","1d"]].map(([i,t,w])=>`<div class="lrow" style="padding:8px 0;border-top:0">${m(i,30)}<div class="who" style="font-size:13px"><b>${esc(i.person)}</b><div class="muted">${t}</div></div><span class="muted" style="font-size:12px">${w}</span></div>`).join("")}</div>
+  <div class="card"><h3>10 questions investors will ask</h3><ul class="rat"><li>Why will CA firms switch from Tally plus Excel?</li><li>What happens to you when GSTN ships its own tool?</li><li>How do you get from 8 firms to 100?</li></ul><button class="btn ghost sm" style="align-self:flex-start" data-toast="Shows all 10 with suggested answers">See all with answers →</button></div></div></div>`;
+}
+function profile(){
+  return `<div class="ph"><div><h1>Profile</h1><p>Used in every email and in your data room. Investors see the public part only if you turn on discovery.</p></div></div>
+  <div class="two"><div class="card"><h3>About you and Ledgerly</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">${[["Your name","Neha Kulkarni"],["Company","Ledgerly"],["Website","ledgerly.example"],["City","Bengaluru"]].map(([l,v])=>`<label class="lab" style="display:flex;flex-direction:column;gap:6px">${l}<input class="field" value="${v}"></label>`).join("")}<label class="lab" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">One line on your background<input class="field" value="Ran a 40-client CA practice for five years"></label><label class="lab" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px">What Ledgerly does, in one line<input class="field" value="Drafts GST returns from bank statements for CA firms"></label></div></div>
+  <div class="card"><h3>Discovery</h3><p class="fg2" style="margin:0;font-size:14px">Let verified investors whose thesis fits find Ledgerly in their deal feed.</p><div class="pick"><button aria-pressed="true" data-tog>On · verified investors only</button><button aria-pressed="false" data-tog>Off</button></div><p class="muted" style="font-size:12px;margin:0">Your round size is never public. Only claimed, verified investors see it.</p></div></div>`;
+}
+/* ======================= investor app pages ======================= */
+function feed(){
+  return `<div class="ph"><div><span class="kicker">Week of 6 Oct · matched to your thesis</span><h1 style="margin-top:8px">3 startups fit Verdant Arc.</h1><p>Only startups that chose to be discoverable and match your sectors, stage and cheque. Round details are private to verified investors.</p></div></div>
+  <div class="toolbar"><button class="fbtn on">Fits (80+)</button><button class="fbtn">AI</button><button class="fbtn">Climate</button><button class="fbtn">Deeptech</button><button class="fbtn">Seed</button><button class="fbtn">Pre-seed</button></div>
+  <div style="display:flex;flex-direction:column;gap:14px">${STARTUPS.map((s,k)=>`<div class="deal-card rise"><div class="pick-head">${mark(s.name,52)}<div style="flex:1;min-width:0"><b style="font-size:18px">${s.name}</b><span>${s.sector} · ${s.city} · ${s.team}</span></div>${dial(s.score,60)}</div><div class="why2">${esc(s.line)}</div><div class="metrics">${s.m.map(([v,l])=>`<div class="metric"><b>${v}</b><span>${l}</span></div>`).join("")}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="tag gold">Raising ${s.ask} · ${s.stage}</span><span class="tag">Data room 72/100</span><span class="muted" style="font-size:12px">${k===0?"Fits: AI for finance, seed, ₹2 Cr inside your cheque":"Fits your sectors and stage"}</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary sm" data-toast="Founder gets your request with your door policy">Request deck & intro</button><button class="btn ghost sm" data-toast="Opens their data room">View data room</button><button class="btn ghost sm" data-toast="Saved · counts toward This week">★ Save</button><button class="btn ghost sm" data-toast="Pass with a reason: helps the founder">Pass</button></div></div>`).join("")}</div>`;
+}
+function leaders(){return `<div class="ph"><div><h1>This week</h1><p>What other verified investors are looking at. Visible to claimed investors only.</p></div></div><div class="board-lb">${leaderboards()}</div>`}
+function saved(){return `<div class="ph"><div><h1>Saved</h1><p>Startups you starred. You'll see when they update traction.</p></div></div><div class="list">${STARTUPS.slice(0,2).map(s=>`<div class="lrow">${mark(s.name,40)}<div class="who"><b>${s.name}</b><div class="sub"><span>${s.sector}</span><span>${s.stage} · ${s.ask}</span></div><div class="fit">${esc(s.line)}</div></div><div class="right"><span class="tag green">MRR updated</span><button class="btn ghost sm" data-toast="Opens their data room">Open</button></div></div>`).join("")}</div>`}
+function iprofile(){return `<div class="ph"><div><h1>Verdant Arc Capital</h1><p>What founders see. Keep it current and you'll only get fits.</p></div></div><div class="two"><div class="card"><div class="pick-head">${mark("Verdant Arc Capital",56)}<div><b style="font-size:18px">Verdant Arc Capital</b><span>Bengaluru · Fund · ${ver(INV[0])}</span></div></div><dl class="kv"><dt>Thesis</dt><dd>AI for finance and compliance teams in India</dd><dt>Stages</dt><dd>Pre-seed, Seed</dd><dt>Cheque</dt><dd>₹50L–2Cr</dd><dt>Door policy</dt><dd>10 intros/week · deck required</dd></dl></div><div class="card"><h3>Your stats on the platform</h3><div class="ring-row"><div class="statbox"><b>78%</b><span>reply rate</span></div><div class="statbox"><b>2 days</b><span>median reply</span></div><div class="statbox"><b>#1</b><span>most responsive</span></div></div><p class="muted" style="font-size:13px;margin:0">Responsive investors rank higher for the best founders.</p></div></div>`}
+
+/* ======================= drawers & modals ======================= */
+function dossier(id){
+  const i=inv(id),r=i.rat||[i.why];
+  $("#layer").innerHTML=`<div class="scrim" data-close><div class="drawer" role="dialog" aria-label="${esc(i.name)} dossier"><div class="dr-h">${m(i,44)}<div class="who"><b>${esc(i.name)}</b><span>${esc(i.person)} · ${esc(i.role)} · ${ver(i)}</span></div><button class="xbtn" data-close aria-label="Close">✕</button></div>
+  <div class="dr-b"><div style="display:flex;gap:14px;align-items:center">${dial(i.score,80)}<div><div class="kicker gold">Fit Score</div><div class="why2" style="margin-top:6px">${esc(i.why)}</div></div></div>
+   <div class="card" style="padding:14px"><h3>Why they fit</h3><ul class="rat">${r.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><span class="src">Sources: their website, deal news · checked 9 Oct 2026</span></div>
+   <dl class="kv"><dt>Cheque</dt><dd>${i.cheque}</dd><dt>Stages</dt><dd>${i.stages.join(", ")}</dd><dt>Sectors</dt><dd>${i.sectors.join(", ")}</dd><dt>City</dt><dd>${esc(i.city)}</dd><dt>How to pitch</dt><dd>${esc(i.pitch||"Email with a short deck link")}</dd></dl>
+   ${i.deals?`<div class="card" style="padding:14px"><h3>Recent deals</h3>${i.deals.map(d=>`<div class="deal"><span class="yr">${d[0]}</span>${mark(d[1],26)}<b style="flex:1">${d[1]}</b><span class="muted">${d[2]}</span></div>`).join("")}</div>`:""}
+   <div class="ring-row"><div class="statbox"><b>${i.reply||"–"}</b><span>reply rate on platform</span></div><div class="statbox"><b>${i.days||"–"}</b><span>median time to reply</span></div><div class="statbox"><b>${i.conflict?"⚠ Yes":"None"}</b><span>competitor in portfolio</span></div></div>
+   <div class="ladder"><span class="${i.v>=1?"on":""}">◌ Researched</span><span class="${i.v>=2?"on":""}">◐ Checked by our team</span><span class="${i.v>=3?"on":""}">● Claimed by investor</span></div></div>
+  <div class="dr-f"><button class="btn primary" data-email="${i.id}">Write email</button><button class="btn ghost" data-toast="Added to Planned">+ Pipeline</button></div></div></div>`;
+}
+function email(id){
+  const i=inv(id),f=i.person.split(" ")[0];
+  $("#layer").innerHTML=`<div class="scrim" data-close><div class="drawer" role="dialog" aria-label="Email to ${esc(i.person)}"><div class="dr-h">${m(i,40)}<div class="who"><b>${esc(i.person)} · ${esc(i.name)}</b><span>${dialInline(i.score)} · ${i.cheque}</span></div><button class="xbtn" data-close aria-label="Close">✕</button></div>
+  <div class="dr-b"><div class="card" style="padding:12px 14px;border-color:var(--gold-line);background:var(--gold-soft)"><b style="font-size:14px">Why ${esc(i.name)}</b><div class="fg2" style="font-size:14px">${esc(i.why)}</div></div>
+   <span class="lab">To</span><div class="ed" style="padding:10px 12px">${esc(i.email||"No email listed · use their pitch form")}</div>
+   <span class="lab">Subject</span><div class="ed" contenteditable="true" style="padding:10px 12px">Ledgerly × ${esc(i.name.split(" ")[0])}: seed round</div>
+   <span class="lab">Email · Warm & concise</span><div class="ed" contenteditable="true">Hi ${f},\n\nLedgerly reads a small business's bank statements and drafts the GST return for its CA to approve, so one CA firm can handle three times the clients.\n\nEight CA firms are on our pilot and two pay us. I ran a 40-client CA practice for five years before starting Ledgerly.\n\n${esc(i.why.split(",")[0])}, <span class="check" title="No source found">and you spoke about this at a fintech meetup</span>. We're raising ₹2 Cr to reach 100 firms.\n\nCould I send the deck, or take 20 minutes next week?\n\nNeha Kulkarni\nFounder, Ledgerly</div>
+   <div style="display:flex;justify-content:space-between;font-size:12px" class="muted"><span>96 words ✓ · 2 sourced facts</span><span style="color:var(--amber)">1 line has no source: edit or remove</span></div>
+   <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="tag" data-toast="Rewriting…">✦ Shorter</button><button class="tag" data-toast="Rewriting…">✦ Lead with traction</button><button class="tag" data-toast="Rewriting…">✦ More personal</button></div>
+   <div class="card" style="padding:12px 14px"><b style="font-size:14px">Follow-ups, already written</b><span class="muted" style="font-size:13px">#1 on day 3 · #2 on day 10 · both stop if ${f} replies</span></div></div>
+  <div class="dr-f"><button class="btn primary" data-toast="Opens Gmail with everything filled in. You press send.">Open in Gmail ↗</button><button class="btn ghost" data-toast="Copied">Copy</button><button class="btn ghost" data-sent="${i.id}">Mark sent</button></div></div></div>`;
+}
+function dialInline(s){return `<span class="gold">Fit ${s}</span>`}
+function gmailModal(first){
+  $("#layer").innerHTML=`<div class="modal-scrim"><div class="modal rise" role="dialog" aria-label="Connect Gmail">${first?`<span class="tag gold" style="align-self:flex-start">Your workspace is ready</span>`:""}<h2>${first?"One more thing: let replies <span class='it'>find you.</span>":"Connect Gmail"}</h2><p class="fg2" style="margin:0">Optional. When an investor replies, we move them on your pipeline and draft an answer. You still send everything yourself.</p>
+  <div class="scopes"><div class="scope"><span class="gold">✓</span><div><b>Read threads with investors on your list</b><span>Nothing else in your inbox, ever.</span></div></div><div class="scope"><span class="gold">✓</span><div><b>Open drafts in Gmail for you to send</b><span>We never press send.</span></div></div><div class="scope"><span class="muted">✕</span><div><b>No deleting, no contacts, no other mail</b><span>Disconnect anytime from Profile.</span></div></div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn white" style="flex:1" data-gmail-on><span class="gdot"></span>Connect Gmail</button><button class="btn ghost" style="flex:1" data-close>Not now</button></div></div></div>`;
+}
+
+/* ======================= router & events ======================= */
+const PAGES={today,matches,inbox,pipeline,competition,dataroom,profile,feed,saved,leaders,iprofile};
+function renderApp(){$("#side").innerHTML=side();$("#page").innerHTML=PAGES[S.page]();}
+function route(){
+  const h=location.hash||"#/";
+  if(!h.startsWith("#/"))return;
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  $("#layer").innerHTML="";
+  const seg=h.slice(2).split("/");
+  document.querySelectorAll("[data-jump]").forEach(b=>b.classList.toggle("on",h.startsWith(b.dataset.jump)&&(b.dataset.jump!=="#/"||h==="#/")));
+  if(seg[0]==="apply"){$("#v-apply").classList.add("on");if(S.step>4)S.step=0;renderApply()}
+  else if(seg[0]==="join"){$("#v-join").classList.add("on");if(S.j>2)S.j=0;renderJoin()}
+  else if(seg[0]==="app"){S.mode="founder";S.page=PAGES[seg[1]]&&FNAV.some(n=>n[0]===seg[1])?seg[1]:"today";$("#v-app").classList.add("on");renderApp()}
+  else if(seg[0]==="inv"){S.mode="investor";S.page=INAV.some(n=>n[0]===seg[1])?seg[1]:"feed";$("#v-app").classList.add("on");renderApp()}
+  else{$("#v-landing").classList.add("on")}
+  window.scrollTo(0,0);
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-close]");if(!t)return;const d=t.dataset;
+  if(d.close!==undefined&&(e.target===t||t.tagName==="BUTTON")){$("#layer").innerHTML="";return}
+  if(d.toast){toast(d.toast);return}
+  if(d.jump){location.hash=d.jump;return}
+  if(d.aud){document.body.dataset.aud=d.aud;document.querySelectorAll("[data-aud]").forEach(b=>b.tagName==="BUTTON"&&b.setAttribute("aria-pressed",b.dataset.aud===d.aud));window.scrollTo({top:0});return}
+  if(d.tryS){S.tryS=d.tryS;renderTry();return}
+  if(d.trySt){S.tryStage=d.trySt;renderTry();return}
+  if(t.id==="go"){S.step++;renderApply();return}
+  if(d.back!==undefined){S.step--;renderApply();return}
+  if(d.sec){S.sectors=S.sectors.includes(d.sec)?S.sectors.filter(x=>x!==d.sec):[...S.sectors,d.sec];renderApply();return}
+  if(d.stage){S.stage=d.stage;renderApply();return}
+  if(d.ask){S.ask=d.ask;renderApply();return}
+  if(d.signin!==undefined){S.step=6;renderApply();return}
+  if(d.j){S.j=+d.j;renderJoin();return}
+  if(d.jb!==undefined){S.j--;renderJoin();return}
+  if(d.tog!==undefined){t.setAttribute("aria-pressed",t.getAttribute("aria-pressed")!=="true");return}
+  if(d.page){location.hash=(S.mode==="founder"?"#/app/":"#/inv/")+d.page;return}
+  if(d.switch!==undefined){location.hash=S.mode==="founder"?"#/inv/feed":"#/app/today";return}
+  if(d.mv){S.matchView=d.mv;renderApp();return}
+  if(d.dossier){dossier(d.dossier);return}
+  if(d.email){email(d.email);return}
+  if(d.gmailModal!==undefined){gmailModal(false);return}
+  if(d.gmailOn!==undefined){S.gmail=true;$("#layer").innerHTML="";renderApp();toast("Gmail connected · investor threads only");return}
+  if(d.unthread!==undefined){S.reading=false;renderApp();return}
+  if(d.thread){S.thread=+d.thread;S.reading=true;renderApp();return}
+  if(d.sent){const i=inv(d.sent);i.status="sent";$("#layer").innerHTML="";renderApp();toast(`Marked sent to ${i.person}. Follow-up #1 on day 3.`);return}
+  if(d.move){inv(d.move).status=d.to;renderApp();return}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#layer").innerHTML="";if((e.metaKey||e.ctrlKey)&&e.key==="k"){e.preventDefault();toast("Command bar: jump to any investor, startup or email")}});
+window.addEventListener("hashchange",route);
+renderTry();renderLandingBits();route();
+</script>

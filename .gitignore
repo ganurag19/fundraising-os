@@ -5,3 +5,6 @@ node_modules/
 dist/
 .DS_Store
 .convex/
+
+# reference videos of other products: large, and not ours to publish
+references/design-sample-videos/
