@@ -1,5 +1,10 @@
-// Placeholder until the landing page milestone. Confirms the app runs with the v4 tokens.
+// Placeholder until the landing page milestone. Confirms the app runs with the v4 tokens
+// and can reach the Convex backend.
+import { useQuery } from 'convex/react'
+import { api } from '../convex/_generated/api'
+
 export default function App() {
+  const ping = useQuery(api.health.ping)
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 16, textAlign: 'center' }}>
       <div>
@@ -7,6 +12,7 @@ export default function App() {
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 40, letterSpacing: '-.03em', margin: '8px 0' }}>
           Fundraising OS is <span style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', color: '#CFDCFF' }}>running.</span>
         </h1>
+        <p style={{ color: 'var(--fg2)' }}>Backend: {ping === 'ok' ? <b style={{ color: 'var(--green)' }}>connected</b> : 'connecting…'}</p>
         <p style={{ color: 'var(--fg2)' }}>Next: the landing page.</p>
       </div>
     </main>

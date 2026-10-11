@@ -56,3 +56,17 @@ Login: none for the 4 sign-up steps and matching; Google or email sign-in on the
 The AI must never: state a fact about an investor (portfolio company, cheque size, thesis, geography) that isn't in the stored record; say an AI wrote the email; promise a meeting or an outcome; invent a mutual connection; send anything.
 Voice rules: subject under 8 words, body under 120 words, no "I hope this finds you well", "game-changing" or "disrupt". Two good examples and one bad one go in the draft instructions: docs/DRAFT_EXAMPLES.md.
 Log every AI call (input, output, time, and what the founder changed it to) in a table.
+
+<!-- convex-ai-start -->
+
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read
+`convex/_generated/ai/guidelines.md` first** for important guidelines on
+how to correctly use Convex APIs and patterns. The file contains rules that
+override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running
+`npx convex ai-files install`.
+
+<!-- convex-ai-end -->

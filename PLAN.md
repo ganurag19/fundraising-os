@@ -40,8 +40,8 @@ Before milestone 1: GitHub repo, Convex project, Claude keys and caps (the setup
 - [x] GitHub sign-in (12 Oct, ganurag19)
 - [x] Public repo pushed: github.com/ganurag19/fundraising-os
 - [x] App scaffold: Vite + React + TypeScript + Convex (12 Oct, builds and runs)
-- [ ] Convex project created and signed in (`npx convex dev`, by you)
-- [ ] Claude dev key ($5 limit) and live key ($25 limit) in Convex environment variables (by you)
+- [x] Convex project `fundraisingos` signed in, dev deployment running; app connected (12 Oct)
+- [x] `ANTHROPIC_API_KEY` set on the Convex dev deployment (12 Oct). Live key goes on prod at go-live.
 
 ## v1.5 (weeks 3–6, after the first founders)
 
