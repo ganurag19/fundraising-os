@@ -34,7 +34,7 @@ When I report a bug, I'll name the part. Look there first, and tell me if you th
 ## 3. Shipping
 
 Live link: [your .convex.site link]
-Repo: [github.com/you/your-repo], public
+Repo: github.com/ganurag19/fundraising-os, public
 Deploy: npm run deploy. A push never deploys by itself. After I say a milestone works: commit, push, then deploy.
 Keys: ANTHROPIC_API_KEY lives in Convex environment variables, set for dev (a separate dev key with a $5 limit) and for prod. Never in code, a VITE_ variable or a committed file. Never ask me to paste a key. .gitignore covers .env.local and the whole seed/ folder.
 The investor seed lives in seed/ (raw files in seed/raw, cleaned seed/investors.json built by scripts/clean_investors.py). It stays out of the repo and is imported into Convex by a script I run, for dev and for prod. A scheduled refresh is parked; to update, I replace a raw file and re-run the two scripts.
