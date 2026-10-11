@@ -13,7 +13,26 @@ type Draft = NonNullable<Row["draft"]>;
 type Toast = (s: string) => void;
 
 const site = (u: string) => u.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
-const gmailUrl = (to: string, d: Draft) => `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(d.subject)}&body=${encodeURIComponent(d.body)}`;
+const enc = encodeURIComponent;
+const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isAndroid = () => /Android/i.test(navigator.userAgent);
+const mailto = (to: string, d: Draft) => `mailto:${to}?subject=${enc(d.subject)}&body=${enc(d.body)}`;
+/** Laptop: Gmail's compose window in her signed-in account. Phones ignore that link, so they get the app instead. */
+const gmailWeb = (to: string, d: Draft, account: string | null) =>
+  `https://mail.google.com/mail/${account ? `?authuser=${enc(account)}&` : "?"}view=cm&fs=1&to=${enc(to)}&su=${enc(d.subject)}&body=${enc(d.body)}`;
+
+function openInGmail(to: string, d: Draft, account: string | null) {
+  if (isIOS()) {
+    // Gmail app if it's installed; if the page is still showing a moment later, her default mail app
+    const fallback = setTimeout(() => { if (!document.hidden) window.location.href = mailto(to, d); }, 1200);
+    document.addEventListener("visibilitychange", () => clearTimeout(fallback), { once: true });
+    window.location.href = `googlegmail:///co?to=${enc(to)}&subject=${enc(d.subject)}&body=${enc(d.body)}`;
+  } else if (isAndroid()) {
+    window.location.href = mailto(to, d); // opens Gmail, the default mail app on most Android phones
+  } else {
+    window.open(gmailWeb(to, d, account), "_blank", "noopener");
+  }
+}
 
 export function Head({ r, rank }: { r: Row; rank?: boolean }) {
   const name = r.displayName ?? "";
@@ -55,7 +74,7 @@ function copyText(text: string): boolean {
   return ok;
 }
 
-export function EmailBox({ r, d, token, onToast }: { r: Row; d: Draft; token: string; onToast: Toast }) {
+export function EmailBox({ r, d, token, onToast, account = null }: { r: Row; d: Draft; token: string; onToast: Toast; account?: string | null }) {
   const markSent = useMutation(api.founders.markSent);
   const copy = async () => {
     const text = `${d.subject}\n\n${d.body}`;
@@ -74,7 +93,7 @@ export function EmailBox({ r, d, token, onToast }: { r: Row; d: Draft; token: st
       </div>
       {d.warnings.map((w) => <div className="warn" key={w}>⚠ {w}</div>)}
       <div className="email-actions">
-        <a className="btn primary sm" href={gmailUrl(r.email ?? "", d)} target="_blank" rel="noreferrer">Open in Gmail</a>
+        <button className="btn primary sm" onClick={() => openInGmail(r.email ?? "", d, account)}>Open in Gmail</button>
         <button className="btn ghost sm icon" onClick={copy} aria-label="Copy email" title="Copy email">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
         </button>
@@ -105,7 +124,7 @@ export function Why({ r, d }: { r: Row; d: Draft }) {
   );
 }
 
-export function InvestorRow({ r, token, onToast, startOpen = false }: { r: Row; token: string; onToast: Toast; startOpen?: boolean }) {
+export function InvestorRow({ r, token, onToast, startOpen = false, account = null }: { r: Row; token: string; onToast: Toast; startOpen?: boolean; account?: string | null }) {
   const writeMore = useAction(api.write.writeMore);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(startOpen);
@@ -129,7 +148,7 @@ export function InvestorRow({ r, token, onToast, startOpen = false }: { r: Row; 
         <div className="row-email">
           <p className="fg2 small">{r.draft.reason}</p>
           <Why r={r} d={r.draft} />
-          <EmailBox r={r} d={r.draft} token={token} onToast={onToast} />
+          <EmailBox r={r} d={r.draft} token={token} onToast={onToast} account={account} />
         </div>
       )}
     </div>

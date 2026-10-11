@@ -49,11 +49,11 @@ export default function Dashboard() {
       </div>
 
       <h2 className="dash-h">Top picks</h2>
-      <div className="rows">{top.map((r) => <InvestorRow key={r.rank} r={r} token={token} onToast={setToast} startOpen={!r.sentAt && r.rank === 0} />)}</div>
+      <div className="rows">{top.map((r) => <InvestorRow key={r.rank} r={r} token={token} onToast={setToast} account={me.gmail} startOpen={!r.sentAt && r.rank === 0} />)}</div>
 
       {rest.length > 0 && <>
         <h2 className="dash-h">Next best <span className="muted small">· tap Write email for any of them</span></h2>
-        <div className="rows">{rest.map((r) => <InvestorRow key={r.rank} r={r} token={token} onToast={setToast} />)}</div>
+        <div className="rows">{rest.map((r) => <InvestorRow key={r.rank} r={r} token={token} onToast={setToast} account={me.gmail} />)}</div>
         {me.matchCount > me.rows.length && <p className="muted small" style={{ marginTop: 10 }}>Showing your best {me.rows.length} of {me.matchCount}. More as you send.</p>}
       </>}
 

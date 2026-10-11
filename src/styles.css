@@ -256,6 +256,7 @@ textarea.field.tall{min-height:128px;field-sizing:content}
 .unlock b{font-size:17px}
 .unlock-list{list-style:none;margin:0 0 4px;padding:0;display:flex;flex-direction:column;gap:6px;text-align:left;font-size:15px}
 .unlock-list li::before{content:"✓ ";color:var(--gold);font-weight:700}
+.unlock-list li:last-child{color:var(--fg2)} .unlock-list li:last-child::before{content:"◌ ";color:var(--violet)}
 .soon-h{font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:34px 0 12px}
 .soon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
 .soon-card{display:flex;gap:12px;align-items:flex-start;text-align:left;background:linear-gradient(135deg,var(--violet-soft),transparent 70%),var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}

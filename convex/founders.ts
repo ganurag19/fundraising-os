@@ -142,6 +142,7 @@ export const me = query({
     v.object({
       company: v.string(), name: v.string(), stage: v.string(), ask: v.string(), sectors: v.array(v.string()),
       website: v.union(v.string(), v.null()), hasProfile: v.boolean(), emailsStatus: v.string(),
+      gmail: v.union(v.string(), v.null()), // her sign-in email, so "Open in Gmail" picks the right account
       unlocked: v.boolean(), matchCount: v.number(), activeCount: v.number(), leadCount: v.number(), rows: v.array(rowV),
     }),
   ),
@@ -167,6 +168,7 @@ export const me = query({
     return {
       company: f.company, name: f.name, stage: f.stage, ask: f.ask, sectors: f.sectors, website: f.website ?? null,
       hasProfile: !!(f.oneLiner || f.forWho) && !!f.founderLine, emailsStatus: f.emailsStatus,
+      gmail: unlocked && f.userId ? (await ctx.db.get("users", f.userId))?.email ?? null : null,
       unlocked, matchCount: f.matchCount ?? rows.length, activeCount: f.activeCount ?? 0, leadCount: f.leadCount ?? 0, rows,
     };
   },
