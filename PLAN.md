@@ -61,5 +61,7 @@ Investor side (confirm profile, founders for you, team members) · founder ratin
 - Gmail read access (needs Google's security assessment)
 - Deck, cap table and model builders; living data room; templates, learning, blog
 - Pitch narrative, FAQ, DD folder; investor update emails
-- Scheduled refresh of the investor list; reading her LinkedIn, website or deck to fill her profile
+- Scheduled refresh of the investor list; reading her LinkedIn or deck to fill her profile (her website is read once at sign-up, since 2026-10-11)
+- LinkedIn and email sign-in, offered in Settings next to Google
+- Founder check: confirm she's real and part of the startup (search lookup, LinkedIn link vs company). Flag internally; show a subtle "unverified" only if it doesn't match. Today we only store, internally, whether her Google email domain matches her website.
 - Installable app → Play Store / App Store

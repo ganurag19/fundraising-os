@@ -12,8 +12,11 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
+    "@auth/core": "^0.41.3",
+    "@convex-dev/auth": "^0.0.96",
     "@convex-dev/rate-limiter": "^0.4.2",
     "convex": "^1.46.0",
+    "jose": "^6.2.12",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4",

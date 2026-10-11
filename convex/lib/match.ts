@@ -10,7 +10,7 @@ export const ASK_LAKH: Record<string, [number, number]> = { "₹25–50L": [25, 
 export type MatchInvestor = {
   firm?: string; displayName?: string;
   sectors: string[]; stages: string[]; chequeMinLakh?: number; chequeMaxLakh?: number;
-  thesis?: string; recent: { year?: number }[]; active?: boolean; lastChecked?: string;
+  thesis?: string; portfolio?: string[]; recent: { year?: number }[]; active?: boolean; lastChecked?: string;
 };
 export type FounderAsk = { sectors: string[]; stage: string; ask: string };
 
@@ -24,7 +24,15 @@ export function chequeFits(inv: MatchInvestor, ask: string): boolean | null {
   return true;
 }
 
-/** Returns a score 0–100, or null if the investor shouldn't be shown at all. */
+// Words that show a written thesis is about her sector, not just tech in general.
+const THESIS_WORDS: Record<string, RegExp> = {
+  ai: /\b(ai|artificial intelligence|machine learning|ml|genai|llms?|agentic)\b/i,
+  climate: /climate|energy|sustainab|clean ?tech|carbon|decarboni|\bev\b|electric|renewable/i,
+  deeptech: /deep ?tech|hardware|robotic|semiconductor|space|biotech|frontier|ip-led/i,
+};
+
+/** Returns a score 0–100, or null if the investor shouldn't be shown at all.
+ *  Focused investors beat generalists: a fund with 3 sectors and 2 stages outranks one that does everything. */
 export function scoreInvestor(inv: MatchInvestor, f: FounderAsk, currentYear: number): number | null {
   const wanted = f.sectors.map((s) => SECTOR_KEYS[s]).filter(Boolean);
   const exactSector = wanted.some((s) => inv.sectors.includes(s));
@@ -37,29 +45,40 @@ export function scoreInvestor(inv: MatchInvestor, f: FounderAsk, currentYear: nu
 
   const cheque = chequeFits(inv, f.ask);
   if (cheque === false) return null;
+  const band = ASK_LAKH[f.ask];
 
   let score = 0;
-  score += exactSector ? 30 : 15;
-  score += stageKnown ? 20 : 8;
-  // cheque: more of her round covered ranks higher (a ₹35L cheque on a ₹1 Cr round is 35%)
-  const share = inv.chequeMaxLakh !== undefined && ASK_LAKH[f.ask] ? inv.chequeMaxLakh / ASK_LAKH[f.ask][0] : null;
-  score += cheque === null ? 8 : share !== null && share >= 0.5 ? 20 : share !== null && share >= 0.2 ? 14 : 10;
-  const recentDeal = inv.recent.some((r) => r.year !== undefined && r.year >= currentYear - 1);
-  score += recentDeal ? 15 : inv.active ? 10 : 3;
-  score += inv.thesis ? 10 : 0;
+  score += exactSector ? (inv.sectors.length <= 4 ? 30 : 24) : 12;
+  score += !stageKnown ? 8 : inv.stages.length <= 3 ? 20 : 14;
+  // cheque: more of her round covered ranks higher; a smallest cheque above her smallest round fits less well
+  const share = inv.chequeMaxLakh !== undefined && band ? inv.chequeMaxLakh / band[0] : null;
+  score += cheque === null ? 8
+    : inv.chequeMinLakh !== undefined && band && inv.chequeMinLakh > band[0] ? 10
+    : share !== null && share >= 0.5 ? 20 : share !== null && share >= 0.2 ? 15 : 10;
+  const lastYear = Math.max(0, ...inv.recent.map((r) => r.year ?? 0));
+  score += lastYear >= currentYear - 1 ? 15 : lastYear >= currentYear - 3 ? 10 : inv.active ? 8 : 3;
+  score += !inv.thesis ? 0 : wanted.some((s) => THESIS_WORDS[s]?.test(inv.thesis!)) ? 10 : 5;
   score += inv.lastChecked ? 5 : 0;
   return Math.min(100, score);
 }
 
+/** A top pick needs something specific to open the email on: a deal, a portfolio company or a written thesis. */
+export const hasHook = (i: MatchInvestor) => i.recent.length > 0 || (i.portfolio?.length ?? 0) > 0 || !!i.thesis;
+
 const firmKey = (i: MatchInvestor): string | null => { const n = i.firm ?? i.displayName; return n ? n.toLowerCase().replace(/[^a-z0-9]/g, "") : null; };
 
-/** Ranks investors and returns the best `n`, highest score first. Ties go to the one with a researched thesis. One per firm. */
-export function topMatches<T extends MatchInvestor>(investors: T[], f: FounderAsk, currentYear: number, n: number): { inv: T; score: number }[] {
+/** Every investor that fits, highest score first, one per firm. Ties go to a researched thesis, then a bigger cheque. */
+export function rankMatches<T extends MatchInvestor>(investors: T[], f: FounderAsk, currentYear: number): { inv: T; score: number }[] {
   return investors
     .map((inv) => ({ inv, score: scoreInvestor(inv, f, currentYear) }))
     .filter((x): x is { inv: T; score: number } => x.score !== null)
     .sort((a, b) => b.score - a.score || Number(!!b.inv.thesis) - Number(!!a.inv.thesis) || (b.inv.chequeMaxLakh ?? 0) - (a.inv.chequeMaxLakh ?? 0))
-    // one person per firm: three picks from three different funds
-    .filter((x, i, all) => { const k = firmKey(x.inv); return k === null || all.findIndex((y) => firmKey(y.inv) === k) === i; })
-    .slice(0, n);
+    .filter((x, i, all) => { const k = firmKey(x.inv); return k === null || all.findIndex((y) => firmKey(y.inv) === k) === i; });
+}
+
+/** Her list: the 3 best investors with a hook first (the top picks), then the next best, up to `n`. */
+export function topMatches<T extends MatchInvestor>(investors: T[], f: FounderAsk, currentYear: number, n: number): { inv: T; score: number }[] {
+  const ranked = rankMatches(investors, f, currentYear);
+  const picks = ranked.filter((x) => hasHook(x.inv)).slice(0, 3);
+  return [...picks, ...ranked.filter((x) => !picks.includes(x))].slice(0, n);
 }

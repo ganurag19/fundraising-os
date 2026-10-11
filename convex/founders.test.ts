@@ -7,6 +7,7 @@ import schema from "./schema";
 const modules = import.meta.glob("./**/*.ts");
 const tokenA = "a".repeat(48);
 const tokenB = "b".repeat(48);
+const profile = { website: "ledgerly.example.in", linkedin: "", oneLiner: "Ledgerly helps CA firms file GST returns 3x faster by reading bank statements with AI.", founderLine: "I'm Nisha; I ran a 40-client CA practice for five years." };
 // Made-up founder.
 const nisha = { inviteCode: "TEST-ONE", company: "Ledgerly", name: "Nisha Kulkarni", sectors: ["AI"], stage: "Seed", ask: "₹1–3 Cr" };
 
@@ -38,14 +39,48 @@ describe("founder sign-up", () => {
     await t.mutation(api.founders.start, { ...nisha, token: tokenA });
     expect((await t.query(api.founders.me, { token: tokenA }))?.company).toBe("Ledgerly");
     expect(await t.query(api.founders.me, { token: tokenB })).toBeNull();
-    const p = await t.mutation(api.founders.saveProfile, { token: tokenB, forWho: "CA firms", outcome: "file faster", how: "AI", reduce: "", founderLine: "I'm someone else." });
+    const p = await t.mutation(api.founders.saveProfile, { ...profile, token: tokenB });
     expect(p.ok).toBe(false);
   });
 
-  test("saves the profile used in every email", async () => {
+  test("saves the profile used in every email, and checks her links", async () => {
     const t = await setup();
     await t.mutation(api.founders.start, { ...nisha, token: tokenA });
-    expect(await t.mutation(api.founders.saveProfile, { token: tokenA, forWho: "CA firms", outcome: "file GST returns 3x faster", how: "AI that reads bank statements", reduce: "manual entry", founderLine: "I'm Nisha, a chartered accountant." })).toEqual({ ok: true });
-    expect((await t.query(api.founders.me, { token: tokenA }))?.hasProfile).toBe(true);
+    expect((await t.mutation(api.founders.saveProfile, { ...profile, token: tokenA, website: "not a site" })).ok).toBe(false);
+    expect((await t.mutation(api.founders.saveProfile, { ...profile, token: tokenA, linkedin: "linkedin.com/feed" })).ok).toBe(false);
+    expect(await t.mutation(api.founders.saveProfile, { ...profile, token: tokenA })).toEqual({ ok: true });
+    const me = await t.query(api.founders.me, { token: tokenA });
+    expect(me?.hasProfile).toBe(true);
+    expect(me?.website).toBe("https://ledgerly.example.in");
+  });
+
+  test("names and emails beyond her top 3 stay hidden until she signs in", async () => {
+    const t = await setup();
+    await t.mutation(api.founders.start, { ...nisha, token: tokenA });
+    const { founderId, userId, otherId } = await t.run(async (ctx) => {
+      const f = (await ctx.db.query("founders").first())!;
+      for (let rank = 0; rank < 5; rank++) {
+        const investorId = await ctx.db.insert("investors", { seedId: `x${rank}`, kind: "fund", displayName: `Made-up Fund ${rank}`, email: `hello@fund${rank}.example`, sectors: ["ai"], stages: ["seed"], portfolio: [], recent: [], sourceUrls: [] });
+        await ctx.db.insert("matches", { founderId: f._id, investorId, rank, score: 90 - rank });
+      }
+      return { founderId: f._id, userId: await ctx.db.insert("users", { email: "nisha@ledgerly.example.in" }), otherId: await ctx.db.insert("users", { email: "someone@else.example" }) };
+    });
+    const locked = (await t.query(api.founders.me, { token: tokenA }))!;
+    expect(locked.unlocked).toBe(false);
+    expect(locked.rows[2].displayName).toBe("Made-up Fund 2");
+    expect(locked.rows[3].displayName).toBeNull();
+    expect(locked.rows[3].email).toBeNull();
+
+    const nishaIn = t.withIdentity({ subject: `${userId}|s1` });
+    expect(await nishaIn.mutation(api.founders.claim, { token: tokenA })).toEqual({ ok: true });
+    const open = (await nishaIn.query(api.founders.me, { token: tokenA }))!;
+    expect(open.unlocked).toBe(true);
+    expect(open.rows[4].email).toBe("hello@fund4.example");
+
+    // someone else signed in with her token still can't open or take her list
+    const other = t.withIdentity({ subject: `${otherId}|s2` });
+    expect((await other.query(api.founders.me, { token: tokenA }))!.rows[3].displayName).toBeNull();
+    expect((await other.mutation(api.founders.claim, { token: tokenA })).ok).toBe(false);
+    expect((await t.run((ctx) => ctx.db.get("founders", founderId)))!.userId).toBe(userId);
   });
 });

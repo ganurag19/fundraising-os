@@ -1,7 +1,10 @@
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import type { Doc } from "./_generated/dataModel";
 import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS } from "./lib/match";
+import { domainOf, normaliseLinkedin, normaliseUrl } from "./lib/links";
 
 const TOKEN = /^[a-f0-9]{48}$/;
 const normaliseCode = (code: string) => code.trim().toUpperCase().replace(/\s+/g, "");
@@ -51,58 +54,142 @@ export const start = mutation({
   },
 });
 
-/** "So the email sounds like you": the one-liner parts and the founder line. */
+/** "So the email sounds like you": her links, one-liner and founder line. */
 export const saveProfile = mutation({
-  args: { token: v.string(), forWho: v.string(), outcome: v.string(), how: v.string(), reduce: v.string(), founderLine: v.string(), revenue: v.optional(v.string()), customers: v.optional(v.string()) },
+  args: { token: v.string(), website: v.string(), linkedin: v.string(), oneLiner: v.string(), founderLine: v.string(), revenue: v.optional(v.string()), customers: v.optional(v.string()) },
   returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
   handler: async (ctx, a) => {
     const f = await founderByToken(ctx, a.token);
     if (!f) return { ok: false as const, error: "Please start again from the first step." };
-    const fields = { forWho: short(a.forWho, 80), outcome: short(a.outcome, 100), how: short(a.how, 100), reduce: short(a.reduce, 100), founderLine: short(a.founderLine, 220) };
-    if (!fields.forWho || !fields.outcome || !fields.how) return { ok: false as const, error: "Please fill in who you help, what they achieve, and how." };
-    if (!fields.founderLine) return { ok: false as const, error: "Please add one line about you." };
-    await ctx.db.patch("founders", f._id, { ...fields, revenue: short(a.revenue, 80) || undefined, customers: short(a.customers, 80) || undefined });
-    if (!f.forWho) await ctx.db.insert("steps", { step: "profile_done" });
+    const website = a.website.trim() ? normaliseUrl(a.website) : null;
+    if (a.website.trim() && !website) return { ok: false as const, error: "That website doesn't look right. Try something like verdera.ai." };
+    const linkedin = a.linkedin.trim() ? normaliseLinkedin(a.linkedin) : null;
+    if (a.linkedin.trim() && !linkedin) return { ok: false as const, error: "Use your LinkedIn profile link, like linkedin.com/in/your-name." };
+    const oneLiner = short(a.oneLiner, 200), founderLine = short(a.founderLine, 220);
+    if (!oneLiner) return { ok: false as const, error: "Please add your one-liner." };
+    if (!founderLine) return { ok: false as const, error: "Please add one line about you." };
+    await ctx.db.patch("founders", f._id, {
+      website: website ?? undefined, linkedin: linkedin ?? undefined, oneLiner, founderLine,
+      revenue: short(a.revenue, 80) || undefined, customers: short(a.customers, 80) || undefined,
+    });
+    if (!f.founderLine) await ctx.db.insert("steps", { step: "profile_done" });
     return { ok: true as const };
   },
 });
 
-/** What the founder screens show: her details, writing status, and her top picks with emails. */
+/** She signs in on the reveal screen: her visitor list moves to her account. */
+export const claim = mutation({
+  args: { token: v.string() },
+  returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
+  handler: async (ctx, { token }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { ok: false as const, error: "Please sign in first." };
+    const f = await founderByToken(ctx, token);
+    if (!f) return { ok: false as const, error: "Please start again from the first step." };
+    if (f.userId && f.userId !== userId) return { ok: false as const, error: "This list belongs to another account." };
+    if (!f.userId) {
+      const user = await ctx.db.get("users", userId);
+      // Internal only, never shown to her: does her sign-in email match her company's website?
+      const domainMatch = user?.email && f.website ? domainOf(user.email) === domainOf(f.website) : undefined;
+      await ctx.db.patch("founders", f._id, { userId, domainMatch });
+      await ctx.db.insert("steps", { step: "signed_in" });
+    }
+    return { ok: true as const };
+  },
+});
+
+/** "I sent it" on one investor (tap again to undo). */
+export const markSent = mutation({
+  args: { token: v.string(), rank: v.number(), sent: v.boolean() },
+  returns: v.null(),
+  handler: async (ctx, { token, rank, sent }) => {
+    const f = await founderByToken(ctx, token);
+    if (!f) return null;
+    const m = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id).eq("rank", rank)).unique();
+    if (!m) return null;
+    await ctx.db.patch("matches", m._id, { sentAt: sent ? Date.now() : undefined });
+    if (sent) await ctx.db.insert("steps", { step: "sent" });
+    return null;
+  },
+});
+
+/** Signed in, and the list is hers. Until then the names and emails beyond her top 3 stay on the server. */
+export async function isUnlocked(ctx: QueryCtx | MutationCtx, f: Doc<"founders">) {
+  if (!f.userId) return false;
+  return (await getAuthUserId(ctx)) === f.userId;
+}
+
+const draftV = v.object({ reason: v.string(), whyFit: v.array(v.string()), watchOut: v.array(v.string()), hook: v.union(v.string(), v.null()), subject: v.string(), body: v.string(), warnings: v.array(v.string()) });
+const rowV = v.object({
+  rank: v.number(), score: v.number(), kind: v.string(), city: v.union(v.string(), v.null()),
+  chequeMinLakh: v.union(v.number(), v.null()), chequeMaxLakh: v.union(v.number(), v.null()), sentAt: v.union(v.number(), v.null()),
+  // null while she's signed out (rows beyond her top 3)
+  displayName: v.union(v.string(), v.null()), person: v.union(v.string(), v.null()), email: v.union(v.string(), v.null()),
+  website: v.union(v.string(), v.null()), lastChecked: v.union(v.string(), v.null()), sourceUrls: v.array(v.string()),
+  draft: v.union(v.null(), draftV),
+});
+
+/** What the founder screens show: her details, writing status, her list and the emails written so far. */
 export const me = query({
   args: { token: v.string() },
   returns: v.union(
     v.null(),
     v.object({
       company: v.string(), name: v.string(), stage: v.string(), ask: v.string(), sectors: v.array(v.string()),
-      hasProfile: v.boolean(), emailsStatus: v.string(),
-      picks: v.array(v.object({
-        rank: v.number(), score: v.number(), displayName: v.string(), person: v.union(v.string(), v.null()),
-        kind: v.string(), city: v.union(v.string(), v.null()), email: v.string(), lastChecked: v.union(v.string(), v.null()),
-        sourceUrls: v.array(v.string()),
-        draft: v.union(v.null(), v.object({ reason: v.string(), whyFit: v.array(v.string()), watchOut: v.array(v.string()), subject: v.string(), body: v.string(), warnings: v.array(v.string()) })),
-      })),
+      website: v.union(v.string(), v.null()), hasProfile: v.boolean(), emailsStatus: v.string(),
+      unlocked: v.boolean(), matchCount: v.number(), rows: v.array(rowV),
     }),
   ),
   handler: async (ctx, { token }) => {
     const f = await founderByToken(ctx, token);
     if (!f) return null;
+    const unlocked = await isUnlocked(ctx, f);
     const matches = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(20);
-    const picks = [];
+    const rows = [];
     for (const m of matches) {
       const inv = await ctx.db.get("investors", m.investorId);
       if (!inv) continue;
-      const d = await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", f._id).eq("investorId", inv._id)).first();
-      picks.push({
-        rank: m.rank, score: m.score, displayName: inv.displayName, person: inv.person ?? null, kind: inv.kind, city: inv.city ?? null,
-        email: inv.email, lastChecked: inv.lastChecked ?? null, sourceUrls: inv.sourceUrls,
-        draft: d ? { reason: d.reason, whyFit: d.whyFit, watchOut: d.watchOut, subject: d.editedSubject ?? d.subject, body: d.editedBody ?? d.body, warnings: d.warnings } : null,
+      const open = unlocked || m.rank < 3;
+      const d = open ? await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", f._id).eq("investorId", inv._id)).first() : null;
+      rows.push({
+        rank: m.rank, score: m.score, kind: inv.kind, city: inv.city ?? null,
+        chequeMinLakh: inv.chequeMinLakh ?? null, chequeMaxLakh: inv.chequeMaxLakh ?? null, sentAt: m.sentAt ?? null,
+        displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: open ? inv.email : null,
+        website: open ? inv.website ?? null : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open ? inv.sourceUrls : [],
+        draft: d ? { reason: d.reason, whyFit: d.whyFit, watchOut: d.watchOut, hook: d.hook ?? null, subject: d.editedSubject ?? d.subject, body: d.editedBody ?? d.body, warnings: d.warnings } : null,
       });
     }
-    return { company: f.company, name: f.name, stage: f.stage, ask: f.ask, sectors: f.sectors, hasProfile: !!f.forWho && !!f.founderLine, emailsStatus: f.emailsStatus, picks };
+    return {
+      company: f.company, name: f.name, stage: f.stage, ask: f.ask, sectors: f.sectors, website: f.website ?? null,
+      hasProfile: !!(f.oneLiner || f.forWho) && !!f.founderLine, emailsStatus: f.emailsStatus,
+      unlocked, matchCount: f.matchCount ?? rows.length, rows,
+    };
   },
 });
 
 /* ---------- internal helpers for the drafting action ---------- */
+
+/** Just her record, for actions that don't need the investors. */
+export const founderForAction = internalQuery({
+  args: { token: v.string() },
+  returns: v.any(),
+  handler: async (ctx, { token }) => await founderByToken(ctx, token),
+});
+
+/** One investor on her list, for "Write email". Only when she's signed in and the list is hers. */
+export const rowForDrafting = internalQuery({
+  args: { token: v.string(), rank: v.number(), userId: v.id("users") },
+  returns: v.any(),
+  handler: async (ctx, { token, rank, userId }) => {
+    const f = await founderByToken(ctx, token);
+    if (!f || f.userId !== userId) return null;
+    const m = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id).eq("rank", rank)).unique();
+    if (!m) return null;
+    const inv = await ctx.db.get("investors", m.investorId);
+    const existing = inv ? await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", f._id).eq("investorId", inv._id)).first() : null;
+    return inv ? { founder: f, investor: inv, hasDraft: !!existing } : null;
+  },
+});
 
 export const forDrafting = internalQuery({
   args: { token: v.string() },
@@ -125,9 +212,10 @@ export const setStatus = internalMutation({
 });
 
 export const saveMatches = internalMutation({
-  args: { founderId: v.id("founders"), picks: v.array(v.object({ investorId: v.id("investors"), score: v.number() })) },
+  args: { founderId: v.id("founders"), matchCount: v.number(), picks: v.array(v.object({ investorId: v.id("investors"), score: v.number() })) },
   returns: v.null(),
-  handler: async (ctx, { founderId, picks }) => {
+  handler: async (ctx, { founderId, matchCount, picks }) => {
+    await ctx.db.patch("founders", founderId, { matchCount });
     const old = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId)).take(50);
     for (const m of old) await ctx.db.delete("matches", m._id);
     const oldDrafts = await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", founderId)).take(50);
@@ -138,7 +226,7 @@ export const saveMatches = internalMutation({
 });
 
 export const saveDraft = internalMutation({
-  args: { founderId: v.id("founders"), investorId: v.id("investors"), reason: v.string(), whyFit: v.array(v.string()), watchOut: v.array(v.string()), subject: v.string(), body: v.string(), warnings: v.array(v.string()) },
+  args: { founderId: v.id("founders"), investorId: v.id("investors"), hook: v.string(), reason: v.string(), whyFit: v.array(v.string()), watchOut: v.array(v.string()), subject: v.string(), body: v.string(), warnings: v.array(v.string()) },
   returns: v.null(),
   handler: async (ctx, a) => {
     await ctx.db.insert("drafts", { ...a, kind: "first" });

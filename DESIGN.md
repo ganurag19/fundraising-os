@@ -73,7 +73,9 @@ Buttons say what happens next ("Open email", "Send follow-up"), never "Submit" o
 - competition preview, picks of the week with medals and badges
 - built for India, coming soon, FAQ, final call to action
 
-**Founder sign-up (4 steps, with a "time left" chip).** Startup name → your name → sector (AI, Climate, Deeptech open; others "soon") → stage and raise. Then the matching screen, and the reveal: "That took 4 minutes. Your first email is ready." Then Google or email sign-in, then the optional Gmail connect.
+**Founder sign-up (6 steps, with a "time left" chip).** Startup name → your name → sector (AI, Climate, Deeptech open; others "soon") → stage and raise → website and LinkedIn (we read the website once to draft her one-liner) → one-liner and founder line (prefilled, she edits). Then the matching screen ("Written in N seconds"), then the reveal.
+
+**Reveal ("3 investors to email today").** One line: "Picked from N that fit {company}." Three gold cards: logo, name, person · city · website ↗, rank, dial, a one-line reason, the email (To, subject, body), then Open in Gmail (blue), a copy icon and "I sent it". "Why them" is folded: 2 reasons, 1 watch-out, sources. Below: "N more investors fit {company}" with blurred rows (score and city only; names and emails never leave the server), and "Continue with Google". Signed in, the rows open, each with "Write email".
 
 **Founder app.** The sidebar, in order, and what each screen does:
 - **Today:** do-this-next card, compact top picks, today's list with time per task, round so far, Q&A readiness, news, data room score
@@ -113,6 +115,7 @@ Empty: one sentence plus the next action. Loading: grey shapes of the real layou
 
 ## 7. Principles
 
+- **Less is more.** Every word earns its place: no repeats, no filler, nothing the founder already knows. If a line could be cut and she'd lose nothing, cut it.
 - One blue button per screen, and it's the main action.
 - Gold means "top pick". Nothing else is gold.
 - Every claim about an investor shows its source, or is marked "check this".

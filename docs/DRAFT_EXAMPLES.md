@@ -1,74 +1,65 @@
 # Draft examples (go into the draft instructions)
 
-The structure follows the VentureHacks elevator-pitch email (venturehacks.com/elevator-pitch), cut down for a cold email:
-subject names company and investor → what we do, for whom → one line of traction → one line of team → why this investor, from their record only → a small ask → signature.
-The article says to lead with traction when it's strong and with the team when traction is thin. Example 1 leads with traction and Example 2 leads with the team.
+Mirrors `convex/lib/prompt.ts`. Every founder, company and investor below is made up.
 
-Every founder, company and investor below is made up.
+The email has to be clearly written to this investor. Order:
+hook (one specific thing they did, by name, tied to her company) → her one-liner → her strongest number → her founder line → the ask with the amount → signature with website and LinkedIn.
 
-Rules the examples obey: subject under 8 words; body under 120 words; one claim about the investor, taken from a field in their record; no "I hope this finds you well", "game-changing" or "disrupt"; no mention of AI writing it; no promised outcome; no invented connection.
+A hook is a named recent deal, a named portfolio company close to her space, or a specific point from what they say they invest in. These are **not** hooks: "climate is on your list of sectors", "you invest at pre-seed", "you back founders from idea to IPO", "this space is familiar to you". The checks flag them.
+
+Rules: subject under 8 words and specific to the investor; body 60–100 words; every investor fact from their record; no "I hope this finds you well", "game-changing", "disrupt", "reach out"; no flattery adjectives; never says AI wrote it; no promised outcome; no invented connection.
+
+Alongside the email: a reason (under 15 words), 2 "why they fit" bullets and 1 "watch out", none repeating each other.
 
 ---
 
-## Good example 1: traction-led (Climate, Seed)
+## Good example 1: hook from a recent deal
 
-Investor record used: `firm: Verdant Arc Capital`, `sectors: climate`, `stages: seed`, `portfolio: [GridLeaf]`
+Record used: `person: Meera`, `recent: [GridLeaf, seed, 2025]`
 
-**Subject:** Kiln Labs × Verdant Arc: seed round
+**Subject:** After GridLeaf, kilns are next
 
 Hi Meera,
 
-Kiln Labs helps brick kilns in Uttar Pradesh cut coal use with a retrofit burner and a phone app that tracks fuel per batch.
+You backed GridLeaf at seed last year, when few funds would touch software for old industry. Brick kilns are the same bet, ten years behind.
 
-62 kilns pay us monthly, up from 9 in March, and each saves about 18% on coal.
+Kiln Labs helps brick kilns in Uttar Pradesh cut coal use by 18% with a retrofit burner and a fuel-tracking app.
 
-I spent six years running kiln operations at my family's business before starting Kiln Labs with an IIT Kanpur combustion engineer.
+62 kilns pay us monthly, up from 9 in March.
 
-You backed GridLeaf at seed, so you know how slowly industrial buyers adopt new tools. We've found a way to make adoption faster.
+I ran kiln operations at my family's business for six years.
 
-We're raising ₹3 Cr. Could I send the deck, or take 20 minutes next week?
+We're raising ₹3 Cr at seed. Could I send the deck, or take 20 minutes next week?
 
 Arjun Rao
-Founder, Kiln Labs · +91 90000 00000
+Founder, Kiln Labs
+kilnlabs.in
 
----
+## Good example 2: hook from the thesis
 
-## Good example 2: team-led (AI, Pre-seed)
+Record used: `person: Kabir`, `thesis: "the next big Indian software companies will automate back offices"`
 
-Investor record used: `person_name: Kabir Sethi`, `kind: angel`, `sectors: ai, b2b_saas`, `stages: pre_seed`, `leads_rounds: true`
-
-**Subject:** Ledgerly: AI for CA firms, pre-seed
+**Subject:** For your back-office AI thesis
 
 Hi Kabir,
 
-Ledgerly reads a small business's bank statements and drafts the GST return for its CA to approve, so the CA firm handles three times the clients.
+You've written that the next big Indian software companies will automate back offices, not front ends. Ledgerly is that for CA firms.
 
-My co-founder built the reconciliation engine at a Bengaluru fintech, and I ran a 40-client CA practice for five years. We know this job from the inside.
+Ledgerly helps CA firms file GST returns 3x faster with AI that reads bank statements.
 
-Eight CA firms are on our pilot, and two have asked to pay.
+Eight firms are on our pilot, and two have asked to pay.
 
-You lead pre-seed rounds in B2B software, and we're looking for someone to lead ours: ₹1.5 Cr.
+I'm Nisha; I ran a 40-client CA practice for five years.
 
-Would a 20-minute call next week work?
+We're raising ₹1.5 Cr at pre-seed. Could I send the deck, or take 20 minutes next week?
 
 Nisha Kulkarni
 Founder, Ledgerly
 
----
-
-## Bad example: what the model must not write
+## Bad example (never write like this)
 
 **Subject:** Exciting opportunity to invest in a game-changing startup!!
 
-Hi Sir/Madam,
+Hi Sir/Madam, I hope this finds you well. We are a disruptive AI-powered platform revolutionising the climate space. Climate is on your list of sectors, so this will be familiar to you. As someone who invested in Tesla, I'm sure you'll see the potential. Our mutual friend Rahul suggested I reach out. This will 10x your returns; please revert ASAP.
 
-I hope this finds you well. We are a disruptive AI-powered platform revolutionising the climate space. As someone who invested in Tesla and loves deeptech, I'm sure you'll see the huge potential. Our mutual friend Rahul suggested I reach out. We are confident this will 10x your returns, and we're closing this week so please revert ASAP.
-
-**Why it's bad:**
-- The subject is over 8 words and pure hype.
-- There's no name.
-- It uses banned phrases.
-- It says nothing concrete about the company.
-- It invents a portfolio company and a mutual friend.
-- It promises a return.
-- It adds false urgency.
+Why it's bad: generic opener that fits any investor, hype words, an invented connection and a famous company not in their record, a promised outcome, no specific ask.

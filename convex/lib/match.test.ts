@@ -42,11 +42,32 @@ describe("match score", () => {
   });
 });
 
+describe("spread and top picks", () => {
+  const focused = { ...base, thesis: "Seed-stage AI for Indian SMBs", chequeMinLakh: 50, chequeMaxLakh: 200, recent: [{ year: 2026 }], lastChecked: "2026-10-09" };
+  test("a generalist scores below a focused investor with the same facts", () => {
+    const generalist = { ...focused, sectors: ["ai", "fintech", "consumer", "saas", "health"], stages: ["idea", "pre_seed", "seed", "series_a"], thesis: "Tech founders from idea to IPO" };
+    expect(scoreInvestor(generalist, seedAi, 2026)!).toBeLessThan(scoreInvestor(focused, seedAi, 2026)! - 15);
+  });
+  test("a smallest cheque above her round's low end scores less", () => {
+    const big = { ...focused, chequeMinLakh: 150, chequeMaxLakh: 500 };
+    expect(scoreInvestor(big, seedAi, 2026)!).toBeLessThan(scoreInvestor(focused, seedAi, 2026)!);
+  });
+  test("top picks have something specific to open on; the rest follow", () => {
+    const noHook = { ...focused, thesis: undefined, recent: [{ year: 2026 }].slice(0, 0), firm: "Plain Fund" };
+    const withHook = { ...base, firm: "Hook Fund", portfolio: ["Made-up Co"] };
+    const top = topMatches([noHook, withHook], seedAi, 2026, 20);
+    expect(top.map((x) => x.inv.firm)).toEqual(["Hook Fund", "Plain Fund"]);
+  });
+});
+
 describe("email checks", () => {
   const oneLiner = "Ledgerly helps CA firms file GST returns 3x faster through AI that reads bank statements.";
   const founderLine = "I'm Nisha, a chartered accountant who ran a 40-client practice for five years.";
   const good = { subject: "Ledgerly × Verdant Arc: seed round", body: `Hi Meera,\n\n${oneLiner}\n\n${founderLine}\n\nCould I send the deck?\n\nNisha`, oneLiner, founderLine };
   test("a good email passes", () => expect(checkDraft(good)).toEqual([]));
+  test("flags openers that could go to any investor", () => {
+    expect(checkDraft({ ...good, body: good.body + " Climate is on your list of sectors." }).join(" ")).toMatch(/Generic/);
+  });
   test("catches long subjects, banned phrases and a missing one-liner", () => {
     const bad = checkDraft({ ...good, subject: "An exciting opportunity to invest in our seed round today", body: "I hope this finds you well. We disrupt everything." });
     expect(bad.join(" ")).toMatch(/Subject/);

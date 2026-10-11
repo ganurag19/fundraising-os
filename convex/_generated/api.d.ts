@@ -8,12 +8,16 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
 import type * as founders from "../founders.js";
+import type * as http from "../http.js";
 import type * as invites from "../invites.js";
 import type * as lib_checks from "../lib/checks.js";
+import type * as lib_links from "../lib/links.js";
 import type * as lib_match from "../lib/match.js";
 import type * as lib_prompt from "../lib/prompt.js";
 import type * as limits from "../limits.js";
+import type * as suggest from "../suggest.js";
 import type * as write from "../write.js";
 
 import type {
@@ -23,12 +27,16 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   founders: typeof founders;
+  http: typeof http;
   invites: typeof invites;
   "lib/checks": typeof lib_checks;
+  "lib/links": typeof lib_links;
   "lib/match": typeof lib_match;
   "lib/prompt": typeof lib_prompt;
   limits: typeof limits;
+  suggest: typeof suggest;
   write: typeof write;
 }>;
 

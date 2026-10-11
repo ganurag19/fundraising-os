@@ -3,13 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { savedInviteCode, visitorToken } from "../lib/token";
+import { normaliseLinkedin, normaliseUrl } from "../../convex/lib/links";
 
 const SECTORS: [string, boolean][] = [["AI", true], ["Climate & Energy", true], ["Deeptech", true], ["Fintech", false], ["B2B software", false], ["Health", false], ["Consumer brands", false]];
 const STAGES = ["Idea", "Pre-seed", "Seed", "Pre-Series A", "Series A"];
 const ASKS = ["₹25–50L", "₹50L–1Cr", "₹1–3 Cr", "₹3–5 Cr", "₹5–10 Cr"];
-const LEFT = ["~2 min left", "~2 min left", "~1 min left", "Almost there", "1 more step"];
+const LEFT = ["~2 min left", "~2 min left", "~2 min left", "~1 min left", "Almost there", "Last step"];
 
-type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export default function Start() {
   const token = useMemo(() => visitorToken(), []);
@@ -18,18 +19,21 @@ export default function Start() {
   const start = useMutation(api.founders.start);
   const saveProfile = useMutation(api.founders.saveProfile);
   const write = useAction(api.write.writeFirstEmails);
+  const fromWebsite = useAction(api.suggest.fromWebsite);
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>(0);
   const [f, setF] = useState({ company: "", name: "", sectors: [] as string[], stage: "", ask: "" });
-  const [p, setP] = useState({ forWho: "", outcome: "", how: "", reduce: "", founderLine: "", revenue: "", customers: "" });
+  const [p, setP] = useState({ website: "", linkedin: "", oneLiner: "", founderLine: "", revenue: "", customers: "" });
+  const [suggested, setSuggested] = useState<"" | "yes" | "no">("");
+  const [note, setNote] = useState(""); // why we couldn't draft from her website (not an error)
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [seconds, setSeconds] = useState(0);
 
   // Coming back: her emails are already written.
-  useEffect(() => { if (me?.emailsStatus === "ready" && step < 5) navigate("/emails"); }, [me, step, navigate]);
-  useEffect(() => { if (step !== 5) return; const t = setInterval(() => setSeconds((s) => s + 1), 1000); return () => clearInterval(t); }, [step]);
+  useEffect(() => { if (me?.emailsStatus === "ready" && step < 6) navigate("/emails"); }, [me, step, navigate]);
+  useEffect(() => { if (step !== 6) return; const t = setInterval(() => setSeconds((s) => s + 1), 1000); return () => clearInterval(t); }, [step]);
 
   if (me === undefined) return <Shell><div className="spinner" /></Shell>;
   if (!me && !code) {
@@ -45,7 +49,7 @@ export default function Start() {
 
   const next = () => { setError(""); setStep((s) => (s + 1) as Step); };
   const back = () => { setError(""); setStep((s) => (s - 1) as Step); };
-  const oneLiner = `${f.company || me?.company || "Your startup"} helps ${p.forWho || "[who]"} ${p.outcome || "[achieve what]"} through ${p.how || "[how]"}${p.reduce ? `, reducing ${p.reduce}` : ""}.`;
+  const company = f.company || me?.company || "Your startup";
 
   async function submitRound() {
     setBusy(true); setError("");
@@ -53,24 +57,36 @@ export default function Start() {
     setBusy(false);
     if (r.ok) next(); else setError(r.error);
   }
+  async function submitLinks() {
+    setError("");
+    if (p.website.trim() && !normaliseUrl(p.website)) { setError("That website doesn't look right. Try something like ledgerly.in."); return; }
+    if (p.linkedin.trim() && !normaliseLinkedin(p.linkedin)) { setError("Use your LinkedIn profile link, like linkedin.com/in/your-name."); return; }
+    if (!p.website.trim()) { setSuggested("no"); next(); return; }
+    setBusy(true);
+    const r = await fromWebsite({ token, website: p.website }).catch(() => ({ ok: false as const, error: "We couldn't read your website. Write your one-liner below." }));
+    setBusy(false);
+    if (r.ok) { setP((o) => ({ ...o, oneLiner: o.oneLiner || r.oneLiner, founderLine: o.founderLine || r.founderLine })); setSuggested("yes"); }
+    else { setSuggested("no"); setNote(r.error); }
+    next();
+  }
   async function submitProfile() {
     setBusy(true); setError("");
     const r = await saveProfile({ token, ...p }).catch(() => ({ ok: false as const, error: "Couldn't save that. Check your connection and try again." }));
     if (!r.ok) { setBusy(false); setError(r.error); return; }
-    setStep(5); setSeconds(0);
+    setStep(6); setSeconds(0);
     const w = await write({ token }).catch(() => ({ ok: false as const, error: "Busy right now. Try again in a few minutes." }));
     setBusy(false);
-    if (w.ok) setStep(6); else { setStep(4); setError(w.error); }
+    if (w.ok) setStep(7); else { setStep(5); setError(w.error); }
   }
 
-  const progress = <div className="progress">{[0, 1, 2, 3, 4].map((i) => <i key={i} className={i <= step ? "on" : ""} />)}</div>;
-  const count = (n: number) => <div className="count">STEP {n} OF 5 <span className="tag gold" style={{ float: "right" }}>{LEFT[n - 1]}</span></div>;
-  const actions = (canGo: boolean, onGo: () => void, label = "Continue →", showBack = true) => (
+  const progress = <div className="progress">{[0, 1, 2, 3, 4, 5].map((i) => <i key={i} className={i <= step ? "on" : ""} />)}</div>;
+  const count = (n: number) => <div className="count">STEP {n} OF 6 <span className="tag gold" style={{ float: "right" }}>{LEFT[n - 1]}</span></div>;
+  const actions = (canGo: boolean, onGo: () => void, label = "Continue →", showBack = true, busyLabel = "Saving…") => (
     <>
       {error && <p className="err" role="alert" style={{ marginTop: 12 }}>{error}</p>}
       <div className="step-actions">
         {showBack && <button className="back" onClick={back} aria-label="Back">←</button>}
-        <button className="btn primary" disabled={!canGo || busy} onClick={onGo}>{busy ? "Saving…" : label}</button>
+        <button className="btn primary" disabled={!canGo || busy} onClick={onGo}>{busy ? busyLabel : label}</button>
       </div>
     </>
   );
@@ -96,20 +112,24 @@ export default function Start() {
         <p className="muted" style={{ fontSize: 13, marginTop: 18 }}>For Indian startups. Used only to find investors and write your emails. Nothing is sent without you.</p>
         {actions(!!f.stage && !!f.ask, submitRound)}</div>}
 
-      {step === 4 && <div className="step rise">{progress}{count(5)}<h1>So the email <span className="it">sounds like you.</span></h1><p className="help">Asked once. These two lines go into every email.</p>
+      {step === 4 && <div className="step rise">{progress}{count(5)}<h1>Where can investors <span className="it">find you?</span></h1><p className="help">We read your website once to draft your one-liner. Your LinkedIn goes in your signature.</p>
         <div className="profile-form">
-          <label>{f.company || me?.company} helps (who)<input className="field" placeholder="e.g. CA firms" maxLength={80} value={p.forWho} onChange={(e) => setP((o) => ({ ...o, forWho: e.target.value }))} /></label>
-          <label>achieve (what)<input className="field" placeholder="e.g. file GST returns 3x faster" maxLength={100} value={p.outcome} onChange={(e) => setP((o) => ({ ...o, outcome: e.target.value }))} /></label>
-          <label>through (how)<input className="field" placeholder="e.g. AI that reads bank statements" maxLength={100} value={p.how} onChange={(e) => setP((o) => ({ ...o, how: e.target.value }))} /></label>
-          <label>reducing (optional)<input className="field" placeholder="e.g. manual entry, errors and late fees" maxLength={100} value={p.reduce} onChange={(e) => setP((o) => ({ ...o, reduce: e.target.value }))} /></label>
-          <div className="preview"><span className="sub-h">Your one-liner</span><br />{oneLiner}</div>
-          <label>One line about you<textarea className="field" placeholder="e.g. I'm Neha, a chartered accountant who ran a 40-client practice for five years." maxLength={220} value={p.founderLine} onChange={(e) => setP((o) => ({ ...o, founderLine: e.target.value }))} /></label>
-          <label>Revenue today (optional)<input className="field" placeholder="e.g. ₹3.2L a month, growing 22% a month" maxLength={80} value={p.revenue} onChange={(e) => setP((o) => ({ ...o, revenue: e.target.value }))} /></label>
+          <label>Website<input className="field" autoFocus inputMode="url" autoCapitalize="none" placeholder="e.g. ledgerly.in" maxLength={200} value={p.website} onChange={(e) => setP((o) => ({ ...o, website: e.target.value }))} /></label>
+          <label>Your LinkedIn (optional)<input className="field" inputMode="url" autoCapitalize="none" placeholder="linkedin.com/in/your-name" maxLength={200} value={p.linkedin} onChange={(e) => setP((o) => ({ ...o, linkedin: e.target.value }))} /></label>
+        </div>
+        {actions(true, submitLinks, p.website.trim() ? "Continue →" : "No website yet →", true, "Reading your website…")}</div>}
+
+      {step === 5 && <div className="step rise">{progress}{count(6)}<h1>So the email <span className="it">sounds like you.</span></h1>
+        <p className="help">{suggested === "yes" ? "Drafted from your website. Make it yours." : note || "Two lines. They go into every email."}</p>
+        <div className="profile-form">
+          <label>Your one-liner<textarea className="field" placeholder={`${company} helps [who] [achieve what] by [how].`} maxLength={200} value={p.oneLiner} onChange={(e) => setP((o) => ({ ...o, oneLiner: e.target.value }))} /></label>
+          <label>One line about you<textarea className="field" placeholder="e.g. I'm Neha; I ran a 40-client CA practice for five years." maxLength={220} value={p.founderLine} onChange={(e) => setP((o) => ({ ...o, founderLine: e.target.value }))} /></label>
+          <label>Your best number (optional)<input className="field" placeholder="e.g. ₹3.2L a month, growing 22% a month" maxLength={80} value={p.revenue} onChange={(e) => setP((o) => ({ ...o, revenue: e.target.value }))} /></label>
           <label>Customers (optional)<input className="field" placeholder="e.g. 8 CA firms, 2 paying" maxLength={80} value={p.customers} onChange={(e) => setP((o) => ({ ...o, customers: e.target.value }))} /></label>
         </div>
-        {actions(!!(p.forWho.trim() && p.outcome.trim() && p.how.trim() && p.founderLine.trim()), submitProfile, "Find my investors →")}</div>}
+        {actions(!!(p.oneLiner.trim() && p.founderLine.trim()), submitProfile, "Find my investors →")}</div>}
 
-      {step === 5 && <div className="step center rise"><div className="spinner" /><h1 style={{ fontSize: 24 }}>Checking 433 investors for {f.company || me?.company}…</h1>
+      {step === 6 && <div className="step center rise"><div className="spinner" /><h1 style={{ fontSize: 24 }}>Checking 433 investors for {company}…</h1>
         <ul className="rat" style={{ textAlign: "left", maxWidth: 380, margin: "16px auto 0", listStyle: "none", padding: 0 }}>
           <li className="fg2">✓ What they invest in, and at what stage</li>
           <li className={seconds > 1 ? "fg2" : ""}>{seconds > 1 ? "✓" : "…"} Whether their cheque fits your round</li>
@@ -117,9 +137,9 @@ export default function Start() {
           <li>… Writing your first 3 emails ({seconds}s)</li>
         </ul></div>}
 
-      {step === 6 && <div className="step center rise"><span className="kicker gold">3 top picks · 3 emails written</span>
-        <h1 style={{ marginTop: 12 }}>That took {seconds < 60 ? `${Math.max(seconds, 1)} seconds` : `${Math.round(seconds / 60)} minute${seconds >= 90 ? "s" : ""}`}. <span className="it">Your first emails are ready.</span></h1>
-        <p className="fg2">Each one is written to that investor, using only what they've actually backed, plus your one-liner and your line.</p>
+      {step === 7 && <div className="step center rise"><span className="kicker gold">Written in {seconds < 60 ? `${Math.max(seconds, 1)} seconds` : `${Math.round(seconds / 60)} min`}</span>
+        <h1 style={{ marginTop: 12 }}>Your first 3 emails <span className="it">are ready.</span></h1>
+        <p className="fg2">Each one opens on something that investor actually did.</p>
         <button className="btn white" style={{ borderRadius: 14, padding: 14, marginTop: 18 }} onClick={() => navigate("/emails")}>Read my emails →</button></div>}
     </Shell>
   );

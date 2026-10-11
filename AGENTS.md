@@ -8,7 +8,7 @@ Before building or changing any screen, read DESIGN.md and follow it. If a choic
 
 Interface: a responsive web app, phone first, same screens on a laptop, dark theme from DESIGN.md. India only: Indian founders, investors who back Indian startups, amounts in ₹. The one thing a founder does there: enter company, sector, stage and ask size, then read, edit and send emails to investors that fit.
 Business logic: Convex functions. A match function filters and scores the seeded investors in code (match score 0–100), then asks the AI to write the reason, "why they fit" and "watch out" bullets for the top 3 picks and one reason for the rest, using only stored facts. A draft function writes the emails for her top 3 picks right after matching, and one more each time she taps "Write email". It uses only the facts stored for that investor and her profile, and always includes her company one-liner and founder line. A follow-up function writes a nudge when one is due: 3 days after sent, then 7 days after that. Status changes (sent, replied, meeting, passed) are plain database updates.
-Database: the investors (fields in docs/SEED_FORMAT.md: name, firm, email and email status, city, sectors, stages, cheque size, portfolio, thesis, sources, source date, last checked date); each founder's profile (name, company, website, LinkedIn, the one-liner parts: helps X achieve Y through Z reducing A, B, C; a line about each founder; revenue and customers); each founder's search and list; every draft and its edits; a status per investor; a log of every AI call; a step log with step name and time only, no names or emails.
+Database: the investors (fields in docs/SEED_FORMAT.md: name, firm, email and email status, city, sectors, stages, cheque size, portfolio, thesis, sources, source date, last checked date); each founder's profile (name, company, website, LinkedIn, the one-liner (drafted from her website, which we read once at sign-up, then edited by her; LinkedIn is stored, never read); a line about each founder; revenue and customers); each founder's search and list; every draft and its edits; a status per investor; a log of every AI call; a step log with step name and time only, no names or emails.
 Third party: the Claude API (key in Convex environment variables). Gmail only as a prefilled compose link the founder opens herself. Google sign-in right after the reveal screen.
 Not in v1: everything PLAN.md puts in v1.5, v2 or Parked, including the investor side, Gmail API, Q&A, competition, data room, chat, integrations, ratings and payments.
 When I report a bug, I'll name the part. Look there first, and tell me if you think I named the wrong one.
@@ -44,7 +44,7 @@ Before I share the link: I open it on my phone, logged out, on mobile data, and 
 
 ## 4. The AI call
 
-Model: Claude Haiku 4.5 for matching and follow-ups; Claude Sonnet 5.5 for each founder's first three drafts. Thinking: low or off.
+Model: Claude Haiku 4.5 for matching, follow-ups, the website one-liner and "Write email" beyond her top 3; Claude Sonnet 5.5 for each founder's first three drafts. Thinking: low or off.
 What goes in, and its limit: the founder's four fields and profile (length-limited) and only the filtered shortlist of investor records, never the whole list; at most 20 records per call.
 Where it runs: a Convex action. Never in the interface.
 Key: ANTHROPIC_API_KEY in Convex environment variables, dev and prod.
