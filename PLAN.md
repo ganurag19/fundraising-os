@@ -12,7 +12,7 @@
 - Landing hook: A, "First round? Send your first investor email in 10 minutes."
 - Sign-in: right after the reveal screen, before she reads her first email (Google or email link).
 - Every email includes her company one-liner and founder line from Profile.
-- Invite-only: **decision pending** (see Parked).
+- Invite-only: **yes** (12 Oct). Landing buttons are "Request an invite" and "I have a code". Requests go to a waitlist; codes are checked on the server. Make a code with `npx convex run invites:createCode '{"code":"GROWTHX-S4","label":"GrowthX","maxUses":50}'`.
 
 ## v1: path to live
 
@@ -53,7 +53,6 @@ Investor side (confirm profile, founders for you, team members) · founder ratin
 
 ## Parked (not now)
 
-- Invite-only access with codes and a waitlist (about 2 hours; your call)
 - Skip an investor she already knows; "rewrite with this note"; "passed" suggests 3 next names; odd ask-size warning
 - Import her Sheet; export to a Sheet
 - Weekly digest; WhatsApp reminders
