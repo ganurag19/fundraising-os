@@ -51,13 +51,12 @@ function Teaser({ me, onToast }: { me: Me; onToast: (s: string) => void }) {
   const [busy, setBusy] = useState(false);
   const more = me.matchCount - 3;
   const space = me.sectors.map((x) => SPACE[x] ?? x).join(" and ");
-  const facts = [
-    `${more} more investors who back ${space} at ${me.stage.toLowerCase()}, ranked for ${me.company}`,
-    me.activeCount > 0 ? `${me.activeCount} closed a deal this year or last. They're still writing cheques.` : null,
-    me.leadCount > 0 ? `${me.leadCount} lead rounds. One yes can anchor yours.` : null,
-    "An email for each, opening on a deal they actually did",
-    "Who else in your space is pitching them · SOON",
-  ].filter(Boolean) as string[];
+  // Three numbers she can scan in a second, then the one promise. The SOON cards below cover what's coming.
+  const stats = [
+    { n: more, label: `back ${space} at ${me.stage.toLowerCase()}` },
+    me.activeCount > 0 ? { n: me.activeCount, label: "invested this year or last" } : null,
+    me.leadCount > 0 ? { n: me.leadCount, label: "lead rounds" } : null,
+  ].filter(Boolean) as { n: number; label: string }[];
   return (
     <section className="more">
       <h2>{more} more investors <span className="it">fit {me.company}.</span></h2>
@@ -74,7 +73,8 @@ function Teaser({ me, onToast }: { me: Me; onToast: (s: string) => void }) {
           ))}
         </div>
         <div className="unlock">
-          <ul className="unlock-list">{facts.map((f) => <li key={f}>{f}</li>)}</ul>
+          <div className="unlock-stats">{stats.map((x) => <div key={x.label}><b>{x.n}</b><span>{x.label}</span></div>)}</div>
+          <p className="unlock-promise">Each one gets an email that opens on <b>a deal they actually did</b>.</p>
           <button className="btn white" disabled={busy} onClick={() => { setBusy(true); void signIn("google", { redirectTo: "/dashboard" }); }}>
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" /><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" /><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" /><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" /></svg>
             {busy ? "Opening Google…" : `Unlock all ${more}`}
