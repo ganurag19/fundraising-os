@@ -8,3 +8,13 @@ dist/
 
 # reference videos of other products: large, and not ours to publish
 references/design-sample-videos/
+
+# build and tooling
+logs
+*.log
+dist
+dist-ssr
+*.local
+.vscode/*
+!.vscode/extensions.json
+.idea
