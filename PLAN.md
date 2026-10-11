@@ -30,6 +30,7 @@ Landing page first: the v4 landing, founder side. The investor toggle shows "Inv
 Last: I can close it, reopen it, and my data is still there (Google sign-in).
 
 Go live: you open it on your phone, logged out, on mobile data → deploy to prod → share with the first 10 founders.
+At go-live, also: set the live Claude key on prod, import the investors into prod, and re-create invite codes on prod (GROWTHX-S4 and others) — dev codes don't carry over.
 
 Before milestone 1: GitHub repo, Convex project, Claude keys and caps (the setup checklist below).
 
