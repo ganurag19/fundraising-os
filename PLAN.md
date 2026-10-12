@@ -12,6 +12,7 @@
 - Landing hook: A, "First round? Send your first investor email in 10 minutes."
 - Sign-in: right after the reveal screen, before she reads her first email (Google or email link).
 - Every email includes her company one-liner and founder line from Profile.
+- Name: **FirstCheq** (13 Oct), at **firstcheq.ai** (also .com and .in; Anurag to buy). Rejected for clashes: First Round, Round1, First Close, RaiseX, Raise Desk, Beej, Shagun; Bohni considered and dropped. Risk accepted with eyes open: First Cheque (an India Quotient-linked fund, active in 2026) has used "First Cheque" since 2018. Mitigations: own trademark filing (classes 35, 36, 42), a short lawyer opinion before ads, own visual identity, "Not affiliated with any fund" in the footer.
 - Invite-only: **yes** (12 Oct). Landing buttons are "Request an invite" and "I have a code". Requests go to a waitlist; codes are checked on the server. Make a code with `npx convex run invites:createCode '{"code":"GROWTHX-S4","label":"GrowthX","maxUses":50}'`.
 
 ## v1: path to live

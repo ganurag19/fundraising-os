@@ -169,7 +169,7 @@ export default function Start() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="flow">
-      <div className="flow-top"><Link className="logo" to="/"><span className="logo-mark">F</span>Fundraising OS</Link><Link className="btn ghost sm" to="/">Exit</Link></div>
+      <div className="flow-top"><Link className="logo" to="/"><span className="logo-mark">F</span>FirstCheq</Link><Link className="btn ghost sm" to="/">Exit</Link></div>
       <div className="flow-main">{children}</div>
     </main>
   );

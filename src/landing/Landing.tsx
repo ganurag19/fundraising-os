@@ -29,7 +29,7 @@ export default function Landing() {
   return (
     <>
       <header className="nav"><div className="nav-in">
-        <a className="logo" href="/" aria-label="Fundraising OS home"><span className="logo-mark">F</span><span className="logo-text">Fundraising OS</span></a>
+        <a className="logo" href="/" aria-label="FirstCheq home"><span className="logo-mark">F</span><span className="logo-text">FirstCheq</span></a>
         <div className="aud" role="group" aria-label="I am a">
           <button aria-pressed={aud === "founder"} onClick={() => setAud("founder")}>Founders</button>
           <button aria-pressed={aud === "investor"} onClick={() => setAud("investor")}>Investors</button>
@@ -188,7 +188,7 @@ export default function Landing() {
         </section>
 
         <div className="cta-band"><h2 className="h-l" style={{ marginTop: 0 }}>Your first round starts with one email. <span className="it">Send it this week.</span></h2><CTA big onOpen={setSheet} /></div>
-        <footer><div className="foot"><a className="logo" href="/"><span className="logo-mark">F</span>Fundraising OS</a><span>Built in India · Example investors on this page are made up</span></div></footer>
+        <footer><div className="foot"><a className="logo" href="/"><span className="logo-mark">F</span>FirstCheq</a><span>Built in India · Not affiliated with any fund · Example investors on this page are made up</span></div></footer>
       </div>
 
       {sheet && <InviteSheet mode={sheet} onMode={setSheet} onClose={() => setSheet(null)} />}

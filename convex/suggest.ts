@@ -71,7 +71,7 @@ export function pageText(html: string): string {
 
 async function fetchPage(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(7000), headers: { "user-agent": "FundraisingOS/1.0 (reads the founder's own site once, on her request)", accept: "text/html" } });
+    const res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(7000), headers: { "user-agent": "FirstCheq/1.0 (reads the founder's own site once, on her request)", accept: "text/html" } });
     if (!res.ok || !(res.headers.get("content-type") ?? "").includes("html")) return null;
     const final = normaliseUrl(res.url); // redirects must still land on a public site
     if (!final) return null;

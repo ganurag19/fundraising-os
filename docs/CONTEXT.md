@@ -9,7 +9,7 @@ Source of truth for code and what is built: this repo, `PROGRESS.md`, `PLAN.md`,
 | Path | What | Status | Tracked in git? |
 |---|---|---|---|
 | `docs/evals/` | Rubric, 33 test cases, fixtures (made-up), workbook, runbook, CC prompts 0–6, AGENTS addition | Written; **nothing built from it yet** | yes (public-safe) |
-| `docs/SPRINT_STATUS.md` | Where Bohni stands vs `PLAN.md` on 13 Oct, gaps for Sell and Evals | Snapshot, goes stale | yes |
+| `docs/SPRINT_STATUS.md` | Where the product stands vs `PLAN.md` on 13 Oct, gaps for Sell and Evals | Snapshot, goes stale | yes |
 | `docs/sell/` | Sell-week plan: `SELL_PLAN.md`, `USER_SESSIONS.md`, `DISTRIBUTION.md`, `BUILD_IN_PUBLIC.md`, `LAUNCH_VIDEO.md`, `sell-tracker.xlsx` | Written; Anurag rewrites the words | **no, gitignore** (personal plans, DM lists) |
 | `docs/ads/` | Distribution and ads: `README.md`, `01-strategy/GO_TO_MARKET.md`, `meta/`, `google/`, `linkedin/`, `creative/`, `cc/CC_PROMPTS.md` (A1–A8), `ads-tracker.xlsx` | Written; **no ads built or run** | **no, gitignore** (budgets, unit economics) |
 
@@ -52,3 +52,4 @@ Anurag may reorder.
 ## Status log (append, newest last)
 
 - 2026-10-13 · Cowork · Wrote docs above. Changed no code, `AGENTS.md`, `PLAN.md` or `PROGRESS.md`.
+- 2026-10-13 · Claude Code · Read and aligned the Cowork docs (table of mismatches given to Anurag); gitignored docs/sell, docs/ads, evals/runs; added the AGENTS pointer. Name locked as FirstCheq (firstcheq.ai), replacing Bohni; app renamed. Next: go live.

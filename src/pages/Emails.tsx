@@ -91,7 +91,7 @@ function Teaser({ me, onToast }: { me: Me; onToast: (s: string) => void }) {
 export function Page({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <main className="app-wrap">
-      <div className="app-top"><Link className="logo" to="/"><span className="logo-mark">F</span>Fundraising OS</Link>{right ?? <span className="tag gold">Beta</span>}</div>
+      <div className="app-top"><Link className="logo" to="/"><span className="logo-mark">F</span>FirstCheq</Link>{right ?? <span className="tag gold">Beta</span>}</div>
       {children}
     </main>
   );
