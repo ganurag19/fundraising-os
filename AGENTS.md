@@ -59,6 +59,10 @@ Log every AI call (input, output, time, and what the founder changed it to) in a
 
 <!-- convex-ai-start -->
 
+## Docs from Cowork
+
+Read docs/CONTEXT.md first. docs/evals is the eval method; docs/ads and docs/sell are private plans (gitignored). After finishing any task, append one line to the Status log at the bottom of docs/CONTEXT.md.
+
 This project uses [Convex](https://convex.dev) as its backend.
 
 When working on Convex code, **always read

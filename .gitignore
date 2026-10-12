@@ -18,3 +18,9 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# private working plans (the repo is public)
+docs/sell/
+docs/ads/
+# eval outputs hold real investors' facts and founders' details
+evals/runs/
