@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useAction, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
-import { Dial, Face, Logo } from "./Art";
+import { Badges, Dial, Face, Logo, Medal } from "./Art";
+import type { BadgeKey } from "../lib/badges";
 import { cheque, SOON } from "../lib/investor";
 
 // Shared by the reveal page and the dashboard: one investor, their email, and the buttons around it.
@@ -35,17 +36,29 @@ function openInGmail(to: string, d: Mail, account: string | null) {
   }
 }
 
-export function Head({ r, rank }: { r: Row; rank?: boolean }) {
+/** Badges she can trust: each comes from a field in the investor's record. */
+function earnedBadges(r: Row, year: number): BadgeKey[] {
+  const out: BadgeKey[] = [];
+  if (r.leadsRounds) out.push("lead");
+  if ((r.lastDealYear ?? 0) >= year) out.push("recent");
+  if (r.firstCheques) out.push("first");
+  return out;
+}
+
+export function Head({ r, rank, badges }: { r: Row; rank?: boolean; badges?: boolean }) {
   const name = r.displayName ?? "";
+  const [year] = useState(() => new Date().getFullYear());
+  const earned = badges ? earnedBadges(r, year) : [];
   return (
     <div className="pick-head">
+      {rank && r.rank < 3 && <Medal rank={r.rank} />}
       {r.kind === "angel" ? <Face name={r.person ?? name} size={44} /> : <Logo name={name} size={44} />}
       <div className="who">
         <b>{name}</b>
         <span>{[r.person && r.person !== name ? r.person : null, r.city].filter(Boolean).join(" · ")}
           {r.website && <> · <a href={r.website} target="_blank" rel="noreferrer">{site(r.website)} ↗</a></>}</span>
+        {earned.length > 0 && <Badges keys={earned} max={2} />}
       </div>
-      {rank && <span className="tag gold rank-tag">#{r.rank + 1}</span>}
     </div>
   );
 }
@@ -53,7 +66,7 @@ export function Head({ r, rank }: { r: Row; rank?: boolean }) {
 export function PickCard({ r, token, onToast }: { r: Row; token: string; onToast: Toast }) {
   return (
     <article className="pick-card rise">
-      <Head r={r} rank />
+      <Head r={r} rank badges />
       {r.draft ? (
         <>
           <div className="reason"><Dial score={r.score} size={52} /><p>{r.draft.reason}</p></div>
@@ -259,10 +272,10 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
   };
   const tag = STATUS_TAG[r.status];
   return (
-    <div className={`row-card${r.rank < 3 ? " top" : ""}`}>
+    <div className={`row-card${r.rank < 3 ? " top" : ""}`} id={`inv-${r.rank}`}>
       <div className="row-main">
         <button className="dial-btn" onClick={() => setWhy((w) => !w)} aria-expanded={why} aria-label={`Match score ${r.score}. Show how it's worked out`}><Dial score={r.score} size={40} /></button>
-        <Head r={r} rank={r.rank < 3} />
+        <Head r={r} rank={r.rank < 3} badges />
         <span className="muted small cheque">{cheque(r)}</span>
         {tag ? <span className={`tag status-${r.status}`}>{tag}</span> : r.draft
           ? <button className="btn ghost sm" onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Email"}</button>

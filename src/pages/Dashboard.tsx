@@ -233,12 +233,45 @@ function Today({ me, token, onToast, go }: { me: Me; token: string; onToast: (s:
   const picks = me.rows.filter((r) => r.rank < 3 && r.status === "new");
   const nextBest = me.rows.find((r) => r.rank >= 3 && r.status === "new");
   const nextDue = me.rows.flatMap((r) => r.followups.filter((f) => f.state === "scheduled" && f.dueAt > now).map((f) => f.dueAt)).sort((a, b) => a - b)[0];
+  const sent = me.rows.filter((r) => r.status !== "new").length;
+  const replied = me.rows.filter((r) => r.status === "replied" || r.status === "meeting").length;
+  const meetings = me.rows.filter((r) => r.status === "meeting").length;
+  const goal = Math.min(20, me.rows.length);
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  const day = (t: number) => new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+
+  // The one thing to do next, in plain words.
+  const hero = followups[0]
+    ? { k: "Follow up", title: `Nudge ${followups[0].displayName}`, line: `No reply yet. Your follow-up is written; it takes 30 seconds to send.`, cta: "Open the follow-up", go: () => scrollTo(`fu-${followups[0].rank}`) }
+    : picks[0]
+    ? { k: "Send", title: `Email ${picks[0].displayName}`, line: picks[0].reason ?? "Your top pick. The email is ready.", cta: "Open the email", go: () => scrollTo(`inv-${picks[0].rank}`) }
+    : nextBest
+    ? { k: "Write", title: `Write to ${nextBest.displayName}`, line: nextBest.reason ?? "Your next best investor.", cta: "Write the email", go: () => scrollTo(`inv-${nextBest.rank}`) }
+    : { k: "Wait", title: "You've written to everyone on your list", line: nextDue ? `Next follow-up on ${day(nextDue)}.` : "Mark replies as they come in.", cta: "See your pipeline", go: () => go("pipeline") };
+
   return (
     <>
+      <section className="hero-move rise">
+        <span className="kicker">Your next move · {hero.k}</span>
+        <h2>{hero.title}</h2>
+        <p>{hero.line}</p>
+        <button className="btn primary" onClick={hero.go}>{hero.cta} →</button>
+      </section>
+
+      <section className="progress-strip" aria-label="Raise progress">
+        <div className="ps-head"><b>Your raise so far</b><span className="muted small">{sent} of {goal} emails sent</span></div>
+        <div className="ps-bar" aria-hidden="true"><i style={{ width: `${(Math.min(sent, goal) / goal) * 100}%` }} /></div>
+        <div className="ps-steps">
+          <div className={sent ? "done" : ""}><b>{sent}</b><span>sent</span></div><span className="arrow">→</span>
+          <div className={replied ? "done" : ""}><b>{replied}</b><span>replied</span></div><span className="arrow">→</span>
+          <div className={meetings ? "done" : ""}><b>{meetings}</b><span>meetings</span></div>
+        </div>
+      </section>
+
       {followups.length > 0 && <>
         <h2 className="dash-h">Follow-ups due <span className="due today">{followups.length}</span></h2>
         <div className="rows">{followups.map((r) => { const fu = r.followups.find((f) => f.state === "ready")!; return (
-          <div className="row-card" key={r.rank}>
+          <div className="row-card" key={r.rank} id={`fu-${r.rank}`}>
             <div className="row-main"><Head r={r} /><StatusMenu r={r} token={token} onToast={onToast} /></div>
             <div className="row-email"><p className="fg2 small">No reply yet. Here's a short nudge (follow-up {fu.n} of 2).</p><FollowupBox r={r} fu={fu} token={token} onToast={onToast} account={me.gmail} /></div>
           </div>

@@ -141,7 +141,7 @@ const rowV = v.object({
   draft: v.union(v.null(), draftV),
   reason: v.union(v.string(), v.null()), // one line on why they fit
   parts: v.array(v.object({ key: v.string(), label: v.string(), got: v.number(), max: v.number() })), // the score, part by part
-  leadsRounds: v.boolean(), lastDealYear: v.union(v.number(), v.null()),
+  leadsRounds: v.boolean(), lastDealYear: v.union(v.number(), v.null()), firstCheques: v.boolean(),
   status: v.union(v.literal("new"), v.literal("sent"), v.literal("replied"), v.literal("meeting"), v.literal("passed")),
   followups: v.array(v.object({ id: v.id("followups"), n: v.number(), state: v.string(), dueAt: v.number(), subject: v.union(v.string(), v.null()), body: v.union(v.string(), v.null()) })),
 });
@@ -178,7 +178,7 @@ export const me = query({
         website: open ? inv.website ?? null : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open ? inv.sourceUrls : [],
         reason: d?.reason ?? m.reason ?? null,
         parts: scoreParts(inv, f, new Date(m._creationTime).getFullYear()) ?? [], // the year she was matched (queries don't read the clock)
-        leadsRounds: !!inv.leadsRounds, lastDealYear: inv.recent.reduce<number | null>((y, r) => (r.year && (!y || r.year > y) ? r.year : y), null),
+        leadsRounds: !!inv.leadsRounds, firstCheques: inv.stages.includes("idea") || inv.stages.includes("pre_seed"), lastDealYear: inv.recent.reduce<number | null>((y, r) => (r.year && (!y || r.year > y) ? r.year : y), null),
         status: m.status ?? ("new" as const),
         followups: open ? (await ctx.db.query("followups").withIndex("by_match_and_n", (q) => q.eq("matchId", m._id)).take(4))
           .filter((x) => x.state !== "cancelled")

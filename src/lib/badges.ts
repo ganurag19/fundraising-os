@@ -5,6 +5,7 @@ export const BADGES = {
   lead: ["◆", "Leads rounds", "#9DBBFF"],
   clear: ["✦", "Clear feedback", "#A98BFF"],
   active: ["▲", "Active this month", "#3DDC84"],
+  recent: ["▲", "Invested this year", "#3DDC84"], // from deal years in our record (no monthly data yet)
   first: ["1", "Writes first cheques", "#E9C46A"],
 } as const;
 export type BadgeKey = keyof typeof BADGES;
