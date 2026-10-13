@@ -53,3 +53,4 @@ Anurag may reorder.
 
 - 2026-10-13 · Cowork · Wrote docs above. Changed no code, `AGENTS.md`, `PLAN.md` or `PROGRESS.md`.
 - 2026-10-13 · Claude Code · Read and aligned the Cowork docs (table of mismatches given to Anurag); gitignored docs/sell, docs/ads, evals/runs; added the AGENTS pointer. Name locked as FirstCheq (firstcheq.ai), replacing Bohni; app renamed. Next: go live.
+- 2026-10-13 · Claude Code · Logo (tick-arrow mark, two-weight wordmark) and tagline added; site hosted on Convex; production live at dazzling-fox-925.ap-southeast-2.convex.site with codes FIRSTCHEQ (100) and GROWTHX-S4 (50). Waiting on Anurag: live Claude key, Google redirect + publish, investor import to prod, firstcheq.ai domain.
