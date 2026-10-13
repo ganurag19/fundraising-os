@@ -123,6 +123,7 @@ Empty: one sentence plus the next action. Loading: grey shapes of the real layou
 - Every claim about an investor shows its source, or is marked "check this".
 - Nothing is sent without her pressing send in Gmail.
 - Plain words over clever ones (section 3).
+- Dark by default, with a light mode in Settings (same token names, so blue and gold stay on-brand).
 - Phone first at 360–390 px; laptop is the same screens, wider; the sidebar becomes a bottom tab bar on phones.
 - We're a research and outreach service, not a marketplace: no public "raising" listings, and round details are shared only when the founder accepts.
 - Optimistic about saving her data, honest about the AI: she sees the wait.

@@ -100,4 +100,16 @@ describe("founder sign-up", () => {
     expect((await other.mutation(api.founders.claim, { token: tokenA })).ok).toBe(false);
     expect((await t.run((ctx) => ctx.db.get("founders", founderId)))!.userId).toBe(userId);
   });
+
+  test("profile edits fix her name and lines, and check her links", async () => {
+    const t = await setup();
+    await t.mutation(api.founders.start, { ...nisha, token: tokenA });
+    await t.mutation(api.founders.saveProfile, { ...profile, token: tokenA });
+    const base = { token: tokenA, company: "ledgerly labs", name: "nisha k", website: "ledgerly.example.in", linkedin: "", oneLiner: "Ledgerly files GST returns 3x faster.", founderLine: "I'm Nisha.", traction: "8 CA firms on pilot" };
+    expect((await t.mutation(api.founders.updateProfile, { ...base, website: "nope" })).ok).toBe(false);
+    expect((await t.mutation(api.founders.updateProfile, { ...base, token: tokenB })).ok).toBe(false);
+    expect(await t.mutation(api.founders.updateProfile, base)).toEqual({ ok: true });
+    const me = (await t.query(api.founders.me, { token: tokenA }))!;
+    expect([me.company, me.name, me.profile.traction]).toEqual(["Ledgerly Labs", "Nisha K", "8 CA firms on pilot"]);
+  });
 });

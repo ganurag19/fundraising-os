@@ -84,6 +84,26 @@ export const saveProfile = mutation({
   },
 });
 
+/** Profile page: she fixes her name, company or lines later. Sector, stage and raise stay as matched. */
+export const updateProfile = mutation({
+  args: { token: v.string(), company: v.string(), name: v.string(), website: v.string(), linkedin: v.string(), oneLiner: v.string(), founderLine: v.string(), traction: v.string() },
+  returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
+  handler: async (ctx, a) => {
+    const f = await founderByToken(ctx, a.token);
+    if (!f) return { ok: false as const, error: "Please reload the page and try again." };
+    const company = companyCase(short(a.company, 80)), name = nameCase(short(a.name, 80));
+    if (!company || !name) return { ok: false as const, error: "Please keep your name and your startup's name." };
+    const website = a.website.trim() ? normaliseUrl(a.website) : null;
+    if (a.website.trim() && !website) return { ok: false as const, error: "That website doesn't look right. Try something like ledgerly.in." };
+    const linkedin = a.linkedin.trim() ? normaliseLinkedin(a.linkedin) : null;
+    if (a.linkedin.trim() && !linkedin) return { ok: false as const, error: "Use your LinkedIn profile link, like linkedin.com/in/your-name." };
+    const oneLiner = short(a.oneLiner, 200), founderLine = short(a.founderLine, 220);
+    if (!oneLiner || !founderLine) return { ok: false as const, error: "Please keep your one-liner and the line about you." };
+    await ctx.db.patch("founders", f._id, { company, name, website: website ?? undefined, linkedin: linkedin ?? undefined, oneLiner, founderLine, traction: short(a.traction, 200) || undefined });
+    return { ok: true as const };
+  },
+});
+
 /** She signs in on the reveal screen: her visitor list moves to her account. */
 export const claim = mutation({
   args: { token: v.string() },
@@ -134,6 +154,7 @@ export const me = query({
     v.object({
       company: v.string(), name: v.string(), stage: v.string(), ask: v.string(), sectors: v.array(v.string()),
       website: v.union(v.string(), v.null()), hasProfile: v.boolean(), emailsStatus: v.string(),
+      profile: v.object({ linkedin: v.string(), oneLiner: v.string(), founderLine: v.string(), traction: v.string() }),
       gmail: v.union(v.string(), v.null()), // her sign-in email, so "Open in Gmail" picks the right account
       unlocked: v.boolean(), matchCount: v.number(), activeCount: v.number(), leadCount: v.number(), rows: v.array(rowV),
     }),
@@ -167,6 +188,7 @@ export const me = query({
     }
     return {
       company: f.company, name: f.name, stage: f.stage, ask: f.ask, sectors: f.sectors, website: f.website ?? null,
+      profile: { linkedin: f.linkedin ?? "", oneLiner: f.oneLiner ?? "", founderLine: f.founderLine ?? "", traction: f.traction ?? "" },
       hasProfile: !!(f.oneLiner || f.forWho) && !!f.founderLine, emailsStatus: f.emailsStatus,
       gmail: unlocked && f.userId ? (await ctx.db.get("users", f.userId))?.email ?? null : null,
       unlocked, matchCount: f.matchCount ?? rows.length, activeCount: f.activeCount ?? 0, leadCount: f.leadCount ?? 0, rows,

@@ -4,13 +4,22 @@ import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
 import { LogoMark, Wordmark } from "../components/Brand";
+import { Face, Logo } from "../components/Art";
 import { FollowupBox, Head, InvestorRow, Pipeline, SoonCards, StatusMenu } from "../components/Investor";
+import { applyTheme, savedTheme } from "../lib/theme";
+import type { Theme } from "../lib/theme";
 import type { Me, Row } from "../components/Investor";
 import { visitorToken } from "../lib/token";
 import { Page } from "./Emails";
 
-type Tab = "today" | "investors" | "pipeline";
-const TABS: [Tab, string, string][] = [["today", "Today", "◉"], ["investors", "Investors", "▤"], ["pipeline", "Pipeline", "↻"]];
+type Tab = "today" | "investors" | "pipeline" | "competition" | "qa" | "dataroom" | "inbox" | "profile" | "settings";
+const RAISE: [Tab, string, string][] = [["today", "Today", "◎"], ["investors", "Investors for you", "★"], ["pipeline", "Pipeline", "▦"]];
+const PREPARE: [Tab, string, string][] = [["competition", "Competition", "⚔"], ["qa", "Investor Q&A", "❝"], ["dataroom", "Data room", "▤"], ["inbox", "Inbox", "✉"]];
+const TITLES: Record<Tab, [string, string]> = {
+  today: ["Today's", "moves."], investors: ["Your", "investors."], pipeline: ["Your", "pipeline."],
+  competition: ["Know your", "competition."], qa: ["They will ask.", "Be ready."], dataroom: ["Your", "data room."], inbox: ["Replies,", "in one place."],
+  profile: ["How you", "come across."], settings: ["Your", "settings."],
+};
 
 const remember = (k: string, v?: string): string | null => {
   try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { /* private mode */ }
@@ -31,6 +40,9 @@ export default function Dashboard() {
   const [claimError, setClaimError] = useState("");
   const [tab, setTab] = useState<Tab>(() => (remember("fos_tab") as Tab | null) ?? "today");
   const [welcome, setWelcome] = useState(() => !remember("fos_welcomed"));
+  const [more, setMore] = useState(false);
+  const [theme, setThemeState] = useState<Theme>(savedTheme);
+  const setTheme = (t: Theme) => { applyTheme(t); setThemeState(t); };
 
   // Back from Google: move her visitor list to her account (once).
   useEffect(() => {
@@ -53,37 +65,72 @@ export default function Dashboard() {
   if (claimError) return <Page><div className="step center" style={{ margin: "60px auto" }}><h1>{claimError}</h1><p className="help">Sign in with the Google account you used first, or start a new list.</p><button className="btn primary" onClick={() => void signOut()}>Sign out</button></div></Page>;
   if (!me.unlocked && !preview) return <Page><div className="spinner" /></Page>;
 
-  const go = (t: Tab) => { setTab(t); remember("fos_tab", t); window.scrollTo(0, 0); };
+  const go = (t: Tab) => { setTab(t); setMore(false); if (RAISE.some(([k]) => k === t)) remember("fos_tab", t); window.scrollTo(0, 0); };
+  const waiting = me.rows.filter((r) => r.status === "sent").length;
   const due = me.rows.filter((r) => r.status === "sent" && r.followups.some((f) => f.state === "ready")).length;
   const sent = me.rows.filter((r) => r.status !== "new").length;
   const replies = me.rows.filter((r) => r.status === "replied" || r.status === "meeting").length;
   const ready = me.rows.filter((r) => r.draft && r.status === "new").length;
 
+  const navItem = ([k, label, icon]: [Tab, string, string], badge?: number, soon?: boolean) => (
+    <button key={k} className={tab === k ? "on" : ""} aria-current={tab === k ? "page" : undefined} onClick={() => go(k)}>
+      <span className="ic" aria-hidden="true">{icon}</span><span className="lb">{label}</span>
+      {soon ? <span className="soon-tag">SOON</span> : badge ? <span className={`dot${k === "today" ? "" : " quiet"}`}>{badge}</span> : null}
+    </button>
+  );
+  const [h1a, h1b] = TITLES[tab];
+
   return (
     <div className="dash">
       <aside className="dash-nav" aria-label="Sections">
         <Link className="logo dash-logo" to="/"><LogoMark /><Wordmark /></Link>
-        {TABS.map(([k, label, icon]) => (
-          <button key={k} className={tab === k ? "on" : ""} aria-current={tab === k ? "page" : undefined} onClick={() => go(k)}>
-            <span className="ic" aria-hidden="true">{icon}</span>{label}
-            {k === "today" && due > 0 && <span className="dot">{due}</span>}
+        <div className="ws"><Logo name={me.company} size={30} /><div><b>{me.company}</b><span>{me.stage} · {me.ask}</span></div></div>
+        <span className="nlbl">Your raise</span>
+        {navItem(RAISE[0], due)}{navItem(RAISE[1], me.matchCount)}{navItem(RAISE[2], waiting)}
+        <span className="nlbl">Prepare</span>
+        {PREPARE.map((p) => navItem(p, undefined, true))}
+        <div className="side-foot">
+          <button className="theme-btn" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>{theme === "dark" ? "☀ Light mode" : "☾ Dark mode"}</button>
+          <button className={`me-btn${tab === "profile" || tab === "settings" ? " on" : ""}`} onClick={() => go("profile")}>
+            <Face name={me.name} size={30} /><div><b>{me.name}</b><span>{me.gmail ?? "Profile and settings"}</span></div>
           </button>
-        ))}
-        <button className="signout" onClick={() => void signOut()}>Sign out</button>
+          <div className="foot-links"><button onClick={() => go("settings")}>Settings</button><button onClick={() => void signOut()}>Sign out</button></div>
+        </div>
       </aside>
 
+      <nav className="tabbar" aria-label="Sections">
+        {RAISE.map(([k, label, icon]) => (
+          <button key={k} className={tab === k ? "on" : ""} onClick={() => go(k)}><span className="ic" aria-hidden="true">{icon}</span>{k === "investors" ? "Investors" : label}{k === "today" && due > 0 && <span className="dot">{due}</span>}</button>
+        ))}
+        <button className={more || !RAISE.some(([k]) => k === tab) ? "on" : ""} onClick={() => setMore(true)}><span className="ic" aria-hidden="true">☰</span>More</button>
+      </nav>
+      {more && (
+        <div className="sheet-scrim" onClick={(e) => e.target === e.currentTarget && setMore(false)}>
+          <div className="sheet more-sheet rise" role="dialog" aria-label="More">
+            <div className="ws"><Logo name={me.company} size={30} /><div><b>{me.company}</b><span>{me.stage} · {me.ask}</span></div><button className="xbtn" aria-label="Close" onClick={() => setMore(false)}>✕</button></div>
+            {[...PREPARE.map((p) => [...p, true] as const), ["profile", "Profile", "◐", false] as const, ["settings", "Settings", "⚙", false] as const].map(([k, label, icon, soon]) => (
+              <button key={k} className="more-item" onClick={() => go(k as Tab)}><span className="ic" aria-hidden="true">{icon}</span>{label}{soon && <span className="soon-tag">SOON</span>}</button>
+            ))}
+            <button className="more-item" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}><span className="ic" aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>{theme === "dark" ? "Light mode" : "Dark mode"}</button>
+            <button className="more-item muted" onClick={() => void signOut()}><span className="ic" aria-hidden="true">⎋</span>Sign out</button>
+          </div>
+        </div>
+      )}
+
       <main className="dash-main">
-        <div className="dash-top"><Link className="logo" to="/"><LogoMark /><Wordmark /></Link><button className="btn ghost sm" onClick={() => void signOut()}>Sign out</button></div>
+        <div className="dash-top"><Link className="logo" to="/"><LogoMark /><Wordmark /></Link><button className="theme-btn sm" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>{theme === "dark" ? "☀" : "☾"}</button></div>
         <header className="reveal-head">
           <span className="kicker">Your raise · {me.company} · {me.stage} · {me.ask}</span>
-          <h1>{tab === "today" ? <>Today's <span className="it">moves.</span></> : tab === "investors" ? <>Your <span className="it">investors.</span></> : <>Your <span className="it">pipeline.</span></>}</h1>
+          <h1>{h1a} <span className="it">{h1b}</span></h1>
         </header>
-        <div className="stats four">
-          <div><b>{me.matchCount}</b><span>fit {me.company}</span></div>
-          <div><b>{ready}</b><span>emails ready</span></div>
-          <div><b>{sent}</b><span>sent</span></div>
-          <div><b>{replies}</b><span>replies</span></div>
-        </div>
+        {RAISE.some(([k]) => k === tab) && (
+          <div className="stats four">
+            <div><b>{me.matchCount}</b><span>fit {me.company}</span></div>
+            <div><b>{ready}</b><span>emails ready</span></div>
+            <div><b>{sent}</b><span>sent</span></div>
+            <div><b>{replies}</b><span>replies</span></div>
+          </div>
+        )}
 
         {welcome && tab === "today" && (
           <div className="welcome rise">
@@ -97,11 +144,84 @@ export default function Dashboard() {
         {tab === "pipeline" && (me.rows.some((r) => r.status !== "new")
           ? <Pipeline rows={me.rows} token={token} onToast={setToast} account={me.gmail} />
           : <div className="empty"><b>Nothing sent yet.</b><span>Tap "I sent it" after you send an email. It shows up here with its follow-ups.</span><button className="btn primary sm" onClick={() => go("today")}>See today's moves</button></div>)}
+        {(tab === "competition" || tab === "qa" || tab === "dataroom" || tab === "inbox") && <SoonPage tab={tab} company={me.company} />}
+        {tab === "profile" && <Profile me={me} token={token} onToast={setToast} />}
+        {tab === "settings" && <Settings me={me} theme={theme} setTheme={setTheme} signOut={() => void signOut()} />}
 
-        <h2 className="dash-h">Coming soon</h2>
-        <SoonCards onToast={setToast} />
+        {RAISE.some(([k]) => k === tab) && <><h2 className="dash-h">Coming soon</h2><SoonCards onToast={setToast} /></>}
       </main>
       {toast && <div className="toast" role="status">{toast}</div>}
+    </div>
+  );
+}
+
+const SOON_PAGES: Record<"competition" | "qa" | "dataroom" | "inbox", { line: string; points: string[] }> = {
+  competition: { line: "Who else is raising in your space, and how you stand apart.", points: ["Startups like yours that raised in the last 2 years, and who backed them", "What investors will compare you on", "One line on your edge, for your email and your deck"] },
+  qa: { line: "The questions Indian seed investors ask, with answers drafted from your profile.", points: ["The 20 questions you'll hear in a first meeting", "Answers drafted from your one-liner and traction, for you to edit", "What a weak answer sounds like, so you avoid it"] },
+  dataroom: { line: "One link with everything an investor asks for.", points: ["A checklist of what to have ready before the first meeting", "Upload once, share one link", "See who opened what"] },
+  inbox: { line: "Investor replies next to your pipeline, so nothing slips.", points: ["Replies from your investors only, nothing else from your inbox", "Marks Replied for you, which stops the follow-ups", "Needs your permission to read investor emails in Gmail"] },
+};
+
+function SoonPage({ tab, company }: { tab: keyof typeof SOON_PAGES; company: string }) {
+  const p = SOON_PAGES[tab];
+  return (
+    <div className="soon-page">
+      <span className="soon-tag">SOON</span>
+      <p className="lede-sm">{p.line}</p>
+      <ul className="rat">{p.points.map((x) => <li key={x}>{x}</li>)}</ul>
+      <p className="muted small">We're building this for founders like you at {company}. It'll appear here when it's ready.</p>
+    </div>
+  );
+}
+
+/** Profile: fix her name, company or lines. New emails and follow-ups use the new version. */
+function Profile({ me, token, onToast }: { me: Me; token: string; onToast: (s: string) => void }) {
+  const update = useMutation(api.founders.updateProfile);
+  const [p, setP] = useState({ company: me.company, name: me.name, website: me.website ?? "", linkedin: me.profile.linkedin, oneLiner: me.profile.oneLiner, founderLine: me.profile.founderLine, traction: me.profile.traction });
+  const [busy, setBusy] = useState(false);
+  const field = (k: keyof typeof p, label: string, area = false, max = 200) => (
+    <label key={k}>{label}{area
+      ? <textarea className="field" maxLength={max} value={p[k]} onChange={(e) => setP((o) => ({ ...o, [k]: e.target.value }))} />
+      : <input className="field" maxLength={max} value={p[k]} onChange={(e) => setP((o) => ({ ...o, [k]: e.target.value }))} />}</label>
+  );
+  const save = async () => {
+    setBusy(true);
+    const r = await update({ token, ...p }).catch(() => ({ ok: false as const, error: "Couldn't save. Check your connection." }));
+    setBusy(false);
+    onToast(r.ok ? "Saved. New emails and follow-ups use this." : r.error);
+  };
+  return (
+    <div className="profile-form settings-card">
+      {field("company", "Startup name", false, 80)}
+      {field("name", "Your name", false, 80)}
+      {field("oneLiner", "What your startup does", true)}
+      {field("founderLine", "About you", true, 220)}
+      {field("traction", "Traction (optional)", true)}
+      {field("website", "Website")}
+      {field("linkedin", "Your LinkedIn (optional)")}
+      <p className="muted small">Sector, stage and raise ({me.sectors.join(", ")} · {me.stage} · {me.ask}) set your matches, so they stay as they are. Emails already written keep their words; edit them on each card.</p>
+      <div className="step-actions"><button className="btn primary" disabled={busy} onClick={save}>{busy ? "Saving…" : "Save profile"}</button></div>
+    </div>
+  );
+}
+
+function Settings({ me, theme, setTheme, signOut }: { me: Me; theme: Theme; setTheme: (t: Theme) => void; signOut: () => void }) {
+  return (
+    <div className="settings">
+      <section className="settings-card">
+        <h2>Appearance</h2>
+        <div className="pick">{(["dark", "light"] as const).map((t) => <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>{t === "dark" ? "☾ Dark" : "☀ Light"}</button>)}</div>
+      </section>
+      <section className="settings-card">
+        <h2>Account</h2>
+        <p className="fg2">Signed in as <b>{me.gmail ?? me.name}</b>. Open in Gmail uses this account on a laptop.</p>
+        <button className="btn ghost sm" onClick={signOut}>Sign out</button>
+      </section>
+      <section className="settings-card">
+        <h2>Your data</h2>
+        <p className="fg2">Nothing is ever sent for you. To see or delete your data, write to <a href="mailto:hello@firstcheq.ai">hello@firstcheq.ai</a>.</p>
+        <p className="small"><Link to="/privacy">Privacy Policy</Link> · <Link to="/terms">Terms</Link></p>
+      </section>
     </div>
   );
 }
