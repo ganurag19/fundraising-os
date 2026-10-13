@@ -89,6 +89,13 @@ describe("deal evidence and apply links", () => {
     expect(scoreInvestor({ ...acc, kind: "grant" }, seedAi, 2026)).not.toBeNull();
     expect(scoreInvestor({ ...base, email: undefined }, seedAi, 2026)).toBeNull();
   });
+  test("apply-only programmes take at most 5 places in her list of 20", () => {
+    const programmes = Array.from({ length: 12 }, (_, i) => ({ ...base, firm: `Made-up Incubator ${i}`, kind: "accelerator", email: undefined, applyUrl: "https://apply.example", stages: [] as string[], thesis: "AI", recent: [{ year: 2026 }] }));
+    const funds = Array.from({ length: 30 }, (_, i) => ({ ...base, stages: ["pre_seed"], firm: `Made-up Fund ${i}`, portfolio: ["Made-up Co"] }));
+    const list = topMatches([...programmes, ...funds], { ...seedAi, stage: "Pre-seed", sectors: ["AI"] }, 2026, 20);
+    expect(list).toHaveLength(20);
+    expect(list.filter((x) => !x.inv.email)).toHaveLength(5);
+  });
   test("apply-only investors are never top picks", () => {
     const applyOnly = { ...base, firm: "Form Fund", email: undefined, applyUrl: "https://form.example", thesis: "AI for SMBs", recent: [{ year: 2026 }] };
     const emailable = { ...base, firm: "Mail Fund", portfolio: ["Made-up Co"] };
