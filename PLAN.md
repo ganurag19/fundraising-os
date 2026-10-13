@@ -56,6 +56,7 @@ Investor side (confirm profile, founders for you, team members) · founder ratin
 
 ## Parked (not now)
 
+- hello@ and anurag@ inboxes for firstcheq.ai (free: ImprovMX forwarding to Gmail + Gmail "Send mail as" through Resend SMTP; or Google Workspace). **Do before ads or a wider launch**: Privacy, Terms and the grievance contact point to hello@firstcheq.ai, which receives nothing until then.
 - Skip an investor she already knows; "rewrite with this note"; "passed" suggests 3 next names; odd ask-size warning
 - Import her Sheet; export to a Sheet
 - Weekly digest; WhatsApp reminders
