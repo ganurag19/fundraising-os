@@ -86,6 +86,7 @@ export default defineSchema({
     rank: v.number(),
     score: v.number(),
     sentAt: v.optional(v.number()), // she tapped "I sent it"
+    reason: v.optional(v.string()), // one line on why they fit (ranks 3+; top picks have theirs in drafts)
     // Pipeline status (plain updates, AGENTS.md section 1). Unset means not sent yet.
     status: v.optional(v.union(v.literal("sent"), v.literal("replied"), v.literal("meeting"), v.literal("passed"))),
     statusAt: v.optional(v.number()),

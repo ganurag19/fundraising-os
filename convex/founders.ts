@@ -3,7 +3,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc } from "./_generated/dataModel";
-import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS } from "./lib/match";
+import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS, scoreParts } from "./lib/match";
 import { domainOf, normaliseLinkedin, normaliseUrl } from "./lib/links";
 import { limits } from "./limits";
 
@@ -119,6 +119,9 @@ const rowV = v.object({
   displayName: v.union(v.string(), v.null()), person: v.union(v.string(), v.null()), email: v.union(v.string(), v.null()),
   website: v.union(v.string(), v.null()), lastChecked: v.union(v.string(), v.null()), sourceUrls: v.array(v.string()),
   draft: v.union(v.null(), draftV),
+  reason: v.union(v.string(), v.null()), // one line on why they fit
+  parts: v.array(v.object({ key: v.string(), label: v.string(), got: v.number(), max: v.number() })), // the score, part by part
+  leadsRounds: v.boolean(), lastDealYear: v.union(v.number(), v.null()),
   status: v.union(v.literal("new"), v.literal("sent"), v.literal("replied"), v.literal("meeting"), v.literal("passed")),
   followups: v.array(v.object({ id: v.id("followups"), n: v.number(), state: v.string(), dueAt: v.number(), subject: v.union(v.string(), v.null()), body: v.union(v.string(), v.null()) })),
 });
@@ -152,6 +155,9 @@ export const me = query({
         // Beyond her top 3, an email address is only revealed once she asks for that investor's email ("Write email", capped daily).
         displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: m.rank < 3 || d ? inv.email : null,
         website: open ? inv.website ?? null : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open ? inv.sourceUrls : [],
+        reason: d?.reason ?? m.reason ?? null,
+        parts: scoreParts(inv, f, new Date(m._creationTime).getFullYear()) ?? [], // the year she was matched (queries don't read the clock)
+        leadsRounds: !!inv.leadsRounds, lastDealYear: inv.recent.reduce<number | null>((y, r) => (r.year && (!y || r.year > y) ? r.year : y), null),
         status: m.status ?? ("new" as const),
         followups: open ? (await ctx.db.query("followups").withIndex("by_match_and_n", (q) => q.eq("matchId", m._id)).take(4))
           .filter((x) => x.state !== "cancelled")
@@ -225,6 +231,30 @@ export const saveMatches = internalMutation({
     for (const d of oldDrafts) await ctx.db.delete("drafts", d._id);
     for (const [rank, p] of picks.entries()) await ctx.db.insert("matches", { founderId, investorId: p.investorId, rank, score: p.score });
     return null;
+  },
+});
+
+export const saveReasons = internalMutation({
+  args: { founderId: v.id("founders"), reasons: v.array(v.object({ rank: v.number(), reason: v.string() })) },
+  returns: v.null(),
+  handler: async (ctx, { founderId, reasons }) => {
+    for (const r of reasons) {
+      const m = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId).eq("rank", r.rank)).unique();
+      if (m) await ctx.db.patch("matches", m._id, { reason: r.reason.slice(0, 160) });
+    }
+    return null;
+  },
+});
+
+/** The investors on her list that still need a one-line reason. */
+export const forReasons = internalQuery({
+  args: { founderId: v.id("founders") },
+  returns: v.any(),
+  handler: async (ctx, { founderId }) => {
+    const matches = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId).gte("rank", 3)).take(20);
+    const out = [];
+    for (const m of matches) if (!m.reason) { const inv = await ctx.db.get("investors", m.investorId); if (inv) out.push({ rank: m.rank, investor: inv }); }
+    return out;
   },
 });
 

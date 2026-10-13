@@ -219,9 +219,29 @@ export function Why({ r, d }: { r: Row; d: Draft }) {
         <div className="why-body">
           <ul className="rat">{d.whyFit.map((w) => <li key={w}>{w}</li>)}</ul>
           <ul className="rat risk">{d.watchOut.map((w) => <li key={w}>Watch out: {w}</li>)}</ul>
+          <ScoreBreakdown r={r} />
           {r.sourceUrls.length > 0 && <span className="src">Sources: {r.sourceUrls.slice(0, 2).map(site).join(" · ")}{r.lastChecked ? ` · checked ${r.lastChecked}` : ""}</span>}
         </div>
       )}
+    </div>
+  );
+}
+
+const STATUS_TAG: Record<Row["status"], string | null> = { new: null, sent: "Waiting", replied: "Replied", meeting: "Meeting", passed: "Passed" };
+
+/** Where her match score comes from: one bar per part, out of its maximum. */
+export function ScoreBreakdown({ r }: { r: Row }) {
+  if (!r.parts.length) return null;
+  return (
+    <div className="breakdown">
+      {r.parts.map((p) => (
+        <div className="bd-row" key={p.key}>
+          <span>{p.label}</span>
+          <span className="bd-bar" aria-hidden="true"><i style={{ width: `${(p.got / p.max) * 100}%` }} className={p.got / p.max >= 0.75 ? "hi" : p.got / p.max >= 0.4 ? "mid" : "lo"} /></span>
+          <b>{p.got}/{p.max}</b>
+        </div>
+      ))}
+      <p className="muted small">Match score {r.score} = the sum of these parts.</p>
     </div>
   );
 }
@@ -230,25 +250,28 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
   const writeMore = useAction(api.write.writeMore);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(startOpen);
+  const [why, setWhy] = useState(false);
   const write = async () => {
     setBusy(true);
     const res = await writeMore({ token, rank: r.rank }).catch(() => ({ ok: false as const, error: "Busy right now. Try again in a few minutes." }));
     setBusy(false);
     if (res.ok) setOpen(true); else onToast(res.error);
   };
+  const tag = STATUS_TAG[r.status];
   return (
     <div className={`row-card${r.rank < 3 ? " top" : ""}`}>
       <div className="row-main">
-        <Dial score={r.score} size={40} />
+        <button className="dial-btn" onClick={() => setWhy((w) => !w)} aria-expanded={why} aria-label={`Match score ${r.score}. Show how it's worked out`}><Dial score={r.score} size={40} /></button>
         <Head r={r} rank={r.rank < 3} />
         <span className="muted small cheque">{cheque(r)}</span>
-        {r.draft
-          ? <button className="btn ghost sm" onClick={() => setOpen((o) => !o)}>{open ? "Hide" : r.sentAt ? "✓ Sent" : "Email"}</button>
+        {tag ? <span className={`tag status-${r.status}`}>{tag}</span> : r.draft
+          ? <button className="btn ghost sm" onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Email"}</button>
           : <button className="btn primary sm" disabled={busy} onClick={write}>{busy ? "Writing…" : "Write email"}</button>}
       </div>
+      {r.reason && <p className="row-reason">{r.reason} <button className="why-link" onClick={() => setWhy((w) => !w)}>{why ? "Hide score" : "Score breakdown"}</button></p>}
+      {why && <ScoreBreakdown r={r} />}
       {open && r.draft && (
         <div className="row-email">
-          <p className="fg2 small">{r.draft.reason}</p>
           <Why r={r} d={r.draft} />
           <EmailBox r={r} d={r.draft} token={token} onToast={onToast} account={account} />
         </div>

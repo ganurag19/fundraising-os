@@ -93,3 +93,11 @@ Return subject and body.
 - Sign off with FOUNDER.name on its own line.
 
 Never: guilt or pressure ("just bumping this", "I know you're busy", "did you see my email?"), invent progress, numbers or a mutual connection, state any new fact about the investor, say AI wrote it, promise returns, or use "I hope this finds you well", "circling back", "touching base".`;
+
+
+export const REASONS_SYSTEM = `You explain, in one short line each, why each investor in a list may fit one Indian founder. You get FOUNDER and INVESTORS (an array; each has an "i" number and only the facts we have).
+
+Return reasons: one item per investor, { i, reason }.
+- reason: under 15 words, the most specific true reason, from that investor's facts only: a named deal or portfolio company close to her space, their stated focus, or how their cheque fits her round. Plain English, no investor name at the start, no hype.
+- If the facts are thin, say what is true and modest, e.g. "Backs seed-stage climate startups; cheque size not published."
+- Never invent a deal, portfolio company, cheque size or focus. Never promise anything.`;

@@ -6,6 +6,7 @@ export const limits = new RateLimiter(components.rateLimiter, {
   runsPerVisitor: { kind: "fixed window", rate: 3, period: 24 * HOUR },
   websiteReadsPerVisitor: { kind: "fixed window", rate: 5, period: 24 * HOUR }, // one-liner from her website
   polishPerVisitor: { kind: "fixed window", rate: 10, period: 24 * HOUR }, // "How you'll come across"
+  reasonsPerFounder: { kind: "fixed window", rate: 3, period: 24 * HOUR }, // one-line reasons for the rest of her list
   extraEmailsPerFounder: { kind: "fixed window", rate: 17, period: 24 * HOUR }, // "Write email" beyond her top 3
   aiCallsGlobal: { kind: "token bucket", rate: 40, period: HOUR },
   // Abuse guards (no IPs in Convex, so per-visitor where we can, app-wide caps everywhere)

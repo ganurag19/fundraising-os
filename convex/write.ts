@@ -11,7 +11,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { rankMatches, topMatches } from "./lib/match";
 import { shortUrl } from "./lib/links";
 import { checkDraft, unsourcedFacts } from "./lib/checks";
-import { DRAFT_SYSTEM, FACT_FIELDS } from "./lib/prompt";
+import { DRAFT_SYSTEM, FACT_FIELDS, REASONS_SYSTEM } from "./lib/prompt";
 import { limits } from "./limits";
 
 const MODEL = "claude-sonnet-5-5"; // each founder's first three drafts (AGENTS.md section 4)
@@ -58,7 +58,7 @@ export const writeFirstEmails = action({
 
     const run = await limits.limit(ctx, "runsPerVisitor", { key: f._id });
     if (!run.ok) return { ok: false as const, error: "You've used today's 3 runs. Come back tomorrow." };
-    const calls = await limits.limit(ctx, "aiCallsGlobal", { count: 3 });
+    const calls = await limits.limit(ctx, "aiCallsGlobal", { count: 4 }); // 3 emails + 1 call for the other reasons
     if (!calls.ok) return { ok: false as const, error: BUSY };
 
     await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: "writing" });
@@ -77,13 +77,57 @@ export const writeFirstEmails = action({
 
     const founder = briefOf(f);
     const client = new Anthropic();
-    const results: boolean[] = await Promise.all(top.map((t) => writeOne(ctx, client, f._id, founder, t.inv)));
+    const [results] = await Promise.all([
+      Promise.all(top.map((t) => writeOne(ctx, client, f._id, founder, t.inv))) as Promise<boolean[]>,
+      writeReasons(ctx, client, f._id, founder),
+    ]);
     const ok: number = results.filter(Boolean).length;
     await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: ok ? "ready" : "failed" });
     if (ok) await ctx.runMutation(internal.founders.logStep, { step: "emails_ready" });
     return ok ? { ok: true as const } : { ok: false as const, error: BUSY };
   },
 });
+
+/** One line on why each of the other investors fits. Fills in reasons for older lists too (the dashboard asks once). */
+export const explainRest = action({
+  args: { token: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { token }): Promise<null> => {
+    const f: Doc<"founders"> | null = await ctx.runQuery(internal.founders.founderForAction, { token });
+    if (!f || f.emailsStatus !== "ready") return null;
+    if (!(await limits.limit(ctx, "reasonsPerFounder", { key: f._id })).ok) return null;
+    if (!(await limits.limit(ctx, "aiCallsGlobal", { count: 1 })).ok) return null;
+    await writeReasons(ctx, new Anthropic(), f._id, briefOf(f));
+    return null;
+  },
+});
+
+const ReasonsOut = z.object({ reasons: z.array(z.object({ i: z.number(), reason: z.string() })) });
+
+async function writeReasons(ctx: ActionCtx, client: Anthropic, founderId: Id<"founders">, founder: FounderBrief): Promise<void> {
+  const rows: { rank: number; investor: Doc<"investors"> }[] = await ctx.runQuery(internal.founders.forReasons, { founderId });
+  if (!rows.length) return;
+  const input = JSON.stringify({
+    FOUNDER: { company: founder.company, oneLiner: founder.oneLiner, sectors: founder.sectors, stage: founder.stage, raising: founder.raising },
+    INVESTORS: rows.slice(0, 20).map((r, i) => ({ i, ...investorFacts(r.investor) })), // at most 20 records per call (AGENTS.md section 4)
+  });
+  const started = Date.now();
+  try {
+    const res = await client.messages.parse({
+      model: MORE_MODEL, max_tokens: 1500, system: REASONS_SYSTEM,
+      messages: [{ role: "user", content: input }],
+      output_config: { format: zodOutputFormat(ReasonsOut) },
+    });
+    const out = res.parsed_output;
+    await ctx.runMutation(internal.founders.logAiCall, { founderId, purpose: "reasons", model: MORE_MODEL, input, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, ms: Date.now() - started, inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens });
+    if (!out) return;
+    const reasons = out.reasons.filter((x) => rows[x.i] && x.reason.trim()).map((x) => ({ rank: rows[x.i].rank, reason: x.reason.trim() }));
+    await ctx.runMutation(internal.founders.saveReasons, { founderId, reasons });
+  } catch (e) {
+    const msg = e instanceof Anthropic.APIError ? `API ${e.status}: ${e.message}` : e instanceof Error ? e.message : String(e);
+    await ctx.runMutation(internal.founders.logAiCall, { founderId, purpose: "reasons", model: MORE_MODEL, input, output: "", ms: Date.now() - started, error: msg.slice(0, 500) });
+  }
+}
 
 /** "Write email" for one investor further down her list. Signed in only. */
 export const writeMore = action({

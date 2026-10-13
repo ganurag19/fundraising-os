@@ -31,9 +31,11 @@ const THESIS_WORDS: Record<string, RegExp> = {
   deeptech: /deep ?tech|hardware|robotic|semiconductor|space|biotech|frontier|ip-led/i,
 };
 
-/** Returns a score 0–100, or null if the investor shouldn't be shown at all.
+export type ScorePart = { key: string; label: string; got: number; max: number };
+
+/** The score, part by part, so a founder can see where her number comes from. Null if the investor shouldn't be shown at all.
  *  Focused investors beat generalists: a fund with 3 sectors and 2 stages outranks one that does everything. */
-export function scoreInvestor(inv: MatchInvestor, f: FounderAsk, currentYear: number): number | null {
+export function scoreParts(inv: MatchInvestor, f: FounderAsk, currentYear: number): ScorePart[] | null {
   const wanted = f.sectors.map((s) => SECTOR_KEYS[s]).filter(Boolean);
   const exactSector = wanted.some((s) => inv.sectors.includes(s));
   const anySector = inv.sectors.includes("sector_agnostic");
@@ -47,19 +49,26 @@ export function scoreInvestor(inv: MatchInvestor, f: FounderAsk, currentYear: nu
   if (cheque === false) return null;
   const band = ASK_LAKH[f.ask];
 
-  let score = 0;
-  score += exactSector ? (inv.sectors.length <= 4 ? 30 : 24) : 12;
-  score += !stageKnown ? 8 : inv.stages.length <= 3 ? 20 : 14;
   // cheque: more of her round covered ranks higher; a smallest cheque above her smallest round fits less well
   const share = inv.chequeMaxLakh !== undefined && band ? inv.chequeMaxLakh / band[0] : null;
-  score += cheque === null ? 8
+  const chequePts = cheque === null ? 8
     : inv.chequeMinLakh !== undefined && band && inv.chequeMinLakh > band[0] ? 10
     : share !== null && share >= 0.5 ? 20 : share !== null && share >= 0.2 ? 15 : 10;
   const lastYear = Math.max(0, ...inv.recent.map((r) => r.year ?? 0));
-  score += lastYear >= currentYear - 1 ? 15 : lastYear >= currentYear - 3 ? 10 : inv.active ? 8 : 3;
-  score += !inv.thesis ? 0 : wanted.some((s) => THESIS_WORDS[s]?.test(inv.thesis!)) ? 10 : 5;
-  score += inv.lastChecked ? 5 : 0;
-  return Math.min(100, score);
+  return [
+    { key: "sector", label: "Invests in your space", got: exactSector ? (inv.sectors.length <= 4 ? 30 : 24) : 12, max: 30 },
+    { key: "stage", label: "Invests at your stage", got: !stageKnown ? 8 : inv.stages.length <= 3 ? 20 : 14, max: 20 },
+    { key: "cheque", label: "Cheque fits your round", got: chequePts, max: 20 },
+    { key: "recent", label: "Invested recently", got: lastYear >= currentYear - 1 ? 15 : lastYear >= currentYear - 3 ? 10 : inv.active ? 8 : 3, max: 15 },
+    { key: "thesis", label: "Their stated focus matches", got: !inv.thesis ? 0 : wanted.some((s) => THESIS_WORDS[s]?.test(inv.thesis!)) ? 10 : 5, max: 10 },
+    { key: "checked", label: "Recently checked by us", got: inv.lastChecked ? 5 : 0, max: 5 },
+  ];
+}
+
+/** Returns a score 0–100, or null if the investor shouldn't be shown at all. */
+export function scoreInvestor(inv: MatchInvestor, f: FounderAsk, currentYear: number): number | null {
+  const parts = scoreParts(inv, f, currentYear);
+  return parts ? Math.min(100, parts.reduce((n, p) => n + p.got, 0)) : null;
 }
 
 /** A top pick needs something specific to open the email on: a deal, a portfolio company or a written thesis. */
