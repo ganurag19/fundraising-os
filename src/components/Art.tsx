@@ -16,7 +16,7 @@ export function Logo({ name, size = 40 }: { name: string; size?: number }) {
 export function Dial({ score, size = 64 }: { score: number; size?: number }) {
   const html = useMemo(() => dialSvg(score, size), [score, size]);
   return (
-    <div className="dial" style={{ width: size, height: size }} aria-label={`Match score ${score} out of 100`}>
+    <div className="dial" style={{ width: size, height: size }} aria-label={`FirstCheq Fit Score ${score} out of 100`}>
       <span dangerouslySetInnerHTML={{ __html: html }} />
       <b style={{ fontSize: Math.round(size / 3.1) }}>{score}</b>
     </div>

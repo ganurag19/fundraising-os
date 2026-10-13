@@ -37,7 +37,7 @@ Use these words, never the ones on the right.
 | Say | Never |
 |---|---|
 | Investors for you | Matches, deal flow |
-| Match score | Fit Score, rating algorithm |
+| FirstCheq Fit Score (short: Fit Score) | Match score, rating algorithm |
 | Full research | Dossier |
 | What they invest in | Thesis (founder side) |
 | Who can reach you | Door policy |
@@ -53,7 +53,7 @@ Buttons say what happens next ("Open email", "Send follow-up"), never "Submit" o
 
 ## 4. Components
 
-- **Match score dial:** a 0–100 ring. Gold at 85 and above, blue at 70–84, grey below 70.
+- **Fit Score dial:** a 0–100 ring. Gold at 85 and above, blue at 70–84, grey below 70.
 - **Top pick card (gold):** a face or logo, name, rating, badges, the dial and a 1–2 line reason. Then "Why they fit" (4 bullets), "Watch out" (2), and "What to say" (in Full research). Sources line with the check date. Top picks only.
 - **Compact top-pick row (Today):** medal, face or logo, name, cheque, one-line reason, rating, badges, a small dial, and Email / Why buttons.
 - **Badges** (earned): ⚡ Replies in 2 days · ♥ Founder favourite · ◆ Leads rounds · ✦ Clear feedback · ▲ Active this month · 1 Writes first cheques. At most 3 on a card.

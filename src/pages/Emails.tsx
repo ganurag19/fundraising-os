@@ -86,7 +86,7 @@ function Teaser({ me, onToast }: { me: Me; onToast: (s: string) => void }) {
         </div>
       </div>
       <h3 className="soon-h">Coming to your dashboard</h3>
-      <SoonCards onToast={onToast} />
+      <SoonCards onToast={onToast} company={me.company} sector={me.sectors[0]} stage={me.stage} />
     </section>
   );
 }

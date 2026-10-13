@@ -4,7 +4,7 @@ import { api } from "../../convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
 import { Badges, Dial, Face, Logo, Medal } from "./Art";
 import type { BadgeKey } from "../lib/badges";
-import { cheque, SOON } from "../lib/investor";
+import { cheque, soonFor } from "../lib/investor";
 
 // Shared by the reveal page and the dashboard: one investor, their email, and the buttons around it.
 
@@ -254,7 +254,7 @@ export function ScoreBreakdown({ r }: { r: Row }) {
           <b>{p.got}/{p.max}</b>
         </div>
       ))}
-      <p className="muted small">Match score {r.score} = the sum of these parts.</p>
+      <p className="muted small">Fit Score {r.score} = the sum of these parts.</p>
     </div>
   );
 }
@@ -277,7 +277,7 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
   return (
     <div className={`row-card${r.rank < 3 ? " top" : ""}`} id={`inv-${r.rank}`}>
       <div className="row-main">
-        <button className="dial-btn" onClick={() => setWhy((w) => !w)} aria-expanded={why} aria-label={`Match score ${r.score}. Show how it's worked out`}><Dial score={r.score} size={40} /></button>
+        <button className="dial-btn" onClick={() => setWhy((w) => !w)} aria-expanded={why} aria-label={`Fit Score ${r.score}. Show how it's worked out`}><Dial score={r.score} size={40} /></button>
         <Head r={r} rank={r.rank < 3} badges />
         <span className="muted small cheque">{cheque(r)}</span>
         {tag ? <span className={`tag status-${r.status}`}>{tag}</span> : applyOnly
@@ -305,15 +305,26 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
   );
 }
 
-export function SoonCards({ onToast }: { onToast: Toast }) {
+export function SoonCards({ onToast, company, sector, stage }: { onToast: Toast; company?: string; sector?: string; stage?: string }) {
   return (
     <div className="soon-grid">
-      {SOON.map((s) => (
-        <button className="soon-card" key={s.title} onClick={() => onToast(`${s.title} is coming soon.`)}>
+      {soonFor(company, sector, stage).map((s) => (
+        <button className="soon-card" key={s.title} onClick={() => onToast(`${s.title}: coming soon.`)}>
           <span className="soon-icon" aria-hidden="true">{s.icon}</span>
           <span className="soon-text"><b>{s.title} <span className="soon-tag">SOON</span></b><span>{s.line}</span></span>
         </button>
       ))}
+    </div>
+  );
+}
+
+/** Upgrade: plans without prices, and a request for access (no payment yet). */
+export function UpgradeCard({ onRequest }: { onRequest: (plan: "round_pass" | "custom") => void }) {
+  return (
+    <div className="plans">
+      <div className="plan"><span className="plan-name">Free <span className="tag green">You're on this</span></span><ul><li>Your best-fit investors, ranked</li><li>Emails for your top picks</li><li>Follow-ups and pipeline</li></ul></div>
+      <div className="plan featured"><span className="plan-name">Round Pass</span><ul><li>Up to 100 investors, each with an email</li><li>More emails a day</li><li>Deck review and investor Q&A prep</li></ul><button className="btn primary" onClick={() => onRequest("round_pass")}>Request access</button></div>
+      <div className="plan"><span className="plan-name">Custom</span><ul><li>We work through your raise with you</li><li>List, emails, deck and meeting prep</li><li>You send every email</li></ul><button className="btn ghost" onClick={() => onRequest("custom")}>Request a call</button></div>
     </div>
   );
 }

@@ -18,3 +18,12 @@ export function savedInviteCode(): string | null {
 export function rememberInviteCode(code: string) {
   try { sessionStorage.setItem("inviteCode", code); localStorage.setItem("inviteCode", code); } catch { /* ignore */ }
 }
+
+/** The landing page's "Start here" card hands its answers to sign-up, so she doesn't answer twice. */
+export type Prefill = { first: string; sectors: string[]; stage: string; ask: string };
+export function savePrefill(p: Prefill) {
+  try { sessionStorage.setItem("fos_prefill", JSON.stringify(p)); } catch { /* private mode: she just answers again */ }
+}
+export function takePrefill(): Prefill | null {
+  try { const v = sessionStorage.getItem("fos_prefill"); sessionStorage.removeItem("fos_prefill"); return v ? JSON.parse(v) : null; } catch { return null; }
+}

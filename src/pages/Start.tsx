@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { LogoMark, Wordmark } from "../components/Brand";
-import { savedInviteCode, visitorToken } from "../lib/token";
+import { savedInviteCode, takePrefill, visitorToken } from "../lib/token";
 import { normaliseLinkedin, normaliseUrl } from "../../convex/lib/links";
 
 const SECTORS: [string, boolean][] = ["AI", "Climate & Energy", "Deeptech", "Fintech", "B2B SaaS", "Health", "Consumer brands", "Edtech", "Agritech", "Media & adtech", "Web3", "Impact"].map((n) => [n, true]);
@@ -28,10 +28,11 @@ export default function Start() {
   const polish = useAction(api.suggest.polish);
   const navigate = useNavigate();
 
+  const [pre] = useState(takePrefill); // answers from the landing page's "Start here" card, if any
   const [step, setStep] = useState<Step>(0);
-  const [first, setFirst] = useState(""); // step 1: her website, or her startup's name
+  const [first, setFirst] = useState(pre?.first ?? ""); // step 1: her website, or her startup's name
   const [confirming, setConfirming] = useState(false); // we read her site; she confirms the name
-  const [f, setF] = useState({ company: "", name: "", sectors: [] as string[], stage: "", ask: "" });
+  const [f, setF] = useState({ company: "", name: "", sectors: pre?.sectors ?? ([] as string[]), stage: pre?.stage ?? "", ask: pre?.ask ?? "" });
   const [p, setP] = useState({ website: "", linkedin: "", oneLiner: "", founderLine: "", vision: "", revenue: "", customers: "", traction: "" });
   const [suggested, setSuggested] = useState<"" | "yes" | "no">("");
   const [note, setNote] = useState(""); // why we couldn't draft from her website (not an error)
@@ -59,6 +60,14 @@ export default function Start() {
   const back = () => { setError(""); setStep((s) => (s - 1) as Step); };
   const company = me?.company || f.company || "Your startup"; // the saved name has its capitals fixed
 
+  // Sector, stage and raise came from the landing card: save the round now and skip those two steps.
+  async function afterName() {
+    if (!(f.sectors.length && f.stage && f.ask)) { next(); return; }
+    setBusy(true); setError("");
+    const r = await start({ token, inviteCode: code ?? "", ...f }).catch(() => ({ ok: false as const, error: "Couldn't save that. Check your connection and try again." }));
+    setBusy(false);
+    if (r.ok) setStep(4); else setError(r.error);
+  }
   async function submitRound() {
     setBusy(true); setError("");
     const r = await start({ token, inviteCode: code ?? "", ...f }).catch(() => ({ ok: false as const, error: "Couldn't save that. Check your connection and try again." }));
@@ -110,7 +119,6 @@ export default function Start() {
       </div>
     </>
   );
-  const onEnter = (ok: boolean) => (e: React.KeyboardEvent) => { if (e.key === "Enter" && ok) next(); };
 
   return (
     <Shell>
@@ -123,8 +131,8 @@ export default function Start() {
         {actions(confirming ? !!f.company.trim() : !!first.trim(), submitFirst, confirming ? "Looks right →" : "Continue →", false, "Reading your website…")}</div>}
 
       {step === 1 && <div className="step rise">{progress}{count(2)}<h1>What's your name?</h1><p className="help">We sign every email with it.</p>
-        <input className="field" autoFocus placeholder="Your full name" autoComplete="name" maxLength={80} value={f.name} onChange={(e) => setF((o) => ({ ...o, name: e.target.value }))} onKeyDown={onEnter(!!f.name.trim())} />
-        {actions(!!f.name.trim(), next)}</div>}
+        <input className="field" autoFocus placeholder="Your full name" autoComplete="name" maxLength={80} value={f.name} onChange={(e) => setF((o) => ({ ...o, name: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter" && f.name.trim()) void afterName(); }} />
+        {actions(!!f.name.trim(), afterName)}</div>}
 
       {step === 2 && <div className="step rise">{progress}{count(3)}<h1>What space are you in?</h1><p className="help">{f.sectors.length ? `${f.sectors.length} selected` : "Pick up to 3 that fit."}</p>
         <div className="pick">{SECTORS.map(([n, on]) => <button key={n} aria-pressed={f.sectors.includes(n)} disabled={!on} onClick={() => setF((o) => ({ ...o, sectors: o.sectors.includes(n) ? o.sectors.filter((x) => x !== n) : o.sectors.length < 3 ? [...o.sectors, n] : o.sectors }))}>{n}{on ? "" : " · soon"}</button>)}</div>
@@ -162,7 +170,7 @@ export default function Start() {
         <ul className="rat" style={{ textAlign: "left", maxWidth: 380, margin: "16px auto 0", listStyle: "none", padding: 0 }}>
           <li className="fg2">✓ What they invest in, and at what stage</li>
           <li className={seconds > 1 ? "fg2" : ""}>{seconds > 1 ? "✓" : "…"} Whether their cheque fits your round</li>
-          <li className={seconds > 3 ? "fg2" : ""}>{seconds > 3 ? "✓" : "…"} Ranking them by match score</li>
+          <li className={seconds > 3 ? "fg2" : ""}>{seconds > 3 ? "✓" : "…"} Ranking them by FirstCheq Fit Score</li>
           <li>… Writing your first 3 emails ({seconds}s)</li>
         </ul>
         {seconds >= 15 && <p className="help" role="status" style={{ marginTop: 18 }}>{seconds < 45 ? "Taking a little longer than usual. Still writing, hang on." : "This is slow right now. Keep this page open; if nothing changes in a minute, go back and try again."}</p>}</div>}

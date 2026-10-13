@@ -5,7 +5,8 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
 import { LogoMark, Wordmark } from "../components/Brand";
 import { Face, Logo } from "../components/Art";
-import { FollowupBox, Head, InvestorRow, Pipeline, SoonCards, StatusMenu } from "../components/Investor";
+import { FollowupBox, Head, InvestorRow, Pipeline, SoonCards, StatusMenu, UpgradeCard } from "../components/Investor";
+import JoinSheet from "../components/JoinSheet";
 import { applyTheme, savedTheme } from "../lib/theme";
 import type { Theme } from "../lib/theme";
 import type { Me, Row } from "../components/Investor";
@@ -41,6 +42,7 @@ export default function Dashboard() {
   const [tab, setTab] = useState<Tab>(() => (remember("fos_tab") as Tab | null) ?? "today");
   const [welcome, setWelcome] = useState(() => !remember("fos_welcomed"));
   const [more, setMore] = useState(false);
+  const [join, setJoin] = useState<"round_pass" | "custom" | null>(null);
   const [theme, setThemeState] = useState<Theme>(savedTheme);
   const setTheme = (t: Theme) => { applyTheme(t, true); setThemeState(t); };
   // The dashboard has its own theme (light by default); leaving it returns to the dark public pages.
@@ -150,9 +152,11 @@ export default function Dashboard() {
         {tab === "profile" && <Profile me={me} token={token} onToast={setToast} />}
         {tab === "settings" && <Settings me={me} token={token} theme={theme} setTheme={setTheme} signOut={() => void signOut()} />}
 
-        {RAISE.some(([k]) => k === tab) && <><h2 className="dash-h">Coming soon</h2><SoonCards onToast={setToast} /></>}
+        {RAISE.some(([k]) => k === tab) && <><h2 className="dash-h">Coming soon for {me.company}</h2><SoonCards onToast={setToast} company={me.company} sector={me.sectors[0]} stage={me.stage} /></>}
+        {(tab === "today" || tab === "settings") && me.plan !== "round_pass" && <><h2 className="dash-h">Go further</h2><UpgradeCard onRequest={setJoin} /></>}
       </main>
       {toast && <div className="toast" role="status">{toast}</div>}
+      {join && <JoinSheet plan={join} onClose={() => setJoin(null)} />}
     </div>
   );
 }
