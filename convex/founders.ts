@@ -127,6 +127,18 @@ export const claim = mutation({
   },
 });
 
+/** Signed in on a browser that doesn't hold her list (another device, or after signing out): her list's token, so the browser can use it. */
+export const myToken = query({
+  args: {},
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const f = await ctx.db.query("founders").withIndex("by_userId", (q) => q.eq("userId", userId)).order("desc").first();
+    return f?.token ?? null;
+  },
+});
+
 /** Signed in, and the list is hers. Until then the names and emails beyond her top 3 stay on the server. */
 export async function isUnlocked(ctx: QueryCtx | MutationCtx, f: Doc<"founders">) {
   if (!f.userId) return false;
@@ -166,6 +178,7 @@ export const me = query({
       emailReminders: v.boolean(),
       gmail: v.union(v.string(), v.null()), // her sign-in email, so "Open in Gmail" picks the right account
       unlocked: v.boolean(), matchCount: v.number(), activeCount: v.number(), leadCount: v.number(), rows: v.array(rowV),
+      claimed: v.boolean(), // the list belongs to a Google account: its emails show only to that account, signed in
     }),
   ),
   handler: async (ctx, { token }) => {
@@ -178,7 +191,8 @@ export const me = query({
     for (const m of matches) {
       const inv = await ctx.db.get("investors", m.investorId);
       if (!inv) continue;
-      const open = unlocked || m.rank < 3;
+      // Before sign-in her top 3 are open to her browser; once the list is claimed, only to the signed-in owner.
+      const open = unlocked || (m.rank < 3 && !f.userId);
       const d = open ? await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", f._id).eq("investorId", inv._id)).first() : null;
       rows.push({
         rank: m.rank, score: m.score, kind: inv.kind, city: inv.city ?? null,
@@ -201,12 +215,13 @@ export const me = query({
     }
     return {
       company: f.company, name: f.name, stage: f.stage, ask: f.ask, sectors: f.sectors, website: f.website ?? null,
-      profile: { linkedin: f.linkedin ?? "", oneLiner: f.oneLiner ?? "", founderLine: f.founderLine ?? "", traction: f.traction ?? "" },
+      // A claimed list's profile shows only to its signed-in owner.
+      profile: f.userId && !unlocked ? { linkedin: "", oneLiner: "", founderLine: "", traction: "" } : { linkedin: f.linkedin ?? "", oneLiner: f.oneLiner ?? "", founderLine: f.founderLine ?? "", traction: f.traction ?? "" },
       hasProfile: !!(f.oneLiner || f.forWho) && !!f.founderLine, emailsStatus: f.emailsStatus,
       gmail: unlocked && f.userId ? (await ctx.db.get("users", f.userId))?.email ?? null : null,
       plan: f.plan ?? null,
       emailReminders: f.emailReminders !== false,
-      unlocked, matchCount: f.matchCount ?? rows.length, activeCount: f.activeCount ?? 0, leadCount: f.leadCount ?? 0, rows,
+      unlocked, claimed: !!f.userId, matchCount: f.matchCount ?? rows.length, activeCount: f.activeCount ?? 0, leadCount: f.leadCount ?? 0, rows,
     };
   },
 });

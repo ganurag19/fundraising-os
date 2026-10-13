@@ -154,3 +154,29 @@ describe("founder sign-up", () => {
     expect([s.total, s.vc, s.incubator]).toEqual([2, 1, 1]);
   });
 });
+
+describe("a claimed list after sign-out", () => {
+  test("hides its emails and profile from a signed-out browser, and myToken finds it for its owner", async () => {
+    const t = await setup();
+    await t.mutation(api.founders.start, { ...nisha, token: tokenA });
+    await t.mutation(api.founders.saveProfile, { token: tokenA, ...profile, vision: "", revenue: "", customers: "", traction: "" });
+    const userId = await t.run((ctx) => ctx.db.insert("users", { email: "nisha@example.test" }));
+    const founderId = await t.run(async (ctx) => (await ctx.db.query("founders").withIndex("by_token", (q) => q.eq("token", tokenA)).unique())!._id);
+    const inv = await t.run((ctx) => ctx.db.insert("investors", { seedId: "x1", kind: "vc", firm: "Made-up Fund", displayName: "Made-up Fund", email: "a@made-up.example", sectors: ["ai"], stages: ["seed"], portfolio: [], recent: [], sourceUrls: [] } as never));
+    await t.run(async (ctx) => {
+      await ctx.db.insert("matches", { founderId, investorId: inv, rank: 0, score: 90 });
+      await ctx.db.insert("drafts", { founderId, investorId: inv, kind: "first", reason: "r", whyFit: [], watchOut: [], subject: "s", body: "b", warnings: [] });
+    });
+    expect((await t.query(api.founders.me, { token: tokenA }))?.rows[0].draft).not.toBeNull(); // before sign-in: her browser sees her top 3
+    const owner = t.withIdentity({ subject: `${userId}|s1` });
+    await owner.mutation(api.founders.claim, { token: tokenA });
+    const signedOut = await t.query(api.founders.me, { token: tokenA });
+    expect(signedOut?.claimed).toBe(true);
+    expect(signedOut?.rows[0].draft).toBeNull();
+    expect(signedOut?.rows[0].displayName).toBeNull();
+    expect(signedOut?.profile.oneLiner).toBe("");
+    expect(await owner.query(api.founders.myToken, {})).toBe(tokenA);
+    expect(await t.query(api.founders.myToken, {})).toBeNull();
+    expect((await owner.query(api.founders.me, { token: tokenA }))?.rows[0].draft).not.toBeNull();
+  });
+});

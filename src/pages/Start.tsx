@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { LogoMark, Wordmark } from "../components/Brand";
-import { savedInviteCode, takePrefill, visitorToken } from "../lib/token";
+import { freshVisitorToken, savePrefill, savedInviteCode, takePrefill, visitorToken } from "../lib/token";
 import { normaliseLinkedin, normaliseUrl } from "../../convex/lib/links";
 
 const SECTORS: [string, boolean][] = ["AI", "Climate & Energy", "Deeptech", "Fintech", "B2B SaaS", "Health", "Consumer brands", "Edtech", "Agritech", "Media & adtech", "Web3", "Impact"].map((n) => [n, true]);
@@ -15,6 +15,13 @@ const TOTAL = 6;
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 // "ledgerly.in" or "https://…" is a website; "Ledgerly" is a name.
 const looksLikeSite = (s: string) => /\.[a-z]{2,}(\/|$)/i.test(s.trim()) && !!normaliseUrl(s);
+
+/** "kilnlabs.in", "https://www.KilnLabs.in/about" and "Kiln Labs" all count as the same startup. */
+function sameStartup(typed: string, company: string, website: string | null) {
+  const n = (x: string) => x.toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").replace(/[^a-z0-9.]/g, "");
+  const t = n(typed), host = n(website ?? ""), name = n(company);
+  return t === name || t === host || (!!host && host.split(".")[0] === t) || t.split(".")[0] === name;
+}
 
 export default function Start() {
   const token = useMemo(() => visitorToken(), []);
@@ -40,11 +47,21 @@ export default function Start() {
   const [error, setError] = useState("");
   const [seconds, setSeconds] = useState(0);
 
+  // This browser holds another list: one saved to a Google account (and she's signed out), or a different startup
+  // than the one she just typed on the home page. Start her as a new visitor; the old list stays where it is.
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const switching = !!me && !isLoading && step === 0 && ((me.claimed && !isAuthenticated) || (!!pre?.first && !sameStartup(pre.first, me.company, me.website)));
+  useEffect(() => {
+    if (!switching) return;
+    freshVisitorToken();
+    if (pre) savePrefill(pre);
+    location.reload();
+  }, [switching, pre]);
   // Coming back: her emails are already written.
-  useEffect(() => { if (me?.emailsStatus === "ready" && step < 6) navigate("/emails"); }, [me, step, navigate]);
+  useEffect(() => { if (!switching && me?.emailsStatus === "ready" && step < 6) navigate("/emails"); }, [me, step, navigate, switching]);
   useEffect(() => { if (step !== 6) return; const t = setInterval(() => setSeconds((s) => s + 1), 1000); return () => clearInterval(t); }, [step]);
 
-  if (me === undefined) return <Shell><div className="spinner" /></Shell>;
+  if (me === undefined || switching) return <Shell><div className="spinner" /></Shell>;
   if (!me && !code) {
     return (
       <Shell><div className="step center">

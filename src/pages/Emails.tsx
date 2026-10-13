@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useConvexAuth, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
@@ -8,7 +8,7 @@ import { PickCard, Pipeline, SoonCards } from "../components/Investor";
 import { cheque } from "../lib/investor";
 import type { Me } from "../components/Investor";
 import { LogoMark, Wordmark } from "../components/Brand";
-import { visitorToken } from "../lib/token";
+import { freshVisitorToken, visitorToken } from "../lib/token";
 
 const SPACE: Record<string, string> = { AI: "AI", "Climate & Energy": "climate", "B2B SaaS": "B2B SaaS", "Consumer brands": "consumer", "Media & adtech": "media and adtech", Web3: "Web3" };
 
@@ -16,12 +16,25 @@ const SPACE: Record<string, string> = { AI: "AI", "Climate & Energy": "climate",
 export default function Emails() {
   const token = useMemo(() => visitorToken(), []);
   const me = useQuery(api.founders.me, { token });
-  const { isAuthenticated } = useConvexAuth();
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { signIn } = useAuthActions();
+  const navigate = useNavigate();
   const [toast, setToast] = useState("");
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(""), 2200); return () => clearTimeout(t); }, [toast]);
 
   if (me === undefined) return <Page><div className="spinner" /></Page>;
   if (me?.unlocked || (isAuthenticated && me?.emailsStatus === "ready")) return <Navigate to="/dashboard" replace />;
+  // A list saved to a Google account, on a signed-out browser: only its owner, signed in, sees it.
+  if (me?.claimed && !isAuthenticated && !isLoading) {
+    return (
+      <Page><div className="step center" style={{ margin: "60px auto" }}>
+        <h1>This list is saved to <span className="it">a Google account.</span></h1>
+        <p className="help">Sign in to see it, or start a new list for another startup.</p>
+        <button className="btn white" onClick={() => void signIn("google", { redirectTo: "/dashboard" })}>Sign in with Google</button>
+        <button className="btn ghost" style={{ marginTop: 10 }} onClick={() => { freshVisitorToken(); navigate("/"); }}>Start a new list</button>
+      </div></Page>
+    );
+  }
   if (!me || me.emailsStatus !== "ready") {
     return (
       <Page><div className="step center" style={{ margin: "60px auto" }}>

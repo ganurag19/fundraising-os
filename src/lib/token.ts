@@ -12,6 +12,20 @@ export function visitorToken(): string {
   return t;
 }
 
+/** Use a list's token on this browser (after sign-in on another device, or after signing out and back in). */
+export function adoptToken(t: string) {
+  try { localStorage.setItem(KEY, t); } catch { /* ignore */ }
+}
+
+/** A brand-new visitor: after signing out, or when she starts a list for a different company. Her old list stays with her account. */
+export function freshVisitorToken() {
+  try {
+    localStorage.removeItem(KEY);
+    for (const k of ["fos_nudged", "fos_tab", "fos_welcomed"]) { sessionStorage.removeItem(k); localStorage.removeItem(k); }
+  } catch { /* ignore */ }
+  return visitorToken();
+}
+
 export function savedInviteCode(): string | null {
   try { return sessionStorage.getItem("inviteCode") ?? localStorage.getItem("inviteCode"); } catch { return null; }
 }

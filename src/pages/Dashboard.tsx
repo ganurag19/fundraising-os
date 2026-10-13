@@ -10,7 +10,7 @@ import JoinSheet from "../components/JoinSheet";
 import { applyTheme, savedTheme } from "../lib/theme";
 import type { Theme } from "../lib/theme";
 import type { Me, Row } from "../components/Investor";
-import { visitorToken } from "../lib/token";
+import { adoptToken, freshVisitorToken, visitorToken } from "../lib/token";
 import { Page } from "./Emails";
 
 type Tab = "today" | "investors" | "pipeline" | "competition" | "qa" | "dataroom" | "inbox" | "connect" | "profile" | "settings";
@@ -32,7 +32,13 @@ export default function Dashboard() {
   const token = useMemo(() => visitorToken(), []);
   const me = useQuery(api.founders.me, { token });
   const { isLoading, isAuthenticated } = useConvexAuth();
-  const { signOut } = useAuthActions();
+  const { signOut: authSignOut } = useAuthActions();
+  // Signing out leaves this browser as a new visitor; her list stays with her account.
+  const signOut = () => authSignOut().finally(() => { freshVisitorToken(); location.assign("/"); });
+  // Signed in on a browser that doesn't hold her list: find it from her account.
+  const mine = useQuery(api.founders.myToken, isAuthenticated ? {} : "skip");
+  const switching = isAuthenticated && !!mine && mine !== token && (me === null || (!!me && !me.unlocked));
+  useEffect(() => { if (switching && mine) { adoptToken(mine); location.reload(); } }, [switching, mine]);
   const claim = useMutation(api.founders.claim);
   const explainRest = useAction(api.write.explainRest);
   const claimed = useRef(false);
@@ -50,10 +56,10 @@ export default function Dashboard() {
 
   // Back from Google: move her visitor list to her account (once).
   useEffect(() => {
-    if (!isAuthenticated || !me || me.unlocked || claimed.current) return;
+    if (!isAuthenticated || !me || me.unlocked || claimed.current || mine === undefined || switching) return;
     claimed.current = true;
     claim({ token }).then((r) => { if (!r.ok) setClaimError(r.error); });
-  }, [isAuthenticated, me, claim, token]);
+  }, [isAuthenticated, me, claim, token, mine, switching]);
   // Older lists have no one-line reasons for ranks 4–20; ask once.
   useEffect(() => {
     if (!me?.unlocked || explained.current || !me.rows.some((r) => r.rank >= 3 && !r.reason)) return;
@@ -64,7 +70,7 @@ export default function Dashboard() {
 
   // Dev build only: ?preview shows the layout without Google sign-in (names beyond the top 3 stay hidden). Not in the live build.
   const preview = import.meta.env.DEV && new URLSearchParams(location.search).has("preview");
-  if (isLoading || me === undefined) return <Page><div className="spinner" /></Page>;
+  if (isLoading || me === undefined || switching || (isAuthenticated && !me && mine === undefined)) return <Page><div className="spinner" /></Page>;
   if ((!isAuthenticated && !preview) || !me) return <Navigate to="/emails" replace />;
   if (claimError) return <Page><div className="step center" style={{ margin: "60px auto" }}><h1>{claimError}</h1><p className="help">Sign in with the Google account you used first, or start a new list.</p><button className="btn primary" onClick={() => void signOut()}>Sign out</button></div></Page>;
   if (!me.unlocked && !preview) return <Page><div className="spinner" /></Page>;
