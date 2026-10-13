@@ -13,7 +13,8 @@ async function send(to: string, subject: string, lines: string[], cta: { label: 
   const key = process.env.RESEND_API_KEY, from = process.env.EMAIL_FROM;
   if (!key || !from) return "Email not set up (RESEND_API_KEY or EMAIL_FROM missing)";
   const text = [...lines, "", `${cta.label}: ${cta.url}`, "", "Turn these emails off in Settings: " + site() + "/dashboard", "FirstCheq · nothing is ever sent to investors for you."].join("\n");
-  const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.55;color:#14151a;max-width:520px">${lines.map((l) => `<p style="margin:0 0 12px">${escape(l)}</p>`).join("")}<p style="margin:20px 0"><a href="${cta.url}" style="background:#3D7BFF;color:#fff;text-decoration:none;padding:11px 18px;border-radius:999px;font-weight:600">${escape(cta.label)}</a></p><p style="color:#6b7080;font-size:12px;margin-top:28px">You get this because you use FirstCheq. <a href="${site()}/dashboard" style="color:#6b7080">Turn these emails off in Settings</a>. Nothing is ever sent to investors for you.</p></div>`;
+  const logo = `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 22px"><tr><td style="vertical-align:middle"><img src="${site()}/logo-512.png" width="32" height="32" alt="" style="display:block;border-radius:8px"></td><td style="vertical-align:middle;padding-left:10px;font-family:Inter,Arial,sans-serif;font-size:19px;letter-spacing:-0.3px;color:#14151a"><span style="font-weight:500;color:#3d4250">First</span><span style="font-weight:800">Cheq</span></td></tr></table>`;
+  const html = `<div style="font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.55;color:#14151a;max-width:520px">${logo}${lines.map((l) => `<p style="margin:0 0 12px">${escape(l)}</p>`).join("")}<p style="margin:20px 0"><a href="${cta.url}" style="background:#3D7BFF;color:#fff;text-decoration:none;padding:11px 18px;border-radius:999px;font-weight:600">${escape(cta.label)}</a></p><p style="color:#6b7080;font-size:12px;margin-top:28px">You get this because you use FirstCheq. <a href="${site()}/dashboard" style="color:#6b7080">Turn these emails off in Settings</a>. Nothing is ever sent to investors for you.</p></div>`;
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -41,24 +42,24 @@ export const log = internalMutation({
 });
 
 export const forWelcome = internalQuery({
-  args: { founderId: v.id("founders") },
+  args: { founderId: v.id("founders"), force: v.optional(v.boolean()) },
   returns: v.any(),
-  handler: async (ctx, { founderId }) => {
+  handler: async (ctx, { founderId, force }) => {
     const f = await ctx.db.get("founders", founderId);
     const user = f?.userId ? await ctx.db.get("users", f.userId) : null;
     if (!f || !user?.email || f.emailReminders === false) return null;
     const already = await ctx.db.query("notifications").withIndex("by_founder", (q) => q.eq("founderId", founderId)).take(20);
-    if (already.some((n) => n.kind === "welcome" && n.ok)) return null;
+    if (!force && already.some((n) => n.kind === "welcome" && n.ok)) return null;
     return { email: user.email, name: f.name, company: f.company, matchCount: f.matchCount ?? 0 };
   },
 });
 
 /** Right after she signs in: one welcome email with where to pick up. */
 export const welcome = internalAction({
-  args: { founderId: v.id("founders") },
+  args: { founderId: v.id("founders"), force: v.optional(v.boolean()) }, // force: resend for a test, from the terminal
   returns: v.null(),
-  handler: async (ctx, { founderId }) => {
-    const d: { email: string; name: string; company: string; matchCount: number } | null = await ctx.runQuery(internal.notify.forWelcome, { founderId });
+  handler: async (ctx, { founderId, force }) => {
+    const d: { email: string; name: string; company: string; matchCount: number } | null = await ctx.runQuery(internal.notify.forWelcome, { founderId, force });
     if (!d) return null;
     const first = d.name.split(" ")[0];
     const error = await send(d.email, `Your investor list for ${d.company} is ready`, [
