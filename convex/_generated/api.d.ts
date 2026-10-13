@@ -20,6 +20,7 @@ import type * as lib_links from "../lib/links.js";
 import type * as lib_match from "../lib/match.js";
 import type * as lib_prompt from "../lib/prompt.js";
 import type * as limits from "../limits.js";
+import type * as notify from "../notify.js";
 import type * as pipeline from "../pipeline.js";
 import type * as suggest from "../suggest.js";
 import type * as watch from "../watch.js";
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   "lib/match": typeof lib_match;
   "lib/prompt": typeof lib_prompt;
   limits: typeof limits;
+  notify: typeof notify;
   pipeline: typeof pipeline;
   suggest: typeof suggest;
   watch: typeof watch;

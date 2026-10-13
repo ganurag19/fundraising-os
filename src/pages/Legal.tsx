@@ -48,6 +48,7 @@ export function Privacy() {
         <li><b>Convex</b> stores the data and runs the app. Its servers for FirstCheq are in Australia, so your data is stored outside India.</li>
         <li><b>Anthropic</b> (Claude) drafts the text. We send it only what a draft needs: your sign-up answers and the investor's researched details. We use Anthropic's commercial API.</li>
         <li><b>Google</b> handles sign-in, if you choose it.</li>
+        <li><b>Resend</b> delivers our emails to you (your welcome and follow-up reminders). It gets your email address and that message only. You can turn reminders off in Settings.</li>
       </ul>
 
       <h2>Information about investors</h2>

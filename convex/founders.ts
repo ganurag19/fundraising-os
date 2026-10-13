@@ -1,6 +1,7 @@
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc } from "./_generated/dataModel";
 import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS, scoreParts } from "./lib/match";
@@ -120,6 +121,7 @@ export const claim = mutation({
       const domainMatch = user?.email && f.website ? domainOf(user.email) === domainOf(f.website) : undefined;
       await ctx.db.patch("founders", f._id, { userId, domainMatch });
       await ctx.db.insert("steps", { step: "signed_in" });
+      await ctx.scheduler.runAfter(0, internal.notify.welcome, { founderId: f._id });
     }
     return { ok: true as const };
   },
@@ -158,6 +160,7 @@ export const me = query({
       website: v.union(v.string(), v.null()), hasProfile: v.boolean(), emailsStatus: v.string(),
       profile: v.object({ linkedin: v.string(), oneLiner: v.string(), founderLine: v.string(), traction: v.string() }),
       plan: v.union(v.literal("round_pass"), v.null()),
+      emailReminders: v.boolean(),
       gmail: v.union(v.string(), v.null()), // her sign-in email, so "Open in Gmail" picks the right account
       unlocked: v.boolean(), matchCount: v.number(), activeCount: v.number(), leadCount: v.number(), rows: v.array(rowV),
     }),
@@ -197,6 +200,7 @@ export const me = query({
       hasProfile: !!(f.oneLiner || f.forWho) && !!f.founderLine, emailsStatus: f.emailsStatus,
       gmail: unlocked && f.userId ? (await ctx.db.get("users", f.userId))?.email ?? null : null,
       plan: f.plan ?? null,
+      emailReminders: f.emailReminders !== false,
       unlocked, matchCount: f.matchCount ?? rows.length, activeCount: f.activeCount ?? 0, leadCount: f.leadCount ?? 0, rows,
     };
   },

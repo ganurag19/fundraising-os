@@ -80,6 +80,8 @@ export default defineSchema({
     activeCount: v.optional(v.number()), // of those, how many backed a deal this year or last
     leadCount: v.optional(v.number()), // of those, how many lead rounds
     userId: v.optional(v.id("users")), // set when she signs in on the reveal screen
+    emailReminders: v.optional(v.boolean()), // unset = on; she can turn them off in Settings
+    remindedOn: v.optional(v.string()), // YYYY-MM-DD (IST) of the last follow-up reminder, so at most one a day
     plan: v.optional(v.literal("round_pass")), // granted by hand for founding-list pre-sales until payments exist
     planUntil: v.optional(v.number()),
     domainMatch: v.optional(v.boolean()), // internal only: sign-in email domain matches her website
@@ -111,7 +113,16 @@ export default defineSchema({
     sentAt: v.optional(v.number()),
   })
     .index("by_match_and_n", ["matchId", "n"])
-    .index("by_founder_and_state", ["founderId", "state"]),
+    .index("by_founder_and_state", ["founderId", "state"])
+    .index("by_state", ["state"]),
+
+  // Emails we sent to the founder herself (never to investors): welcome and follow-up reminders.
+  notifications: defineTable({
+    founderId: v.id("founders"),
+    kind: v.union(v.literal("welcome"), v.literal("followups_due")),
+    ok: v.boolean(),
+    error: v.optional(v.string()),
+  }).index("by_founder", ["founderId"]),
 
   // Every email we wrote, and what the founder later changed it to.
   drafts: defineTable({

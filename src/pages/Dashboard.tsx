@@ -148,7 +148,7 @@ export default function Dashboard() {
           : <div className="empty"><b>Nothing sent yet.</b><span>Tap "I sent it" after you send an email. It shows up here with its follow-ups.</span><button className="btn primary sm" onClick={() => go("today")}>See today's moves</button></div>)}
         {(tab === "competition" || tab === "qa" || tab === "dataroom" || tab === "inbox") && <SoonPage tab={tab} company={me.company} />}
         {tab === "profile" && <Profile me={me} token={token} onToast={setToast} />}
-        {tab === "settings" && <Settings me={me} theme={theme} setTheme={setTheme} signOut={() => void signOut()} />}
+        {tab === "settings" && <Settings me={me} token={token} theme={theme} setTheme={setTheme} signOut={() => void signOut()} />}
 
         {RAISE.some(([k]) => k === tab) && <><h2 className="dash-h">Coming soon</h2><SoonCards onToast={setToast} /></>}
       </main>
@@ -207,9 +207,15 @@ function Profile({ me, token, onToast }: { me: Me; token: string; onToast: (s: s
   );
 }
 
-function Settings({ me, theme, setTheme, signOut }: { me: Me; theme: Theme; setTheme: (t: Theme) => void; signOut: () => void }) {
+function Settings({ me, token, theme, setTheme, signOut }: { me: Me; token: string; theme: Theme; setTheme: (t: Theme) => void; signOut: () => void }) {
+  const setReminders = useMutation(api.notify.setReminders);
   return (
     <div className="settings">
+      <section className="settings-card">
+        <h2>Emails to you</h2>
+        <p className="fg2">A short email on mornings when a follow-up is ready to send. Only to you, never to investors.</p>
+        <div className="pick">{([true, false] as const).map((on) => <button key={String(on)} aria-pressed={me.emailReminders === on} onClick={() => void setReminders({ token, on })}>{on ? "On" : "Off"}</button>)}</div>
+      </section>
       <section className="settings-card">
         <h2>Appearance</h2>
         <div className="pick">{(["dark", "light"] as const).map((t) => <button key={t} aria-pressed={theme === t} onClick={() => setTheme(t)}>{t === "dark" ? "☾ Dark" : "☀ Light"}</button>)}</div>
