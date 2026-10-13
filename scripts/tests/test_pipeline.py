@@ -97,6 +97,12 @@ class MatchingTest(unittest.TestCase):
         self.assertEqual(m.find(person="Meera Testwala")[0], "b")
         self.assertEqual(m.find(firm="Green Teapot Fund", website="https://greenteapot.test"), (None, None))
 
+    def test_same_name_different_sites_is_not_a_match(self):
+        m = Matcher()
+        m.add("a", firm="Beyondish Venture Partners", website="https://beyondishvp.test")
+        self.assertEqual(m.find(firm="Beyondish Capital Fund", website="https://beyondishcapital.test"), (None, None))
+        self.assertEqual(m.find(firm="Beyondish Capital Fund")[0], "a")
+
     def test_shared_domains_never_match(self):
         m = Matcher()
         m.add("a", firm="One Fund", website="https://letsventure.com/one")
@@ -198,7 +204,8 @@ class MergeAndCheckTest(unittest.TestCase):
 
     def test_email_from_a_third_party_page_is_blocked(self):
         c = self.by_name["Copied Email Fund"]
-        self.assertIn("email", c["check_failures"])
+        self.assertIn("contact", c["check_failures"])
+        self.assertEqual(c["checks"]["email"]["result"], "fail")
         self.assertTrue(c["import_blocked"])
 
     def test_accelerator_needs_no_deals_and_keeps_its_application_link(self):
@@ -225,11 +232,95 @@ class MergeAndCheckTest(unittest.TestCase):
         path = os.path.join(self.s.dir, "enrichment", "spot_check_2026-10-13.md")
         self.assertTrue(open(path).read().startswith("# Spot check, 2026-10-13"))
 
-    def test_import_skips_blocked_and_grants(self):
-        out = os.path.join(self.s.dir, "import.jsonl")
+    def build(self, schema):
+        out = os.path.join(self.s.dir, f"import{schema}.jsonl")
         build_import.SRC, build_import.OUT = os.path.join(self.s.dir, "investors_enriched.json"), out
-        build_import.main()
-        names = [json.loads(l)["displayName"] for l in open(out)]
+        build_import.REGISTRY = os.path.join(self.s.dir, "enrichment", "exported_ids.json")
+        build_import.main(schema)
+        rows = list(map(json.loads, open(out)))
+        self.retired = [d["seedId"] for d in rows if d.get("retired")]
+        return {d["displayName"]: d for d in rows if not d.get("retired")}
+
+    def test_dropped_investor_gets_a_retired_line_and_returns_cleanly(self):
+        gid = self.by_name["Green Teapot Fund"]["id"]
+        self.build(2)
+        self.assertEqual(self.retired, [])
+        self.s.add_result(result(self.s.growth_slug("Green Teapot Fund"), checked_on="2026-10-14", active=False))
+        self.s.pipeline()
+        self.assertNotIn("Green Teapot Fund", self.build(2))
+        self.assertEqual(self.retired, [gid])
+        line = [json.loads(l) for l in open(os.path.join(self.s.dir, "import2.jsonl")) if '"retired"' in l][0]
+        self.assertEqual(line, {"seedId": gid, "retired": True})
+
+    def test_shifted_ids_stop_the_build(self):
+        self.build(2)
+        recs = self.s.load("investors_enriched.json")
+        for r in recs["investors"]:
+            if r["id"] == "inv_0001":
+                r["firm"], r["email"] = "Totally Other Fund", "hi@other.test"
+        json.dump(recs, open(os.path.join(self.s.dir, "investors_enriched.json"), "w"))
+        with self.assertRaises(SystemExit):
+            self.build(2)
+
+    def test_apply_link_counts_as_contact_only_on_schema_2(self):
+        s = self.s.growth_slug
+        self.s.add_result(result(s("Copied Email Fund"), india_based=True,
+                                 pitch_route={"type": "form", "value": "https://copied.test/pitch"},
+                                 sources=[{"url": "https://copied.test/pitch", "supports": ["india_based", "pitch_route"]}]))
+        self.s.pipeline()
+        one, two = self.build(1), self.build(2)
+        self.assertNotIn("Copied Email Fund", one)
+        self.assertEqual(two["Copied Email Fund"]["applyUrl"], "https://copied.test/pitch")
+        self.assertNotIn("email", two["Copied Email Fund"])
+        self.assertIn("Made-up Seed Scheme", two)
+        self.assertNotIn("Made-up Seed Scheme", one)
+        self.assertEqual(two["Campus Incubator Test"]["applyType"], "rolling")
+        self.assertEqual(two["Green Teapot Fund"]["recent"][0]["sector"], "ai")
+        self.assertNotIn("sector", one["Green Teapot Fund"]["recent"][0])
+
+    def test_apply_link_on_another_site_does_not_count(self):
+        s = self.s.growth_slug
+        self.s.add_result(result(s("Copied Email Fund"), india_based=True,
+                                 application={"url": "https://forms.example.test/x", "deadline": None, "type": None},
+                                 sources=[{"url": "https://forms.example.test/x", "supports": ["india_based", "application"]}]))
+        self.s.pipeline()
+        self.assertTrue(self.s.records()[self.by_name["Copied Email Fund"]["id"]]["import_blocked"])
+
+    def test_outside_form_counts_when_their_own_page_links_it(self):
+        s = self.s.growth_slug
+        form = "https://forms.example.test/x?usp=sf"
+        self.s.add_result(result(s("Copied Email Fund"), india_based=True, pitch_route={"type": "form", "value": form},
+                                 sources=[{"url": "https://copied.test/contact", "supports": ["india_based", "pitch_route"]}]))
+        self.s.pipeline()
+        rid = self.by_name["Copied Email Fund"]["id"]
+        self.assertEqual(self.s.records()[rid]["checks"]["apply"]["why"], "form linked from own site")
+        self.s.pipeline(fetch=lambda u: {"https://copied.test/contact": '<a href="https://forms.example.test/x">Pitch</a>',
+                                         form: "form"}.get(u))
+        self.assertFalse(self.s.records()[rid]["import_blocked"])
+        self.s.pipeline(fetch=lambda u: {"https://copied.test/contact": "no link here", form: "form"}.get(u))
+        self.assertTrue(self.s.records()[rid]["import_blocked"])
+
+    def test_failed_email_is_never_exported_even_with_an_apply_link(self):
+        s = self.s.growth_slug
+        self.s.add_result(result(s("Copied Email Fund"), india_based=True, public_email="team@copied.test",
+                                 email_source_url="https://directory.test/copied",
+                                 pitch_route={"type": "form", "value": "https://copied.test/pitch"},
+                                 sources=[{"url": "https://copied.test/pitch", "supports": ["india_based", "pitch_route"]}]))
+        self.s.pipeline()
+        self.assertNotIn("Copied Email Fund", self.build(1))
+        row = self.build(2)["Copied Email Fund"]
+        self.assertNotIn("email", row)
+        self.assertEqual(row["applyUrl"], "https://copied.test/pitch")
+
+    def test_cloudflare_hidden_email_is_seen(self):
+        key, em = 0x5a, "pitch@greenteapot.test"
+        hexed = "%02x" % key + "".join("%02x" % (ord(c) ^ key) for c in em)
+        self.s.pipeline(fetch=lambda u: f'<a data-cfemail="{hexed}">[email protected]</a>')
+        g = self.s.records()[self.by_name["Green Teapot Fund"]["id"]]
+        self.assertEqual(g["checks"]["email"]["why"], "seen on page")
+
+    def test_import_skips_blocked_and_grants(self):
+        names = list(self.build(1))
         self.assertIn("Green Teapot Fund", names)
         self.assertIn("Campus Incubator Test", names)
         self.assertIn("Blue Kettle Ventures", names)

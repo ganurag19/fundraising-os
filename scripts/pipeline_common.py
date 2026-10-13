@@ -2,7 +2,7 @@
 
 Matching rules used everywhere a new name meets the existing list:
   1. same website domain (personal mail hosts and shared platforms don't count)
-  2. same cleaned firm name
+  2. same cleaned firm name, unless both have their own website and the sites differ
   3. same person name, and either the same firm or no firm on one side
 """
 
@@ -102,7 +102,8 @@ class Matcher:
                 self.by_domain.setdefault(d, ref)
         f = norm_firm(firm)
         if f:
-            self.by_firm.setdefault(f, ref)
+            d = domain(website)
+            self.by_firm.setdefault(f, (ref, d if d and d not in SHARED_DOMAINS else None))
         p = norm_person(person)
         if p:
             self.by_person.setdefault(p, []).append((f, ref))
@@ -115,7 +116,9 @@ class Matcher:
                     return ref, "domain"
         f = norm_firm(firm)
         if f and f in self.by_firm and not person:
-            return self.by_firm[f], "firm"
+            ref, known = self.by_firm[f]
+            if not (d and d not in SHARED_DOMAINS and known and not same_site(d, known)):
+                return ref, "firm"
         p = norm_person(person)
         if p and p in self.by_person:
             for kf, ref in self.by_person[p]:

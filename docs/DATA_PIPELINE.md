@@ -16,7 +16,7 @@ seed/discovered/*.jsonl      add_candidates.py   ENRICHMENT_SPEC   merge_enrichm
 | 2. De-duplicate | script | `python3 scripts/add_candidates.py` | new units in `seed/enrichment/queue_growth.json`; deals for investors we have in `seed/enrichment/deals.json`; `seed/discovered/_dedupe_report.md` |
 | 3. Research | Claude agents, about 10 units each | docs/ENRICHMENT_SPEC.md v2 | `seed/enrichment/results/<slug>.json` |
 | 4. Merge + check | script | `python3 scripts/merge_enrichment.py && python3 scripts/check_records.py --verify-emails` | `seed/investors_enriched.json`, `checks_report.md`, `spot_check_<date>.md`, "Spot check" sheet |
-| 5. Import to dev | script, then Convex | `python3 scripts/build_import.py && npx convex import --table investors --replace -y seed/investors_import.jsonl` | dev has the new list; **Anurag runs `--prod` himself** |
+| 5. Import | script, then Convex | `python3 scripts/build_import.py --schema 2 --out seed/investors_import_v2.jsonl && node scripts/upsert_investors.mjs seed/investors_import_v2.jsonl` | updates investors in place by `seedId` and never deletes, so founders' lists survive. **Prod: Anurag adds `--prod` himself. Never run `convex import --replace` on prod**: it gives every investor a new id and breaks every live founder's list. Schema 1 (`build_import.py` with no flag) is only for a deployment still on the old schema |
 | 6. Refresh | script + agents | `python3 scripts/refresh_queue.py --limit 50`, then step 3 on that queue | `seed/enrichment/queue_refresh_<date>.json` |
 
 Tests: `python3 -m unittest discover scripts/tests` (made-up data, temp folder; run after any script change).
@@ -49,7 +49,9 @@ When a candidate matches, its deal (if any) goes to that investor. When it doesn
 
 | Check | Passes when | New investor fails → |
 |---|---|---|
-| email | listed, printed on the investor's own site or an official page (.gov.in, .nic.in, .ac.in, .res.in), page recorded; with `--verify-emails` the page is opened once and contains the address (also "[at]" / "[dot]") | blocked |
+| contact | email passes, **or** apply passes (an apply link reaches the app only with `build_import.py --schema 2`) | blocked |
+| ↳ email | listed, printed on the investor's own site or an official page (.gov.in, .nic.in, .ac.in, .res.in), page recorded; with `--verify-emails` the page is opened once and contains the address (also "[at]" / "[dot]") | blocked |
+| ↳ apply | an application or pitch-form link on the investor's own site or an official page; with `--verify-emails` it must open | (part of contact) |
 | sources | thesis, stages, sectors, cheque, pitch route each have a source URL; every deal has a link | blocked |
 | india | `india_based` is true, backed by a source | blocked |
 | active | marked active, or a deal dated this year or last year | blocked, except accelerators and grants |
@@ -62,7 +64,24 @@ Records from the original spreadsheets are never blocked here (their emails came
 
 Checked 13 Oct 2026 (robots.txt and terms). Details are in `seed/discovered/_source_terms.md`.
 
-<!-- SOURCE_TABLE -->
+| Source | Verdict | Use for |
+|---|---|---|
+| SEBI AIF register (sebi.gov.in) | ok | names only: 2,038 trust names, 25 per page, with no sector or website. Weak for discovery; use it to confirm a fund is registered |
+| Atal Innovation Mission (aim.gov.in) | ok | list of Atal Incubation Centres |
+| DST NIDHI (nidhi.dst.gov.in) | ok to read; copying needs permission | incubator names; store facts only, never copy text |
+| Startup India (startupindia.gov.in) | ok | Seed Fund Scheme incubators, programmes |
+| Fund, network and incubator websites | ok unless their own terms say no | the main research source |
+| Outlook Business | ok (robots.txt allows Claude) | single funding articles: angels and deals |
+| IVCA (ivca.in) | single pages only | member list is behind a login, so not usable |
+| Indian Angel Network (iangroup.vc) | single pages only | their own facts |
+| Inc42 | **out** (Cloudflare check; we don't get around it) | none |
+| Entrackr | **out** (terms ban automated collection and building a database) | none |
+| YourStory | **out** (robots.txt disallows ClaudeBot) | none |
+| VCCircle | **out** (blocked) | none |
+| LetsVenture / LVX | **out** (terms ban automated access) | none |
+| TechCrunch | **out** (robots.txt disallows ClaudeBot) | none |
+
+**This changes the plan for angels and monthly deals.** The four Indian funding-report sites the brief named are all out. Deals and angel names now come from: fund and network sites (portfolio and news pages), the startup's own announcement page, Outlook Business articles, and other news sites once each one's robots.txt and terms are checked and added to this table. If Anurag wants Inc42 or Entrackr, the honest route is to ask them for permission or a data licence.
 
 Never used: LinkedIn, Crunchbase, Tracxn, OpenVC (terms forbid automated reading). We read pages one at a time, the way a person would. No crawling, no getting around a block, login or captcha.
 
@@ -74,16 +93,22 @@ The pilot sets the yield (see the status log in docs/CONTEXT.md). The plan from 
 |---|---|---|---|
 | 1 (13 Oct) | Pilot | ~60 mixed | measured |
 | 2–3 | Funds | SEBI Cat I VC AIF list → AI, climate, deeptech, agnostic seed funds | ~150–250 |
-| 3–4 | Angels | 3 months of weekly funding reports (single articles) | ~150–250 |
+| 3–4 | Angels | allowed news (Outlook Business), network and syndicate sites, startups' own funding posts | lower than first hoped: the main funding-report sites are out |
 | 4–5 | Networks + corporate arms + family offices | IVCA members, network sites | ~80–120 |
 | 5–6 | Incubators + grants | AIM, NIDHI, Startup India lists | most need the apply-link change (docs/PROPOSAL_EVIDENCE_AND_APPLY.md) |
 | 6–8 | Refresh the original 433 | refresh_queue.py | fewer stale records, not more records |
 
 If an investor has no published email, it can't be in the app today, so the real count depends on how many publish one. The pilot measures this.
 
+## Retiring and safe ids
+
+- `build_import.py --schema 2` remembers every investor it has exported (`seed/enrichment/exported_ids.json`). An investor that was exported before but isn't now (it stopped investing, failed a re-check, or lost its only contact route) gets a line `{"seedId": "...", "retired": true}`. The safe import hides it from new matches and keeps it on founders' existing lists. If it comes back later, the full row clears the mark.
+- The import replaces each investor's data, so a fact dropped in research (an email, a passed deadline) disappears from the app too.
+- The spreadsheet ids (`inv_0001`…) come from row order in `clean_investors.py` and shift if a raw file changes. `build_import.py` stops with "STOPPED: these ids now name a different investor" if that happens, rather than putting one investor's facts on another's record. Ask Claude to map old ids to new before importing.
+
 ## Refresh cadence
 
-- **Monthly (first week):** a recent-deals pass. An agent reads that month's weekly funding reports (single articles) and writes `seed/discovered/deals_<YYYY-MM>.jsonl` with a `deal` on each line. `add_candidates.py` routes deals to investors we already have and queues new names. Then run merge → check → import.
+- **Monthly (first week):** a recent-deals pass. An agent reads that month's funding news from allowed sources only (table above; single articles) and writes `seed/discovered/deals_<YYYY-MM>.jsonl` with a `deal` on each line. `add_candidates.py` routes deals to investors we already have and queues new names. Then run merge → check → import.
 - **Every 6 months per investor:** `refresh_queue.py` lists investors in the app whose `last_checked` is over 6 months old (never-checked first). Research those like any unit; the newer result wins on merge.
 - **`last_checked`** is the date the research result was written. `source_date` is when a record first came in. The app shows "Recently checked by us" from `lastChecked`.
 - A result with `active: false` excludes the investor at the next import. The record stays in the file, so it isn't rediscovered.

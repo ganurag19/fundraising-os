@@ -78,6 +78,8 @@ def apply(rec, res):
         put("thesis", res.get("thesis"))
     if res.get("website") and not rec.get("website"):
         put("website", res["website"])
+    elif res.get("website") and rec.get("origin") == "growth" and "website" in ok:
+        put("website", res["website"])  # research corrects the site discovery guessed
     if res.get("kind") in KINDS and "kind" in ok and res["kind"] != rec["kind"]:
         put("kind", res["kind"])
     if res.get("confidence") == "high":

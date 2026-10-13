@@ -1,6 +1,10 @@
 # Proposal: deal evidence in matching, and apply links instead of email
 
-Status: **proposed, not built.** Written 13 Oct 2026 by the data session. The main session owns `convex/` and `src/`; nothing here changes until Anurag says yes. The data side already collects the fields (docs/ENRICHMENT_SPEC.md v2), so either change can land whenever it's approved.
+Status: **approved by Anurag on 13 Oct 2026 (both parts); app side live on dev (commit 5cd23e3, not on prod). "Dated deals" counts only deals with a year and a sector tag in the last 3 years.** Written by the data session. The main session owns `convex/` and `src/` and builds the app side. The data side is ready: `python3 scripts/build_import.py --schema 2` writes `recent[].sector`, `applyUrl`, `applyDeadline` and `applyType`, and includes rows with an apply link but no email. Plain `build_import.py` stays on today's schema until the main session says the new one is live.
+
+Defaults taken with the approval (Anurag can change them):
+- Open question in part 1: **yes**. A listed sector with 0 matching deals out of 5+ dated deals drops from 30 to 24.
+- Words for part 2: "Apply", "I applied", "Closes <date>". Add them to DESIGN.md section 3.
 
 ## 1. Sector tags on deals, so the score uses evidence
 
@@ -36,8 +40,8 @@ Open question for Anurag: should a listed sector with **zero** matching deals (w
 - Funds whose only route is a form: same Apply button, ranked as today but not a top pick.
 - New kind labels: `family_office` is imported as `corporate_vc` today, so it shows under Funds. `grant` would need a "Programmes" filter, or would only show under All.
 
-## What I need from Anurag
+## Order to ship
 
-1. Yes or no on each part (they're independent).
-2. The words for the Apply flow (part 2).
-3. The answer to the open question in part 1.
+1. Main session: schema (`email` optional, `applyUrl?`, `applyDeadline?`, `applyType?`, `recent[].sector?`), with an import check that each row has an email or an applyUrl. Matching and card changes, with tests.
+2. Data session: `build_import.py --schema 2`, then import to dev. Anurag checks dev on his phone.
+3. Anurag: the prod import, after the prod deploy.

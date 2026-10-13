@@ -7,14 +7,17 @@ Writes  seed/investors_enriched.json          (adds "checks", "check_failures", 
         a "Spot check" sheet in seed/investors_clean.xlsx
 
 Checks
+  contact   passes when "email" or "apply" passes (an apply link reaches the app with --schema 2 imports).
   email     the email is printed on the investor's own site or an official source (.gov.in, .ac.in ...),
             and that page is recorded. Records from the original spreadsheets pass as "spreadsheet".
             With --verify-emails, the page is opened once and must contain the address.
+  apply     an application or pitch-form link on the investor's own site or an official source;
+            with --verify-emails it must also open.
   sources   every researched fact (thesis, stages, sectors, cheque, deals, pitch route) has a URL.
   india     india_based is true.
   active    marked active, or a deal dated this year or last year.
 
-A new investor (origin "growth") that fails email, sources or india is blocked from the import.
+A new investor (origin "growth") that fails contact, sources or india is blocked from the import.
 Failing "active" blocks too, unless it is an accelerator or grant (they run cohorts, not deals).
 Records from the spreadsheets are never blocked here; their failures are listed in the report.
 
@@ -32,7 +35,7 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pipeline_common import OFFICIAL_SUFFIXES, domain, load_json, same_site, save_json  # noqa: E402
 
-BLOCKING = {"email", "sources", "india", "active"}
+BLOCKING = {"contact", "sources", "india", "active"}
 NO_DEALS_KINDS = {"accelerator", "grant"}
 FACT_FIELDS = {  # record field -> the "supports" name a source must carry
     "thesis": "thesis", "stages": "stages", "cheque_max_inr_lakh": "cheque", "pitch_route": "pitch_route",
@@ -47,6 +50,15 @@ def supports(rec):
             if x.startswith("cheque"):
                 s.add("cheque")
     return s
+
+
+def cf_decode(h):
+    """Cloudflare hides printed emails as data-cfemail hex; the first byte is the XOR key."""
+    try:
+        key = int(h[:2], 16)
+        return "".join(chr(int(h[i:i + 2], 16) ^ key) for i in range(2, len(h), 2))
+    except ValueError:
+        return ""
 
 
 def email_check(rec, fetch=None):
@@ -66,6 +78,7 @@ def email_check(rec, fetch=None):
         text = fetch(page)
         if text is None:
             return "fail", "could not open the email page"
+        text = text + " " + " ".join(cf_decode(h) for h in re.findall(r'data-cfemail="([0-9a-fA-F]+)"', text))
         flat = re.sub(r"\s*(\[at\]|\(at\)| at )\s*", "@", text.lower())
         flat = re.sub(r"\s*(\[dot\]|\(dot\)| dot )\s*", ".", flat)
         if rec["email"].lower() not in flat:
@@ -74,12 +87,42 @@ def email_check(rec, fetch=None):
     return "pass", "own site" if own else "official source"
 
 
+def apply_url(rec):
+    """The link a founder would apply or pitch through, if there is no email to write to."""
+    if (rec.get("application") or {}).get("url"):
+        return rec["application"]["url"]
+    pr = rec.get("pitch_route") or {}
+    return pr.get("value") if pr.get("type") == "form" and str(pr.get("value") or "").startswith("http") else None
+
+
+def apply_check(rec, fetch=None):
+    url = apply_url(rec)
+    if not url:
+        return "fail", "no application or pitch-form link"
+    d, site = domain(url), domain(rec.get("website"))
+    own = same_site(d, site) or (d or "").endswith(OFFICIAL_SUFFIXES)
+    # a form hosted elsewhere (Google Forms, Typeform) counts when the investor's own page links to it
+    linked_from = [src["url"] for src in (rec.get("enrichment") or {}).get("sources") or []
+                   if set(src.get("supports") or []) & {"pitch_route", "application"}
+                   and same_site(domain(src.get("url")), site) and src.get("url") != url]
+    if not own and not linked_from:
+        return "fail", f"link on {d}, not the investor's site or an official source"
+    if fetch:
+        if fetch(url) is None:
+            return "fail", "link does not open"
+        if not own and url.split("?")[0].rstrip("/") not in (fetch(linked_from[0]) or ""):
+            return "fail", "form not linked from their own page"
+    return "pass", "own site" if same_site(d, site) else "official source" if own else "form linked from own site"
+
+
 def sources_check(rec):
     if not rec.get("enrichment"):
         return ("pass", "not researched yet") if rec.get("origin") != "growth" else ("fail", "no research")
     have = supports(rec)
     if any(s.get("file") for s in rec.get("sources") or []):  # stages and cheque from the raw spreadsheets
         have |= {"stages", "cheque", "sectors"}
+    if any(s.get("found_via") for s in rec.get("sources") or []):  # sector hint from the page we found them on
+        have.add("sectors")
     missing = [f for f, tag in FACT_FIELDS.items()
                if rec.get(f) not in (None, [], "") and tag not in have
                and not (f == "pitch_route" and (rec[f] or {}).get("type") in (None, "unknown"))]
@@ -109,14 +152,18 @@ def active_check(rec, today):
 
 
 def check(rec, today, fetch=None):
+    em, ap = email_check(rec, fetch), apply_check(rec, fetch)
     res = {
-        "email": email_check(rec, fetch),
+        "contact": ("pass", "email") if em[0] == "pass" else ("pass", "apply link") if ap[0] == "pass" else ("fail", "no email or apply link"),
+        "email": em,
+        "apply": ap,
         "sources": sources_check(rec),
         "india": india_check(rec),
         "active": active_check(rec, today),
     }
     rec["checks"] = {k: {"result": r, "why": w} for k, (r, w) in res.items()}
-    rec["check_failures"] = sorted(k for k, (r, _) in res.items() if r == "fail")
+    # email and apply are the two halves of contact; only contact counts as a failure
+    rec["check_failures"] = sorted(k for k, (r, _) in res.items() if r == "fail" and k not in ("email", "apply"))
     blocking = set(rec["check_failures"]) & BLOCKING
     if rec.get("kind") in NO_DEALS_KINDS:
         blocking.discard("active")
@@ -215,15 +262,17 @@ def run(seed, since=None, today=None, fetch=None):
     lines = ["# Checks report", "", f"Run on {today.isoformat()}", "",
              f"New investors: {len(growth)}, ready to import {sum(1 for r in growth if not r['import_blocked'] and not r.get('exclude'))}, "
              f"blocked {sum(1 for r in growth if r['import_blocked'] and not r.get('exclude'))}, excluded {sum(1 for r in growth if r.get('exclude'))}"]
-    for k in ("email", "sources", "india", "active"):
+    for k in ("contact", "sources", "india", "active"):
         lines.append(f"- failing {k}: {fails(growth, k)}")
+    lines.append(f"- reachable only by apply link (need --schema 2): "
+                 f"{sum(1 for r in growth if not r['import_blocked'] and not r.get('exclude') and r['checks']['contact']['why'] == 'apply link')}")
     lines += ["", f"Investors from the spreadsheets in the app today: {len(legacy)} (never blocked here)"]
     for k in ("sources", "active"):
         lines.append(f"- failing {k}: {fails(legacy, k)}")
     lines += ["", "## New investors blocked from import", ""]
     for r in growth:
         if r["import_blocked"] and not r.get("exclude"):
-            whys = "; ".join(f"{k}: {r['checks'][k]['why']}" for k in r["check_failures"])
+            whys = "; ".join(f"{k}: {r['checks'][k]['why']}" for k in r["check_failures"] if k not in ("email", "apply"))
             lines.append(f"- {r.get('firm') or r.get('person_name')} ({r['id']}): {whys}")
     with open(os.path.join(enr, "checks_report.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
