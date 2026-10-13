@@ -52,5 +52,5 @@ export function logoSvg(name: string, size = 40): string {
 export function dialSvg(score: number, size = 64): string {
   const r = 26, c = 2 * Math.PI * r, o = c * (1 - score / 100);
   const col = score >= 85 ? "#E9C46A" : score >= 70 ? "#3D7BFF" : "#83838F";
-  return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${r}" fill="none" stroke="#24242B" stroke-width="6"/><circle cx="32" cy="32" r="${r}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${o}"/></svg>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${r}" fill="none" style="stroke:var(--line2)" stroke-width="6"/><circle cx="32" cy="32" r="${r}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${o}"/></svg>`;
 }

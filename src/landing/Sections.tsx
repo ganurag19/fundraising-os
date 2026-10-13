@@ -9,28 +9,30 @@ const ASKS = ["₹25–50L", "₹50L–1Cr", "₹1–3 Cr", "₹3–5 Cr", "₹5
 export type StartAnswers = { first: string; sectors: string[]; stage: string; ask: string };
 
 /** The hero's "Start here" card: the first questions, answered right on the page. */
-export function HeroStart({ onGo }: { onGo: (a: StartAnswers) => void }) {
+export function HeroStart({ onGo, onCode }: { onGo: (a: StartAnswers) => void; onCode: () => void }) {
   const [a, setA] = useState<StartAnswers>({ first: "", sectors: [], stage: "", ask: "" });
   const toggle = (s: string) => setA((o) => ({ ...o, sectors: o.sectors.includes(s) ? o.sectors.filter((x) => x !== s) : o.sectors.length < 3 ? [...o.sectors, s] : o.sectors }));
   return (
     <form className="start-card" onSubmit={(e) => { e.preventDefault(); onGo(a); }}>
       <span className="kicker">Start here · free</span>
-      <label>Your website, or your startup's name<input className="field" value={a.first} onChange={(e) => { const first = e.target.value; setA((o) => ({ ...o, first })); }} placeholder="e.g. kilnlabs.in" maxLength={200} autoCapitalize="none" /></label>
-      <div className="sc-label">Your space <span className="muted">(up to 3)</span></div>
-      <div className="pick small-pick">{SECTORS.map((s) => <button type="button" key={s} aria-pressed={a.sectors.includes(s)} onClick={() => toggle(s)}>{s}</button>)}</div>
-      <div className="sc-row">
+      <label className="sc-q">Your website, or your startup's name<input className="field" value={a.first} onChange={(e) => { const first = e.target.value; setA((o) => ({ ...o, first })); }} placeholder="e.g. kilnlabs.in" maxLength={200} autoCapitalize="none" /></label>
+      <div className="sc-q"><div className="sc-label">Your space <span className="muted">(up to 3)</span></div>
+      <div className="pick small-pick">{SECTORS.map((s) => <button type="button" key={s} aria-pressed={a.sectors.includes(s)} onClick={() => toggle(s)}>{s}</button>)}</div></div>
+      <div className="sc-row sc-q">
         <label>Stage<select className="field" value={a.stage} onChange={(e) => { const stage = e.target.value; setA((o) => ({ ...o, stage })); }}><option value="">Choose</option>{STAGES.map((s) => <option key={s}>{s}</option>)}</select></label>
         <label>Raising<select className="field" value={a.ask} onChange={(e) => { const ask = e.target.value; setA((o) => ({ ...o, ask })); }}><option value="">Choose</option>{ASKS.map((s) => <option key={s}>{s}</option>)}</select></label>
       </div>
-      <button className="btn primary" type="submit">Find my 3 best investors, free →</button>
-      <span className="muted small">Researched investors, personalised emails, ready to send.</span>
+      <div className="sc-actions">
+        <button className="btn primary" type="submit">Find my 3 best investors, free →</button>
+        <button className="btn ghost" type="button" onClick={onCode}>I have a code</button>
+      </div>
     </form>
   );
 }
 
 /** Before vs after: nine pains cross out as three steps appear. */
 const PAINS = ["Who do I even pitch?", "Who invests at my stage?", "Writing every email from scratch", "ChatGPT drafts that sound like everyone", "Forgetting to follow up", "Ghosted", "A spreadsheet that's always out of date", "Months pass", "Still no meeting"];
-const STEPS: [string, string][] = [["Tell us about your startup", "2 MIN"], ["See the investors who fit, and why", "INSTANT"], ["Send from your Gmail, follow-ups included", "2 MIN"]];
+const STEPS: [string, string][] = [["Tell us about your startup", "2 MIN"], ["Find the investors who fit you", "INSTANT"], ["Send personalised emails from Gmail", "2 MIN"]];
 
 export function BeforeAfter() {
   const ref = useRef<HTMLDivElement>(null);
@@ -46,7 +48,7 @@ export function BeforeAfter() {
     <div ref={ref} className={`before-after${go ? " go" : ""}`}>
       <div className="ba-side ba-before">
         <span className="kicker">Your first raise today · 9 steps</span>
-        <div className="pain-pile">{PAINS.map((p, i) => <span key={p} style={{ transitionDelay: `${i * 0.12}s` }}>{p}</span>)}</div>
+        <div className="pain-pile">{PAINS.map((p, i) => <span key={p} style={{ animationDelay: `${i * 0.45}s` }}>{p}</span>)}</div>
       </div>
       <div className="ba-arrow" aria-hidden="true">→</div>
       <div className="ba-side ba-after">
@@ -60,7 +62,7 @@ export function BeforeAfter() {
 }
 
 /** "See it work": the real app screens, light mode, with made-up investors. */
-const SCENES = ["Tell us about you", "Your 3 best investors", "The email, ready", "Your pipeline"];
+const SCENES = ["Tell us about you", "Your best-fit investors", "Personalised email, ready to send", "Your pipeline"];
 const PICKS: [string, number, string][] = [
   ["Verdant Arc Capital", 94, "Backed GridLeaf at seed: software for old industry."],
   ["Northlight Seed", 89, "Smeltwise is in their portfolio: fuel savings for heavy industry."],
@@ -92,7 +94,7 @@ export function ProductDemo() {
         )}
         {scene === 1 && (
           <div className="demo-scene">
-            <span className="kicker">143 investors fit Kiln Labs · your top 3</span>
+            <span className="kicker">86 investors fit Kiln Labs · your top picks</span>
             {PICKS.map(([n, s, why], i) => (
               <div className="row-card top demo-row" key={n} style={{ animationDelay: `${i * 0.25}s` }}>
                 <div className="row-main"><Dial score={s} size={40} /><div className="pick-head"><Medal rank={i} /><Logo name={n} size={34} /><div className="who"><b>{n}</b><span>₹50L–2 Cr · leads rounds</span></div></div></div>
@@ -145,7 +147,7 @@ export function ThreeEmails() {
       <div className="te-body">
         <div className="email"><div className="to">To {e.to}</div><div className="subj">{e.subj}</div>{e.body}</div>
         <aside className="te-why">
-          <div className="te-score"><Dial score={e.score} size={56} /><div><b>FirstCheq Fit Score</b><span>{e.hook}</span></div></div>
+          <div className="te-score"><Dial score={e.score} size={56} /><div className="te-label"><b>FirstCheq Fit Score</b><span>{e.hook}</span></div></div>
           {PART_LABELS.map((l, k) => (
             <div className="bd-row" key={l}><span>{l}</span><span className="bd-bar" aria-hidden="true"><i className={e.parts[k] / PART_MAX[k] >= 0.75 ? "hi" : "mid"} style={{ width: `${(e.parts[k] / PART_MAX[k]) * 100}%` }} /></span><b>{e.parts[k]}/{PART_MAX[k]}</b></div>
           ))}
@@ -172,7 +174,7 @@ export function FitScore() {
         <p className="muted small">Every investor comes with the reason and the source.</p>
       </div>
       <div className="fit-card">
-        <div className="te-score"><Dial score={88} size={64} /><div><b>Verdant Arc Capital</b><span>3 of 4 recent deals are climate</span></div></div>
+        <div className="te-score"><Dial score={88} size={64} /><div className="te-label"><b>Verdant Arc Capital</b><span>3 of 4 recent deals are climate</span></div></div>
         {parts.map(([t, , got, max]) => (
           <div className="bd-row" key={t}><span>{t}</span><span className="bd-bar" aria-hidden="true"><i className={got / max >= 0.75 ? "hi" : "mid"} style={{ width: `${(got / max) * 100}%` }} /></span><b>{got}/{max}</b></div>
         ))}
@@ -214,10 +216,13 @@ export function WhatsMore() {
     ["▤", "Pitch deck review", "Slide-by-slide notes on what investors will question."],
     ["?", "Questions investors will ask", "Are you ready? Answers drafted from your profile."],
     ["❝", "Your raise FAQ", "Round, terms, use of funds: written once, reused everywhere."],
+    ["★", "Mentors, advisors and warm intros", "From founders who've already raised their first cheque."],
   ];
   return (
-    <div className="soon-grid">
-      {items.map(([ic, t, d]) => (
+    <div className="soon-grid six">
+      {items.map(([ic, t, d], i) => i === items.length - 1 ? (
+        <div className="soon-card vip" key={t}><span className="soon-icon" aria-hidden="true">{ic}</span><span className="soon-text"><b>{t}</b><span>{d}</span><span className="vip-btn">VIP access · SOON</span></span></div>
+      ) : (
         <div className="soon-card" key={t}><span className="soon-icon" aria-hidden="true">{ic}</span><span className="soon-text"><b>{t} <span className="soon-tag">SOON</span></b><span>{d}</span></span></div>
       ))}
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -10,6 +10,20 @@ import type { StartAnswers } from "./Sections";
 import { savedInviteCode, savePrefill } from "../lib/token";
 
 const GO = "Find my 3 best investors, free →";
+
+/** "don't wing": italic red, struck through as it scrolls into view. */
+function StrikeOnView({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !("IntersectionObserver" in window)) { setOn(true); return; }
+    const io = new IntersectionObserver(([e]) => setOn(e.isIntersecting), { threshold: 1, rootMargin: "0px 0px -20% 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return <span ref={ref} className={`strike-red${on ? " on" : ""}`}>{children}</span>;
+}
 
 /** Phones: the main button, once she scrolls past the hero. */
 function StickyCta({ onOpen }: { onOpen: () => void }) {
@@ -30,7 +44,7 @@ function ProofBar() {
   ];
   return (
     <section className="proof">
-      <span className="ribbon">Researched for India · refreshed every month</span>
+      <span className="ribbon">Designed and built for India · checked every week</span>
       <div className="proof-bar">{items.filter(([n]) => n === undefined || n > 0).map(([n, label]) => <div key={label}><b>{n ?? "·"}</b><span>{label}</span></div>)}</div>
     </section>
   );
@@ -61,10 +75,8 @@ export default function Landing() {
             <h1 className="h-xl rise">The journey to your first cheque <span className="it">starts here.</span></h1>
             <p className="lede rise">Your investor outreach starts tonight. Follow-ups run themselves.</p>
             <div className="facts rise"><span>Free</span><span>2 minutes</span><span>Your 3 best-fit investors, emails ready</span></div>
-            <div className="cta-row"><button className="btn primary" onClick={() => go()}>{GO}</button><button className="btn ghost" onClick={open("code")}>I have a code</button></div>
-            <div className="trustline"><span>Nothing sent without you</span><span>From your own Gmail</span></div>
           </div>
-          <HeroStart onGo={go} />
+          <HeroStart onGo={go} onCode={open("code")} />
         </section>
 
         <ProofBar />
@@ -81,7 +93,7 @@ export default function Landing() {
 
         <section className="difference">
           <span className="kicker">The difference</span>
-          <h2>The best-prepared founders don't wing their raise. <span className="it">Neither should you.</span></h2>
+          <h2>The best-prepared founders <StrikeOnView>don't wing</StrikeOnView> their raise. <span className="it">Neither should you.</span></h2>
         </section>
 
         <section className="section">
@@ -90,12 +102,12 @@ export default function Landing() {
         </section>
 
         <section className="section">
-          <div className="s-head center"><span className="kicker">FirstCheq Fit Score</span><h2 className="h-l">Not 5,000 investors. <span className="it">The ones looking for you.</span></h2></div>
+          <div className="s-head center"><span className="kicker-pill">FirstCheq Fit Score</span><h2 className="h-l">Goodbye, spray and pray. <span className="it">Find the investors looking for you.</span></h2><p className="lede center-lede">Not a list of 5,000. The few who back your space, your stage and your size of round, ranked with the reason.</p></div>
           <FitScore />
         </section>
 
         <section className="section">
-          <div className="s-head center"><span className="kicker">Why not just…</span><h2 className="h-l">Do it yourself, hire, <span className="it">or FirstCheq?</span></h2></div>
+          <div className="s-head center"><span className="kicker">Why not just…</span><h2 className="h-l">Do it yourself, hire, <span className="it">or FirstCheq?</span></h2><p className="lede center-lede">The fastest, cheapest and most effective path to your first cheque.</p></div>
           <Compare />
         </section>
 
@@ -108,7 +120,7 @@ export default function Landing() {
           <div className="s-head center"><span className="kicker">FAQ</span><h2 className="h-l">Questions, answered</h2></div>
           <div className="faq">
             {[["Is this for me?", "Yes, if it's your first round: pre-seed or seed, ₹25L to ₹10 Cr, in India."],
-              ["Where does the investor data come from?", "Their own websites and published deal news. Every fact shows its source."],
+              ["Where does the investor data come from?", "Their own websites and published deal news. Every fact shows its source. Contact links are checked every week, and every investor is re-researched at least every 6 months."],
               ["Do you send emails for me?", "Never. You read every email and send it from your own Gmail."],
               ["What does it cost?", "Your 3 best investors and their emails are free. More help is coming for founders who want it."]].map(([q, ans]) => (
               <details key={q}><summary>{q}</summary><p>{ans}</p></details>

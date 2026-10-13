@@ -13,12 +13,12 @@ import type { Me, Row } from "../components/Investor";
 import { visitorToken } from "../lib/token";
 import { Page } from "./Emails";
 
-type Tab = "today" | "investors" | "pipeline" | "competition" | "qa" | "dataroom" | "inbox" | "profile" | "settings";
+type Tab = "today" | "investors" | "pipeline" | "competition" | "qa" | "dataroom" | "inbox" | "connect" | "profile" | "settings";
 const RAISE: [Tab, string, string][] = [["today", "Today", "◎"], ["investors", "Investors", "★"], ["pipeline", "Pipeline", "▦"]];
-const PREPARE: [Tab, string, string][] = [["competition", "Competition", "⚔"], ["qa", "Investor Q&A", "❝"], ["dataroom", "Data room", "▤"], ["inbox", "Inbox", "✉"]];
+const PREPARE: [Tab, string, string][] = [["competition", "Competition", "⚔"], ["qa", "Investor Q&A", "❝"], ["dataroom", "Data room", "▤"], ["inbox", "Inbox", "✉"], ["connect", "Founders connect", "★"]];
 const TITLES: Record<Tab, [string, string]> = {
   today: ["Today's", "moves."], investors: ["Your", "investors."], pipeline: ["Your", "pipeline."],
-  competition: ["Know your", "competition."], qa: ["They will ask.", "Be ready."], dataroom: ["Your", "data room."], inbox: ["Replies,", "in one place."],
+  competition: ["Know your", "competition."], qa: ["They will ask.", "Be ready."], dataroom: ["Your", "data room."], inbox: ["Replies,", "in one place."], connect: ["Founders who've", "been there."],
   profile: ["How you", "come across."], settings: ["Your", "settings."],
 };
 
@@ -148,7 +148,7 @@ export default function Dashboard() {
         {tab === "pipeline" && (me.rows.some((r) => r.status !== "new")
           ? <Pipeline rows={me.rows} token={token} onToast={setToast} account={me.gmail} />
           : <div className="empty"><b>Nothing sent yet.</b><span>Tap "I sent it" after you send an email. It shows up here with its follow-ups.</span><button className="btn primary sm" onClick={() => go("today")}>See today's moves</button></div>)}
-        {(tab === "competition" || tab === "qa" || tab === "dataroom" || tab === "inbox") && <SoonPage tab={tab} company={me.company} />}
+        {(tab === "competition" || tab === "qa" || tab === "dataroom" || tab === "inbox" || tab === "connect") && <SoonPage tab={tab} company={me.company} />}
         {tab === "profile" && <Profile me={me} token={token} onToast={setToast} />}
         {tab === "settings" && <Settings me={me} token={token} theme={theme} setTheme={setTheme} signOut={() => void signOut()} />}
 
@@ -161,11 +161,12 @@ export default function Dashboard() {
   );
 }
 
-const SOON_PAGES: Record<"competition" | "qa" | "dataroom" | "inbox", { line: string; points: string[] }> = {
+const SOON_PAGES: Record<"competition" | "qa" | "dataroom" | "inbox" | "connect", { line: string; points: string[] }> = {
   competition: { line: "Who else is raising in your space, and how you stand apart.", points: ["Startups like yours that raised in the last 2 years, and who backed them", "What investors will compare you on", "One line on your edge, for your email and your deck"] },
   qa: { line: "The questions Indian seed investors ask, with answers drafted from your profile.", points: ["The 20 questions you'll hear in a first meeting", "Answers drafted from your one-liner and traction, for you to edit", "What a weak answer sounds like, so you avoid it"] },
   dataroom: { line: "One link with everything an investor asks for.", points: ["A checklist of what to have ready before the first meeting", "Upload once, share one link", "See who opened what"] },
   inbox: { line: "Investor replies next to your pipeline, so nothing slips.", points: ["Replies from your investors only, nothing else from your inbox", "Marks Replied for you, which stops the follow-ups", "Needs your permission to read investor emails in Gmail"] },
+  connect: { line: "A community of Indian founders raising their first round, and those who already have.", points: ["Ask anything in the founders' forum: terms, decks, which investors reply", "Mentors and advisors who've raised a first cheque", "Warm intros from funded founders, when they think you're ready"] },
 };
 
 function SoonPage({ tab, company }: { tab: keyof typeof SOON_PAGES; company: string }) {
