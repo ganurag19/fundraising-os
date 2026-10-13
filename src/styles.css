@@ -125,7 +125,7 @@ h1,h2,h3{text-wrap:balance}
 .mini-inv .meta b{display:block;font-size:14px}
 .mini-inv .meta > span:not(.badge-row){display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini-inv .meta > .badge-row{margin-top:5px}
-.section{padding-block:96px 0}
+.section{padding-block:clamp(112px,12vw,156px) 0}
 .s-head{max-width:780px;margin-bottom:34px}
 .h-l{font-family:var(--display);font-weight:700;letter-spacing:-.035em;font-size:clamp(32px,4.8vw,58px);line-height:1.03;margin:12px 0 14px}
 .pains{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -169,7 +169,7 @@ h1,h2,h3{text-wrap:balance}
 .faq summary::after{content:"+";color:var(--muted);font-size:20px;line-height:1}
 .faq details[open] summary::after{content:"–"}
 .faq p{color:var(--fg2);margin:10px 0 0}
-.cta-band{margin-top:96px;border-radius:30px;padding:76px 24px;text-align:center;border:1px solid var(--line);background:radial-gradient(50% 80% at 50% 100%,rgba(61,123,255,.5),transparent 70%),var(--bg2)}
+.cta-band{margin-top:clamp(112px,12vw,156px);border-radius:30px;padding:76px 24px;text-align:center;border:1px solid var(--line);background:radial-gradient(50% 80% at 50% 100%,rgba(61,123,255,.5),transparent 70%),var(--bg2)}
 footer{padding-block:56px;color:var(--muted);font-size:13px}
 .foot{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;border-top:1px solid var(--line);padding-top:24px}
 
@@ -457,7 +457,7 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .proof-bar div:first-child{border-color:var(--gold-line);background:var(--gold-soft)} .proof-bar div:first-child b{color:var(--gold)}
 .proof-bar span{font-size:13px;color:var(--fg2)}
 .proof-bar p{grid-column:1/-1;text-align:center;margin:2px 0 0}
-.difference{margin-top:96px;border-radius:32px;padding:clamp(90px,14vw,170px) 24px;text-align:center;border:1px solid var(--blue-line);background:radial-gradient(70% 90% at 50% 0%,var(--blue-soft),transparent 70%),radial-gradient(60% 80% at 50% 100%,var(--violet-soft),transparent 70%),var(--card)}
+.difference{margin-top:clamp(112px,12vw,156px);border-radius:32px;padding:clamp(90px,14vw,170px) 24px;text-align:center;border:1px solid var(--blue-line);background:radial-gradient(70% 90% at 50% 0%,var(--blue-soft),transparent 70%),radial-gradient(60% 80% at 50% 100%,var(--violet-soft),transparent 70%),var(--card)}
 .difference h2{font-family:var(--display);font-weight:800;letter-spacing:-.04em;font-size:clamp(34px,6vw,72px);line-height:1.02;max-width:16ch;margin:16px auto 0}
 .step-box{align-items:flex-start} .step-box h3{font-size:19px;margin:4px 0 0}
 .mono-time{font:600 12px/1 var(--mono);color:var(--gold);letter-spacing:.06em}
@@ -526,7 +526,7 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .sc-q{padding:16px 0;border-top:1px solid var(--line)}
 .sc-q .sc-label{margin-bottom:8px}
 .sc-actions{display:flex;flex-direction:column;gap:8px;padding-top:16px;border-top:1px solid var(--line)}
-.proof{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:28px}
+.proof{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:clamp(56px,7vw,88px)}
 .ribbon{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--blue-ink);background:var(--blue-soft);border:1px solid var(--blue-line);border-radius:999px;padding:7px 14px}
 .proof .proof-bar{width:100%;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin:0}
 .proof .proof-bar div,.proof .proof-bar div:first-child{border:1px solid var(--line);background:linear-gradient(180deg,var(--card2),var(--card));justify-content:center}
@@ -692,3 +692,36 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .ft-short{display:none}
 @media (max-width:560px){.ft-long{display:none}.ft-short{display:inline}.ft-fund b{white-space:normal;line-height:1.2;font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.ft-row{grid-template-columns:minmax(0,1.2fr) 48px minmax(0,.9fr)}.ft-deal{font-size:12px}}
 @media (max-width:640px){.cmp-row.head{display:none}.cmp-row span[data-l]::before{content:attr(data-l);display:block;font:600 10px/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}.cmp-row span.us[data-l]::before{color:var(--blue-ink)}}
+/* dashboard investor table (matches the landing Fit Score demo) */
+.inv-head,.inv-grid{display:grid;grid-template-columns:minmax(0,1.6fr) 96px minmax(0,1.2fr) 110px 120px;gap:12px;align-items:center}
+.inv-head{padding:0 14px 8px;font:600 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.inv-who{display:flex;align-items:center;gap:8px;min-width:0} .inv-who .pick-head{min-width:0;flex:1}
+.inv-score{display:flex;align-items:center;gap:7px;background:none;border:1px solid transparent;border-radius:10px;padding:6px 8px;margin-left:-8px;font:700 17px/1 var(--display);color:var(--fg2);cursor:pointer;justify-self:start}
+.inv-score:hover,.why-open .inv-score{border-color:var(--gold-line);background:var(--gold-soft)}
+.inv-score.hi{color:var(--green)}
+.bars{display:inline-flex;align-items:flex-end;gap:2px;height:13px} .bars i{width:3px;border-radius:1px;background:var(--line2)}
+.bars i:nth-child(1){height:5px}.bars i:nth-child(2){height:9px}.bars i:nth-child(3){height:13px}
+.bars i.on{background:currentColor}
+.inv-deal{font-size:13.5px;color:var(--fg2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inv-cheque{font-size:13.5px;color:var(--fg2)}
+.inv-act{justify-self:end}
+.row-card.why-open{border-color:var(--gold-line)}
+.why-panel{margin-top:12px;border:1px solid var(--line2);border-radius:14px;background:var(--card2);padding:14px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.why-panel p{margin:0 0 6px;color:var(--fg)}
+.why-list{margin:0 0 6px;padding-left:18px;color:var(--fg2)}
+.why-srcs{display:flex;flex-direction:column;gap:3px;margin-bottom:6px} .why-srcs a{text-decoration:none} .why-srcs a:hover{text-decoration:underline}
+.why-panel .breakdown{margin:0}
+@media (max-width:720px){
+  .inv-head{display:none}
+  .inv-grid{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"who score" "deal act";row-gap:8px}
+  .inv-who{grid-area:who}.inv-score{grid-area:score;margin-left:0}.inv-deal{grid-area:deal;white-space:normal}.inv-act{grid-area:act}.inv-cheque{display:none}
+  .inv-deal[data-l]::before{content:attr(data-l) " · ";font:600 10px/1 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+}
+/* key differences: FirstCheq column as one raised card */
+.scrollx:has(.tbl.compare){overflow:auto;padding:10px 0}
+.tbl.compare{border-collapse:separate;border-spacing:0}
+.tbl.compare th.us,.tbl.compare td.us{background:linear-gradient(180deg,rgba(61,123,255,.16),rgba(61,123,255,.08));border-left:1.5px solid var(--blue);border-right:1.5px solid var(--blue);border-bottom-color:var(--blue-line);position:relative}
+.tbl.compare th.us-top{border-top:1.5px solid var(--blue);border-radius:16px 16px 0 0;font-size:13px;color:var(--fg);background:var(--blue)}
+.tbl.compare td.us-end{border-bottom:1.5px solid var(--blue);border-radius:0 0 16px 16px}
+.tbl.compare td.us::before{content:"✓ ";color:var(--green);font-weight:700}
+.why-panel .breakdown{border:0;padding:0;background:none;box-shadow:none}

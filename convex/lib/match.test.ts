@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { chequeFits, scoreInvestor, scoreParts, topMatches } from "./match";
+import { chequeFits, dealToShow, scoreInvestor, scoreParts, topMatches } from "./match";
 import { checkDraft, checkFollowup, hookNamesADeal, unsourcedFacts } from "./checks";
 
 // Made-up investors only.
@@ -149,5 +149,22 @@ describe("email checks", () => {
   });
   test("flags facts that point at empty fields", () => {
     expect(unsourcedFacts([{ text: "you backed GridLeaf", field: "portfolio" }, { text: "AI for finance", field: "thesis" }], { portfolio: [], thesis: "AI for finance" })).toEqual(["you backed GridLeaf"]);
+  });
+});
+
+describe("dealToShow", () => {
+  // Made-up investor.
+  const inv = { portfolio: ["Smeltwise"], recent: [
+    { company: "Paybee", year: 2026, sector: "fintech" },
+    { company: "GridLeaf", year: 2025, round: "seed", sector: "climate" },
+    { company: "Kilnly", year: 2023, sector: "climate" },
+  ] };
+  test("prefers her sector, newest first", () => {
+    expect(dealToShow(inv, ["Climate & Energy"])).toEqual({ company: "GridLeaf", year: 2025, round: "seed", inHers: true });
+  });
+  test("falls back to the newest deal, then the portfolio, then nothing", () => {
+    expect(dealToShow(inv, ["Health"])?.company).toBe("Paybee");
+    expect(dealToShow({ recent: [], portfolio: ["Smeltwise"] }, ["Health"])).toEqual({ company: "Smeltwise", year: null, round: null, inHers: false });
+    expect(dealToShow({ recent: [], portfolio: [] }, ["Health"])).toBeNull();
   });
 });

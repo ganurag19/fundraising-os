@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc } from "./_generated/dataModel";
-import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS, scoreParts } from "./lib/match";
+import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS, dealToShow, scoreParts } from "./lib/match";
 import { domainOf, normaliseLinkedin, normaliseUrl } from "./lib/links";
 import { limits } from "./limits";
 
@@ -144,6 +144,8 @@ const rowV = v.object({
   reason: v.union(v.string(), v.null()), // one line on why they fit
   parts: v.array(v.object({ key: v.string(), label: v.string(), got: v.number(), max: v.number() })), // the score, part by part
   leadsRounds: v.boolean(), lastDealYear: v.union(v.number(), v.null()), firstCheques: v.boolean(),
+  // the deal shown in her table (null while hidden): newest in her sector, else newest, else a portfolio company
+  deal: v.union(v.null(), v.object({ company: v.string(), year: v.union(v.number(), v.null()), round: v.union(v.string(), v.null()), inHers: v.boolean() })),
   // Programmes and form-only funds: an application link instead of an email
   applyUrl: v.union(v.string(), v.null()), applyDeadline: v.union(v.string(), v.null()), hasEmail: v.boolean(),
   status: v.union(v.literal("new"), v.literal("sent"), v.literal("replied"), v.literal("meeting"), v.literal("passed")),
@@ -187,6 +189,7 @@ export const me = query({
         applyUrl: open ? inv.applyUrl ?? null : null, applyDeadline: inv.applyDeadline ?? null, hasEmail: !!inv.email,
         parts: scoreParts(inv, f, new Date(m._creationTime).getFullYear()) ?? [], // the year she was matched (queries don't read the clock)
         leadsRounds: !!inv.leadsRounds, firstCheques: inv.stages.includes("idea") || inv.stages.includes("pre_seed"), lastDealYear: inv.recent.reduce<number | null>((y, r) => (r.year && (!y || r.year > y) ? r.year : y), null),
+        deal: open ? dealToShow(inv, f.sectors) : null,
         status: m.status ?? ("new" as const),
         followups: open ? (await ctx.db.query("followups").withIndex("by_match_and_n", (q) => q.eq("matchId", m._id)).take(4))
           .filter((x) => x.state !== "cancelled")

@@ -18,6 +18,7 @@ export function soonFor(company = "your startup", sector = "your sector", stage 
     { icon: "▤", title: `Pitch deck review for ${company}`, line: "Slide-by-slide notes on what investors will question." },
     { icon: "?", title: `Questions investors will ask ${company}`, line: "Are you ready? Answers drafted from your profile." },
     { icon: "❝", title: `FAQ for your ${stage.toLowerCase()} raise`, line: "Round, terms, use of funds: written once, reused everywhere." },
+    { icon: "★", title: "Mentors, advisors and warm intros", line: "From founders who've already raised their first cheque.", vip: true },
   ];
 }
 

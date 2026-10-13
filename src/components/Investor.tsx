@@ -259,6 +259,36 @@ export function ScoreBreakdown({ r }: { r: Row }) {
   );
 }
 
+/** Three bars, lit by how strong the Fit Score is. */
+function ScoreBars({ score }: { score: number }) {
+  const lit = score >= 85 ? 3 : score >= 70 ? 2 : 1;
+  return <span className="bars" aria-hidden="true">{[0, 1, 2].map((i) => <i key={i} className={i < lit ? "on" : ""} />)}</span>;
+}
+
+const checked = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : null;
+
+/** "Why they fit": the reason, its sources, then the score part by part. */
+function WhyPanel({ r }: { r: Row }) {
+  return (
+    <div className="why-panel">
+      <span className="ft-pop-k">Why they fit</span>
+      {r.reason && <p>{r.reason}</p>}
+      {r.draft && r.draft.whyFit.length > 0 && <ul className="why-list">{r.draft.whyFit.map((x) => <li key={x}>{x}</li>)}</ul>}
+      {r.sourceUrls.length > 0 && <>
+        <span className="ft-pop-k">Sources</span>
+        <div className="why-srcs">{r.sourceUrls.slice(0, 4).map((u) => <a className="ft-src" key={u} href={u} target="_blank" rel="noreferrer noopener">↗ {site(u)}{checked(r.lastChecked) ? ` · checked ${checked(r.lastChecked)}` : ""}</a>)}</div>
+      </>}
+      <span className="ft-pop-k">Fit Score, part by part</span>
+      <ScoreBreakdown r={r} />
+    </div>
+  );
+}
+
+/** Column names over a list of investor rows (laptop width). */
+export function InvestorHead() {
+  return <div className="inv-head" aria-hidden="true"><span>Investor</span><span>Fit Score ↓</span><span>Recent deal</span><span>Cheque</span><span /></div>;
+}
+
 export function InvestorRow({ r, token, onToast, startOpen = false, account = null }: { r: Row; token: string; onToast: Toast; startOpen?: boolean; account?: string | null }) {
   const writeMore = useAction(api.write.writeMore);
   const [busy, setBusy] = useState(false);
@@ -274,17 +304,19 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
   const setStatus = useMutation(api.pipeline.setStatus);
   const tag = applyOnly && r.status === "sent" ? "Applied" : STATUS_TAG[r.status];
   const closes = r.applyDeadline ? new Date(r.applyDeadline + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : null;
+  const act = tag ? <span className={`tag status-${r.status}`}>{tag}</span> : applyOnly
+    ? <a className="btn primary sm" href={r.applyUrl!} target="_blank" rel="noreferrer">Apply</a>
+    : r.draft
+    ? <button className="btn ghost sm" onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Email"}</button>
+    : <button className="btn primary sm" data-track="click_write" disabled={busy} onClick={write}>{busy ? "Writing…" : "Write email"}</button>;
   return (
-    <div className={`row-card${r.rank < 3 ? " top" : ""}`} id={`inv-${r.rank}`}>
-      <div className="row-main">
-        <button className="dial-btn" onClick={() => setWhy((w) => !w)} aria-expanded={why} aria-label={`Fit Score ${r.score}. Show how it's worked out`}><Dial score={r.score} size={40} /></button>
-        <Head r={r} rank={r.rank < 3} badges />
-        <span className="muted small cheque">{cheque(r)}</span>
-        {tag ? <span className={`tag status-${r.status}`}>{tag}</span> : applyOnly
-          ? <a className="btn primary sm" href={r.applyUrl!} target="_blank" rel="noreferrer">Apply</a>
-          : r.draft
-          ? <button className="btn ghost sm" onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Email"}</button>
-          : <button className="btn primary sm" data-track="click_write" disabled={busy} onClick={write}>{busy ? "Writing…" : "Write email"}</button>}
+    <div className={`row-card inv-row${r.rank < 3 ? " top" : ""}${why ? " why-open" : ""}`} id={`inv-${r.rank}`}>
+      <div className="inv-grid">
+        <div className="inv-who"><Head r={r} rank={r.rank < 3} badges />{r.leadsRounds && <span className="ft-lead">Leads</span>}</div>
+        <button className={`inv-score${r.score >= 85 ? " hi" : ""}`} onClick={() => setWhy((w) => !w)} aria-expanded={why} aria-label={`Fit Score ${r.score}. Show why they fit`}><ScoreBars score={r.score} />{r.score}</button>
+        <span className="inv-deal" data-l="Recent deal" title={r.deal ? r.deal.company : undefined}>{r.deal ? [r.deal.company, r.deal.round, r.deal.year ?? (r.deal.round ? null : "portfolio")].filter(Boolean).join(" · ") : <span className="muted">No deal on record</span>}</span>
+        <span className="inv-cheque">{cheque(r)}</span>
+        <span className="inv-act">{act}</span>
       </div>
       {applyOnly && r.status === "new" && (
         <div className="apply-row">
@@ -293,8 +325,7 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
           <button className="btn ghost sm" onClick={() => { void setStatus({ token, rank: r.rank, status: "sent" }); onToast("Noted. It's in your pipeline under Waiting on them."); }}>I applied</button>
         </div>
       )}
-      {r.reason && <p className="row-reason">{r.reason} <button className="why-link" onClick={() => setWhy((w) => !w)}>{why ? "Hide score" : "Score breakdown"}</button></p>}
-      {why && <ScoreBreakdown r={r} />}
+      {why ? <WhyPanel r={r} /> : r.reason && <p className="row-reason">{r.reason} <button className="why-link" onClick={() => setWhy(true)}>Why they fit</button></p>}
       {open && r.draft && (
         <div className="row-email">
           <Why r={r} d={r.draft} />
@@ -307,11 +338,13 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
 
 export function SoonCards({ onToast, company, sector, stage }: { onToast: Toast; company?: string; sector?: string; stage?: string }) {
   return (
-    <div className="soon-grid">
+    <div className="soon-grid six">
       {soonFor(company, sector, stage).map((s) => (
-        <button className="soon-card" data-track="click_soon" key={s.title} onClick={() => onToast(`${s.title}: coming soon.`)}>
+        <button className={`soon-card${"vip" in s ? " vip" : ""}`} data-track="click_soon" key={s.title} onClick={() => onToast(`${s.title}: coming soon.`)}>
           <span className="soon-icon" aria-hidden="true">{s.icon}</span>
-          <span className="soon-text"><b>{s.title} <span className="soon-tag">SOON</span></b><span>{s.line}</span></span>
+          {"vip" in s
+            ? <span className="soon-text"><b>{s.title}</b><span>{s.line}</span><span className="vip-btn">VIP access · SOON</span></span>
+            : <span className="soon-text"><b>{s.title} <span className="soon-tag">SOON</span></b><span>{s.line}</span></span>}
         </button>
       ))}
     </div>

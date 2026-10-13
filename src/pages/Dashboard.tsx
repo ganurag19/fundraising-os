@@ -5,7 +5,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
 import { LogoMark, Wordmark } from "../components/Brand";
 import { Face, Logo } from "../components/Art";
-import { FollowupBox, Head, InvestorRow, Pipeline, SoonCards, StatusMenu, UpgradeCard } from "../components/Investor";
+import { FollowupBox, Head, InvestorHead, InvestorRow, Pipeline, SoonCards, StatusMenu, UpgradeCard } from "../components/Investor";
 import JoinSheet from "../components/JoinSheet";
 import { applyTheme, savedTheme } from "../lib/theme";
 import type { Theme } from "../lib/theme";
@@ -333,7 +333,8 @@ function Investors({ me, token, onToast }: { me: Me; token: string; onToast: (s:
         <div className="pick">{kinds.map(([k, label]) => <button key={k} aria-pressed={kind === k} onClick={() => setKind(k)}>{label}</button>)}</div>
         {cities.length > 1 && <select className="status-menu" aria-label="City" value={city} onChange={(e) => setCity(e.target.value)}><option value="">Any city</option>{cities.map((c) => <option key={c}>{c}</option>)}</select>}
       </div>
-      <p className="muted small">{rows.length} of your best {me.rows.length}{me.matchCount > me.rows.length ? ` (out of ${me.matchCount} who fit)` : ""}. Tap a score to see how it's worked out.</p>
+      <p className="muted small">{rows.length} of your best {me.rows.length}{me.matchCount > me.rows.length ? ` (out of ${me.matchCount} who fit)` : ""}. Tap a Fit Score to see why they fit, with sources.</p>
+      <InvestorHead />
       <div className="rows">{rows.map((r) => <InvestorRow key={r.rank} r={r} token={token} onToast={onToast} account={me.gmail} />)}</div>
       {!rows.length && <div className="empty"><b>No investors match these filters.</b><button className="btn ghost sm" onClick={() => { setKind("all"); setCity(""); }}>Clear filters</button></div>}
     </>

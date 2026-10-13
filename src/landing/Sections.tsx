@@ -182,8 +182,8 @@ export function FitScore() {
 /** Do it yourself, hire, agency, or FirstCheq. */
 const ROWS: [string, string, string, string, string][] = [
   ["Time to your first email", "2–4 weeks", "4–8 weeks to hire and ramp up", "2–4 weeks to onboard", "2 minutes"],
-  ["Finding who fits", "Googling and guesswork", "Their own network", "Their own network", "Researched investors, matched to you"],
-  ["Each email", "Hours, or a generic draft", "Varies", "Templates at scale", "Written to each investor"],
+  ["Targeted reach", "Anyone you can find, by guesswork", "Their own network", "Their own network", "Only investors who fit your space, stage and round, ranked by Fit Score"],
+  ["Personalised emails", "Hours each, or a generic draft", "Varies", "Templates at scale", "Researched and written to each investor, opening on a real deal"],
   ["Follow-ups", "Easy to forget", "Manual", "Usually", "Written for you, on time"],
   ["Your effort a week", "10–15 hours", "Managing a hire", "Calls and reviews", "About 1 hour"],
   ["Cost", "Your evenings", "₹70k–1.5L a month", "₹50k–2L a month + 2–5% success fee", "Free to start"],
@@ -195,8 +195,8 @@ export function Compare() {
   return (
     <>
       <div className="scrollx"><table className="tbl compare">
-        <thead><tr><th className="lbl"></th><th className="us">FirstCheq</th><th>On your own</th><th>A full-time hire</th><th>An advisor or agency</th></tr></thead>
-        <tbody>{ROWS.map(([k, own, hire, agency, us]) => <tr key={k}><td className="lbl"><b>{k}</b></td><td className="us">{us}</td><td>{own}</td><td>{hire}</td><td>{agency}</td></tr>)}</tbody>
+        <thead><tr><th className="lbl"></th><th className="us us-top">FirstCheq</th><th>On your own</th><th>A full-time hire</th><th>An advisor or agency</th></tr></thead>
+        <tbody>{ROWS.map(([k, own, hire, agency, us], i) => <tr key={k}><td className="lbl"><b>{k}</b></td><td className={`us${i === ROWS.length - 1 ? " us-end" : ""}`}>{us}</td><td>{own}</td><td>{hire}</td><td>{agency}</td></tr>)}</tbody>
       </table></div>
       <p className="muted small center" style={{ marginTop: 10 }}>Typical, indicative ranges, not quotes.</p>
     </>

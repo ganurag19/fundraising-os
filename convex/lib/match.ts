@@ -140,3 +140,16 @@ export function topMatches<T extends MatchInvestor>(investors: T[], f: FounderAs
   const rest = ranked.filter((x) => !picks.includes(x)).filter((x) => (x.inv.email && !isProgramme(x.inv)) || ++capped <= APPLY_ONLY_CAP);
   return [...picks, ...rest].slice(0, n);
 }
+
+/** The one deal to show in her table: newest in her sector, else newest of any; else a portfolio company. Never invented. */
+export function dealToShow(
+  inv: { recent: { company: string; year?: number; round?: string; sector?: string }[]; portfolio: string[] },
+  sectors: string[],
+): { company: string; year: number | null; round: string | null; inHers: boolean } | null {
+  const wanted = sectors.map((s) => SECTOR_KEYS[s]).filter(Boolean);
+  const newest = <T extends { year?: number }>(xs: T[]) => [...xs].sort((a, b) => (b.year ?? 0) - (a.year ?? 0))[0];
+  const mine = newest(inv.recent.filter((r) => r.sector && wanted.includes(r.sector)));
+  const d = mine ?? newest(inv.recent);
+  if (d) return { company: d.company, year: d.year ?? null, round: d.round ?? null, inHers: !!mine };
+  return inv.portfolio[0] ? { company: inv.portfolio[0], year: null, round: null, inHers: false } : null;
+}
