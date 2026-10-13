@@ -34,6 +34,7 @@ from check_records import apply_url  # noqa: E402
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "seed", "investors_enriched.json")
 REGISTRY = os.path.join(ROOT, "seed", "enrichment", "exported_ids.json")
+TODAY = __import__("datetime").date.today().isoformat()  # a passed deadline is never exported
 OUT = os.path.join(ROOT, "seed", "investors_import.jsonl")
 # the app's Funds tab knows vc and corporate_vc; a family office invests like a corporate arm
 IMPORT_KIND = {"family_office": "corporate_vc"}
@@ -67,7 +68,8 @@ def main(schema=1):
         if r.get("origin") == "growth" and (r.get("checks") or {}).get("email", {}).get("result") != "pass":
             has_email = False  # a new investor's email goes out only once it was seen on its page
         link = apply_url(r) if schema >= 2 and (r.get("checks") or {}).get("apply", {}).get("result") == "pass" else None
-        if not r.get("india_based") or r.get("exclude") or r.get("import_blocked"):
+        india = r.get("india_based") or (r.get("checks") or {}).get("india", {}).get("result") == "pass"
+        if not india or r.get("exclude") or r.get("import_blocked"):
             continue
         if not (has_email or link):
             continue
@@ -95,7 +97,8 @@ def main(schema=1):
         app = r.get("application") or {}
         optional = {
             "email": r["email"] if has_email else None,
-            "applyUrl": link, "applyDeadline": app.get("deadline") if link else None,
+            "applyUrl": link,
+            "applyDeadline": app.get("deadline") if link and (app.get("deadline") or "") >= TODAY else None,
             "applyType": app.get("type") if link and app.get("url") == link else ("form" if link else None),
             "person": person, "firm": firm, "title": r.get("title"), "city": r.get("city"),
             "website": r.get("website"), "thesis": r.get("thesis"),

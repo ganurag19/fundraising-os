@@ -96,7 +96,7 @@ The pilot sets the yield (see the status log in docs/CONTEXT.md). The plan from 
 | 3–4 | Angels | allowed news (Outlook Business), network and syndicate sites, startups' own funding posts | lower than first hoped: the main funding-report sites are out |
 | 4–5 | Networks + corporate arms + family offices | IVCA members, network sites | ~80–120 |
 | 5–6 | Incubators + grants | AIM, NIDHI, Startup India lists | most need the apply-link change (docs/PROPOSAL_EVIDENCE_AND_APPLY.md) |
-| 6–8 | Refresh the original 433 | refresh_queue.py | fewer stale records, not more records |
+| 6–8 | Refresh the original 433 | `refresh_queue.py --sectors fintech,b2b_saas,consumer,health --limit 100` first (all 12 sectors are live since 13 Oct; these have the fewest theses and tagged deals), then the rest | fewer stale records, better emails for the new sectors |
 
 If an investor has no published email, it can't be in the app today, so the real count depends on how many publish one. The pilot measures this.
 

@@ -30,7 +30,10 @@ import os
 import random
 import re
 import sys
+import time
+import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pipeline_common import OFFICIAL_SUFFIXES, domain, load_json, same_site, save_json  # noqa: E402
@@ -95,10 +98,13 @@ def apply_url(rec):
     return pr.get("value") if pr.get("type") == "form" and str(pr.get("value") or "").startswith("http") else None
 
 
-def apply_check(rec, fetch=None):
+def apply_check(rec, fetch=None, today=None):
     url = apply_url(rec)
     if not url:
         return "fail", "no application or pitch-form link"
+    app = rec.get("application") or {}
+    if today and app.get("url") == url and app.get("type") == "call" and (app.get("deadline") or "9999") < today.isoformat():
+        return "fail", f"call closed on {app['deadline']}"
     d, site = domain(url), domain(rec.get("website"))
     own = same_site(d, site) or (d or "").endswith(OFFICIAL_SUFFIXES)
     # a form hosted elsewhere (Google Forms, Typeform) counts when the investor's own page links to it
@@ -136,8 +142,15 @@ def sources_check(rec):
     return ("fail", "no source for " + ", ".join(missing)) if missing else ("pass", "")
 
 
+INDIA_LISTS = {"startup_india", "aim", "nidhi", "sebi_aif"}  # official lists of Indian programmes and funds
+
+
 def india_check(rec):
-    return ("pass", "") if rec.get("india_based") else ("fail", "not shown to invest in India")
+    if rec.get("india_based"):
+        return "pass", ""
+    if rec.get("india_based") is None and any(s.get("found_via") in INDIA_LISTS for s in rec.get("sources") or []):
+        return "pass", "on an official Indian list"
+    return "fail", "not shown to invest in India"
 
 
 def active_check(rec, today):
@@ -152,7 +165,7 @@ def active_check(rec, today):
 
 
 def check(rec, today, fetch=None):
-    em, ap = email_check(rec, fetch), apply_check(rec, fetch)
+    em, ap = email_check(rec, fetch), apply_check(rec, fetch, today)
     res = {
         "contact": ("pass", "email") if em[0] == "pass" else ("pass", "apply link") if ap[0] == "pass" else ("fail", "no email or apply link"),
         "email": em,
@@ -171,18 +184,36 @@ def check(rec, today, fetch=None):
     return rec
 
 
-def make_fetch():
+def make_fetch(tries=3):
+    """Opens a page at most `tries` times (network blips are common on long runs). A page with a broken
+    certificate stays unopened on purpose: a founder would get a browser warning there too."""
     cache = {}
+
+    def get(url):
+        for i in range(tries):
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "FirstCheq-check/1.0 (one page per investor)"})
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    return r.read(2_000_000).decode("utf-8", "ignore")
+            except urllib.error.HTTPError as e:
+                if e.code in (403, 404, 410):
+                    return None
+            except Exception:
+                pass
+            time.sleep(1 + 2 * i)
+        return None
 
     def fetch(url):
         if url not in cache:
-            try:
-                req = urllib.request.Request(url, headers={"User-Agent": "FirstCheq-check/1.0 (one page per investor)"})
-                with urllib.request.urlopen(req, timeout=15) as r:
-                    cache[url] = r.read(2_000_000).decode("utf-8", "ignore")
-            except Exception:
-                cache[url] = None
+            cache[url] = get(url)
         return cache[url]
+
+    def prefetch(urls):
+        todo = sorted({u for u in urls if u and u not in cache})
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            for u, text in zip(todo, pool.map(get, todo)):
+                cache[u] = text
+    fetch.prefetch = prefetch
     return fetch
 
 
@@ -239,6 +270,13 @@ def run(seed, since=None, today=None, fetch=None):
     path = os.path.join(seed, "investors_enriched.json")
     data = load_json(path)
     records = data["investors"]
+    if fetch and hasattr(fetch, "prefetch"):
+        urls = []
+        for r in records:
+            urls += [r.get("email_source_url"), apply_url(r)]
+            urls += [src.get("url") for src in (r.get("enrichment") or {}).get("sources") or []
+                     if set(src.get("supports") or []) & {"pitch_route", "application"}]
+        fetch.prefetch(urls)
     for r in records:
         check(r, today, fetch)
     save_json(path, data)

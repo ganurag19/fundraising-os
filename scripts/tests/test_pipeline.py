@@ -337,6 +337,32 @@ class MergeAndCheckTest(unittest.TestCase):
         self.assertNotIn("email", row)
         self.assertEqual(row["applyUrl"], "https://copied.test/pitch")
 
+    def test_closed_call_no_longer_counts_and_past_dates_are_dropped(self):
+        s = self.s.growth_slug
+        self.s.add_result(result(s("Made-up Seed Scheme"), kind="grant", india_based=True,
+                                 application={"url": "https://scheme.gov.in/call", "deadline": "2026-09-30", "type": "call"},
+                                 sources=[{"url": "https://scheme.gov.in/call", "supports": ["india_based", "application"]}]))
+        self.s.add_result(result(s("Campus Incubator Test"), kind="accelerator", active=None, india_based=True,
+                                 application={"url": "https://incubator.ac.in/apply", "deadline": "2026-01-01", "type": "cohort"},
+                                 sources=[{"url": "https://incubator.ac.in/apply", "supports": ["india_based", "application"]}]))
+        self.s.pipeline()
+        r = {(x.get("firm") or x.get("person_name")): x for x in self.s.records().values()}
+        self.assertEqual(r["Made-up Seed Scheme"]["checks"]["apply"]["why"], "call closed on 2026-09-30")
+        build_import.TODAY = "2026-10-13"
+        row = self.build(2)["Campus Incubator Test"]
+        self.assertEqual(row["applyUrl"], "https://incubator.ac.in/apply")
+        self.assertNotIn("applyDeadline", row)
+
+    def test_official_indian_list_counts_as_india(self):
+        rec = merge_enrichment.new_record({"id": "g_x", "kind": "incubator", "firm": "Made-up AIC",
+                                           "discovered": [{"source_url": "https://list.gov.in", "found_via": "startup_india"}]})
+        self.assertEqual(check_records.india_check(rec)[0], "pass")
+        rec["sources"][0]["found_via"] = "news"
+        self.assertEqual(check_records.india_check(rec)[0], "fail")
+        rec["india_based"] = False
+        rec["sources"][0]["found_via"] = "aim"
+        self.assertEqual(check_records.india_check(rec)[0], "fail")
+
     def test_cloudflare_hidden_email_is_seen(self):
         key, em = 0x5a, "pitch@greenteapot.test"
         hexed = "%02x" % key + "".join("%02x" % (ord(c) ^ key) for c in em)
@@ -372,6 +398,19 @@ class MergeAndCheckTest(unittest.TestCase):
 
 
 class RefreshQueueTest(unittest.TestCase):
+    def test_sector_batch_puts_the_thinnest_first(self):
+        s = Seed([legacy("inv_0001", firm="Fintech Full", sectors=["fintech"], thesis="Backs payments.",
+                         recent_investments=[{"company": "Madeup Pay", "year": 2026, "sector": "fintech"}]),
+                  legacy("inv_0002", firm="Fintech No Thesis", sectors=["fintech"]),
+                  legacy("inv_0003", firm="Climate Only", sectors=["climate"]),
+                  legacy("inv_0004", firm="Anything Goes", sectors=["sector_agnostic"], thesis="All tech.")])
+        try:
+            q = refresh_queue.run(s.dir, months=6, today=TODAY, sectors=["fintech"])
+            units = s.load("enrichment", os.path.basename(q["path"]))
+            self.assertEqual([u["firm"] for u in units], ["Fintech No Thesis", "Anything Goes", "Fintech Full"])
+        finally:
+            s.close()
+
     def test_never_checked_first_and_recent_ones_left_out(self):
         s = Seed([legacy("inv_0001", firm="Checked Recently", last_checked="2026-09-01"),
                   legacy("inv_0002", firm="Checked Long Ago", last_checked="2026-01-01"),
