@@ -46,10 +46,7 @@ export const QUESTIONS: [string, string][] = [
 ];
 
 export const PAINS: [string, string, string][] = [
-  ["I don't know a single investor.", "Start with 600+.", "Funds, angels and networks in India, each matched to your sector, stage and cheque size, with the reason why."],
-  ["I don't know what to write.", "Your first email is already written,", "using what that investor actually backs and your own numbers. Short, specific, yours to edit."],
-  ["What if they ask something I can't answer?", "Answers to 18 common questions,", "drafted from your profile: market, revenue, plan, competition, profitability."],
-  ["I sent 30 emails and heard nothing.", "Fewer, better emails.", "We flag investors who backed your competitors, and show who actually replies to founders."],
-  ["I keep forgetting to follow up.", "Follow-ups written and due on day 3 and day 10,", "and stopped the moment they reply."],
-  ["I'm doing this at 2 a.m. after work.", "One clear task at a time.", "Open the app and it tells you the next move, and how long it takes."],
+  ["I don't know a single investor.", "Start with the ones who fit.", "Indian funds, angels and networks matched to your sector, stage and round size, each with the reason why."],
+  ["I don't know what to write.", "Your first email is already written.", "It opens on a deal that investor actually did. Yours to edit."],
+  ["I keep forgetting to follow up.", "We write the follow-ups.", "On day 3 and a week later, stopped the moment they reply."],
 ];

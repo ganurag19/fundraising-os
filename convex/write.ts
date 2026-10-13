@@ -10,7 +10,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { rankMatches, topMatches } from "./lib/match";
 import { shortUrl } from "./lib/links";
-import { checkDraft, unsourcedFacts } from "./lib/checks";
+import { checkDraft, hookNamesADeal, unsourcedFacts } from "./lib/checks";
 import { DRAFT_SYSTEM, FACT_FIELDS, REASONS_SYSTEM } from "./lib/prompt";
 import { limits } from "./limits";
 
@@ -172,6 +172,8 @@ async function writeOne(ctx: ActionCtx, client: Anthropic, founderId: Id<"founde
       });
       if (!out || res.stop_reason === "refusal") continue;
       const problems = checkDraft({ subject: out.subject, body: out.body, oneLiner: founder.oneLiner, founderLine: founder.founderLine, traction: founder.traction });
+      const deal = hookNamesADeal(out.body, facts as { recent?: { company: string }[]; portfolio?: string[] });
+      if (deal) problems.push(deal);
       const unsourced = unsourcedFacts(out.factsUsed, facts as Record<string, unknown>);
       if ((problems.length || unsourced.length) && attempt === 0) {
         fixNote = `\n\nYour last draft had these problems. Fix them and keep everything else true:\n- ${[...problems, ...unsourced.map((u) => `Not in INVESTOR: ${u}`)].join("\n- ")}`;

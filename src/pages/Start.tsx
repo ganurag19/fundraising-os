@@ -147,7 +147,8 @@ export default function Start() {
         <div className="profile-form">
           <label>You<textarea className="field tall" maxLength={220} value={p.founderLine} onChange={(e) => setP((o) => ({ ...o, founderLine: e.target.value }))} /></label>
           <label>{company}<textarea className="field tall" maxLength={200} value={p.oneLiner} onChange={(e) => setP((o) => ({ ...o, oneLiner: e.target.value }))} /></label>
-          {(p.traction || p.revenue || p.customers) && <label>Traction<textarea className="field" style={{ minHeight: 60 }} maxLength={200} value={p.traction} onChange={(e) => setP((o) => ({ ...o, traction: e.target.value }))} /></label>}
+          <label>Your proof, with a number<textarea className="field" style={{ minHeight: 60 }} maxLength={200} placeholder="e.g. 8 CA firms on pilot, 2 paying · ₹3.2L a month · 1,200 on the waitlist" value={p.traction} onChange={(e) => setP((o) => ({ ...o, traction: e.target.value }))} /></label>
+          {!/\d/.test(p.traction + p.founderLine + p.oneLiner) && <p className="warn">Investors look for one number. Add one if you can: customers, pilots, revenue, a waitlist, or years in your industry.</p>}
         </div>
         {actions(!!(p.oneLiner.trim() && p.founderLine.trim()), submitProfile, "Find my investors →")}</div>}
 

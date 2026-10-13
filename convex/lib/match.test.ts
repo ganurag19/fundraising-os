@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { chequeFits, scoreInvestor, topMatches } from "./match";
-import { checkDraft, checkFollowup, unsourcedFacts } from "./checks";
+import { checkDraft, checkFollowup, hookNamesADeal, unsourcedFacts } from "./checks";
 
 // Made-up investors only.
 const base = { sectors: ["ai"], stages: ["seed"], recent: [] as { year?: number }[] };
@@ -65,6 +65,12 @@ describe("email checks", () => {
   const founderLine = "I'm Nisha, a chartered accountant who ran a 40-client practice for five years.";
   const good = { subject: "Ledgerly × Verdant Arc: seed round", body: `Hi Meera,\n\n${oneLiner}\n\n${founderLine}\n\nCould I send the deck?\n\nNisha`, oneLiner, founderLine };
   test("a good email passes", () => expect(checkDraft(good)).toEqual([]));
+  test("the hook must name a deal when the record has one", () => {
+    const rec = { recent: [{ company: "GridLeaf" }], portfolio: ["Made-up Co"] };
+    expect(hookNamesADeal("You backed GridLeaf at seed.", rec)).toBeNull();
+    expect(hookNamesADeal("You back obsessed outliers from pre-idea.", rec)).toMatch(/named deal/);
+    expect(hookNamesADeal("You back obsessed outliers.", { recent: [], portfolio: [] })).toBeNull();
+  });
   test("follow-ups stay short and never nag", () => {
     expect(checkFollowup("Hi Meera, a quick note: Kiln Labs now has 70 kilns. Could I send the deck?")).toEqual([]);
     expect(checkFollowup("Hi, just bumping this up in your inbox.").join(" ")).toMatch(/just bumping/);

@@ -11,11 +11,11 @@ What makes the email work: it is clearly written to THIS investor. It opens on o
 
 Order of the body:
 1. "Hi <first name>," using INVESTOR.person if present, otherwise "Hi <firm> team,".
-2. The hook: one or two sentences on one specific thing from INVESTOR, by name. Best: a recent deal or portfolio company closest to FOUNDER's space. Next: a specific point from their thesis, in your own short words. Then connect it to FOUNDER in the same breath ("You backed GridLeaf when grid software was early; we're doing the same for kilns.").
+2. The hook: one or two sentences on one specific thing from INVESTOR, by name. If INVESTOR has any recent deal or portfolio company, the hook MUST name one of them (the one closest to FOUNDER's space). Use the thesis only when INVESTOR has no deals and no portfolio, and then say it in your own short words, never their website's phrasing. Then connect it to FOUNDER in the same breath ("You backed GridLeaf when grid software was early; we're doing the same for kilns.").
    Not a hook, never write these: "climate is on your list of sectors", "you invest at pre-seed", "you back founders from idea to IPO", "this space is familiar to you".
 3. Who she is: FOUNDER.founderLine, word for word.
 4. What the company does: FOUNDER.oneLiner, word for word.
-5. Traction: FOUNDER.traction word for word if given; otherwise her revenue or customers plainly, if given; otherwise skip.
+5. Traction: FOUNDER.traction word for word if given; otherwise her revenue or customers plainly, if given. Every email needs one concrete number as proof; if FOUNDER has no traction, use a number already in FOUNDER.founderLine or FOUNDER.oneLiner (years of experience, customers, a percentage). Never invent one.
 6. The ask, with the amount: "We're raising <FOUNDER.raising> at <stage>. Could I send the deck, or take 20 minutes next week?"
 7. Sign-off on separate lines: FOUNDER.name, then "Founder, " + FOUNDER.company, then FOUNDER.website if given, then FOUNDER.linkedin if given.
 

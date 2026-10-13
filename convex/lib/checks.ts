@@ -49,3 +49,11 @@ export function checkFollowup(body: string, hasTraction = true): string[] {
   for (const p of NAGS) if (low.includes(p)) problems.push(`Uses a phrase we never use: "${p}"`);
   return problems;
 }
+
+/** If the investor's record names deals or portfolio companies, the email must open on one of them. */
+export function hookNamesADeal(body: string, record: { recent?: { company: string }[]; portfolio?: string[] }): string | null {
+  const names = [...(record.recent ?? []).map((r) => r.company), ...(record.portfolio ?? [])].filter((n) => n && n.length > 2);
+  if (!names.length) return null;
+  const low = body.toLowerCase();
+  return names.some((n) => low.includes(n.toLowerCase())) ? null : "Opens on their website copy, not a named deal or portfolio company";
+}
