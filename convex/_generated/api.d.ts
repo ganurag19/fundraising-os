@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
 import type * as followups from "../followups.js";
@@ -23,6 +24,7 @@ import type * as limits from "../limits.js";
 import type * as notify from "../notify.js";
 import type * as pipeline from "../pipeline.js";
 import type * as suggest from "../suggest.js";
+import type * as track from "../track.js";
 import type * as watch from "../watch.js";
 import type * as write from "../write.js";
 
@@ -33,6 +35,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
   auth: typeof auth;
   crons: typeof crons;
   followups: typeof followups;
@@ -48,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   notify: typeof notify;
   pipeline: typeof pipeline;
   suggest: typeof suggest;
+  track: typeof track;
   watch: typeof watch;
   write: typeof write;
 }>;
