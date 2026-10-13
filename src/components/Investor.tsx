@@ -79,7 +79,13 @@ const CopyIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="non
 const day = (t: number) => new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
 /** One email (first or follow-up): To, subject, body, then Open in Gmail, copy, and her "I sent it". */
-function MailBox({ to, mail, warnings = [], sent, onSent, onToast, account }: { to: string; mail: Mail; warnings?: string[]; sent: boolean; onSent: () => void; onToast: Toast; account: string | null }) {
+function MailBox({ to, mail, warnings = [], sent, onSent, onToast, account, onSave }: { to: string; mail: Mail; warnings?: string[]; sent: boolean; onSent: () => void; onToast: Toast; account: string | null; onSave?: (m: Mail) => Promise<string | null> }) {
+  const [editing, setEditing] = useState<Mail | null>(null);
+  const save = async () => {
+    if (!editing || !onSave) return;
+    const err = await onSave(editing);
+    if (err) onToast(err); else { setEditing(null); onToast("Saved. Open in Gmail uses your version."); }
+  };
   const copy = async () => {
     const text = `${mail.subject}\n\n${mail.body}`;
     try {
@@ -90,17 +96,26 @@ function MailBox({ to, mail, warnings = [], sent, onSent, onToast, account }: { 
   };
   return (
     <>
-      <div className="email">
-        <div className="to">To {to}</div>
-        <div className="subj">{mail.subject}</div>
-        {mail.body}
-      </div>
+      {editing ? (
+        <div className="email editing">
+          <div className="to">To {to}</div>
+          <input className="field subj-edit" aria-label="Subject" maxLength={150} value={editing.subject} onChange={(e) => setEditing({ ...editing, subject: e.target.value })} />
+          <textarea className="field body-edit" aria-label="Email" maxLength={3000} value={editing.body} onChange={(e) => setEditing({ ...editing, body: e.target.value })} />
+          <div className="email-actions"><button className="btn primary sm" onClick={save}>Save my version</button><button className="btn ghost sm" onClick={() => setEditing(null)}>Cancel</button><span className="muted small">{editing.body.trim().split(/\s+/).filter(Boolean).length} words</span></div>
+        </div>
+      ) : (
+        <div className="email">
+          <div className="to">To {to}{onSave && <button className="edit-link" onClick={() => setEditing({ subject: mail.subject, body: mail.body })}>Edit</button>}</div>
+          <div className="subj">{mail.subject}</div>
+          {mail.body}
+        </div>
+      )}
       {warnings.map((w) => <div className="warn" key={w}>⚠ {w}</div>)}
-      <div className="email-actions">
+      {!editing && <div className="email-actions">
         <button className="btn primary sm" onClick={() => openInGmail(to, mail, account)}>Open in Gmail</button>
         <button className="btn ghost sm icon" onClick={copy} aria-label="Copy email" title="Copy email"><CopyIcon /></button>
         <button className={`btn sm ${sent ? "sent" : "ghost"}`} aria-pressed={sent} onClick={onSent}>{sent ? "✓ Sent" : "I sent it"}</button>
-      </div>
+      </div>}
     </>
   );
 }
@@ -112,7 +127,12 @@ export function EmailBox({ r, d, token, onToast, account = null }: { r: Row; d: 
     void setStatus({ token, rank: r.rank, status: sent ? "new" : "sent" });
     onToast(sent ? "Marked as not sent." : `Sent. We'll write your first follow-up for ${day(Date.now() + 3 * 864e5)}.`);
   };
-  return <MailBox to={r.email ?? ""} mail={d} warnings={d.warnings} sent={sent} onSent={onSent} onToast={onToast} account={account} />;
+  const saveEdit = useMutation(api.pipeline.saveEdit);
+  const onSave = async (m: Mail) => {
+    const res = await saveEdit({ token, rank: r.rank, subject: m.subject, body: m.body }).catch(() => ({ ok: false as const, error: "Couldn't save. Check your connection." }));
+    return res.ok ? null : res.error;
+  };
+  return <MailBox to={r.email ?? ""} mail={d} warnings={d.warnings} sent={sent} onSent={onSent} onToast={onToast} account={account} onSave={sent ? undefined : onSave} />;
 }
 
 /** A follow-up that's ready: same buttons; "I sent it" schedules the next one. */

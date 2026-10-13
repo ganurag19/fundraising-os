@@ -305,3 +305,10 @@ textarea.field.tall{min-height:128px;field-sizing:content}
 .due.today{background:var(--red-soft);color:var(--red)}
 .status-menu{flex:none;background:var(--card2);color:var(--fg);border:1px solid var(--line2);border-radius:10px;padding:6px 8px;font-size:13px;max-width:140px}
 @media (max-width:520px){ .row-main{flex-wrap:wrap} .row-main .pick-head{flex:1 1 60%} }
+
+/* Edit an email */
+.email .to{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.edit-link{background:none;border:0;color:var(--blue-ink);font:600 12px/1 var(--body);padding:2px 0;cursor:pointer}
+.email.editing{display:flex;flex-direction:column;gap:10px;white-space:normal}
+.subj-edit{font-weight:600}
+textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-sizing:content}

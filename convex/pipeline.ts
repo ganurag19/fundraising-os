@@ -59,6 +59,24 @@ export const setStatus = mutation({
   },
 });
 
+/** She edited her email. Kept next to the original, so we can learn what she changes (AGENTS.md section 4). */
+export const saveEdit = mutation({
+  args: { token: v.string(), rank: v.number(), subject: v.string(), body: v.string() },
+  returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
+  handler: async (ctx, { token, rank, subject, body }) => {
+    const f = await founderByToken(ctx, token);
+    if (!f) return { ok: false as const, error: "Please reload the page and try again." };
+    const m = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id).eq("rank", rank)).unique();
+    const d = m ? await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", f._id).eq("investorId", m.investorId)).first() : null;
+    if (!d) return { ok: false as const, error: "We couldn't find that email." };
+    const s = subject.trim().slice(0, 150), b = body.trim().slice(0, 3000);
+    if (!s || !b) return { ok: false as const, error: "The subject and the email can't be empty." };
+    await ctx.db.patch("drafts", d._id, { editedSubject: s === d.subject ? undefined : s, editedBody: b === d.body ? undefined : b });
+    await ctx.db.insert("steps", { step: "edited" });
+    return { ok: true as const };
+  },
+});
+
 /** She sent a follow-up. After #1, #2 is scheduled 7 days later. */
 export const followupSent = mutation({
   args: { token: v.string(), followupId: v.id("followups") },

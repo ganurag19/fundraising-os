@@ -91,4 +91,19 @@ describe("pipeline", () => {
     await t.mutation(api.pipeline.setStatus, { token, rank: 0, status: "sent" });
     expect((await t.query(internal.founders.forDrafting, { token })).hasSent).toBe(true);
   });
+
+  test("her edits are saved next to the original and used everywhere", async () => {
+    const { t, founderId } = await setup();
+    await t.run(async (ctx) => {
+      const m = (await ctx.db.query("matches").first())!;
+      await ctx.db.insert("drafts", { founderId, investorId: m.investorId, kind: "first", reason: "r", whyFit: [], watchOut: [], subject: "Original subject", body: "Original body", warnings: [] });
+    });
+    expect((await t.mutation(api.pipeline.saveEdit, { token, rank: 0, subject: " ", body: "x" })).ok).toBe(false);
+    expect((await t.mutation(api.pipeline.saveEdit, { token: other, rank: 0, subject: "Hijack", body: "x" })).ok).toBe(false);
+    expect(await t.mutation(api.pipeline.saveEdit, { token, rank: 0, subject: "My subject", body: "My own words" })).toEqual({ ok: true });
+    const draft = (await t.query(api.founders.me, { token }))!.rows[0].draft!;
+    expect([draft.subject, draft.body]).toEqual(["My subject", "My own words"]);
+    const stored = await t.run(async (ctx) => (await ctx.db.query("drafts").first())!);
+    expect([stored.subject, stored.editedSubject]).toEqual(["Original subject", "My subject"]);
+  });
 });

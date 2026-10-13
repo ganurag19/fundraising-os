@@ -157,7 +157,8 @@ export default function Start() {
           <li className={seconds > 1 ? "fg2" : ""}>{seconds > 1 ? "✓" : "…"} Whether their cheque fits your round</li>
           <li className={seconds > 3 ? "fg2" : ""}>{seconds > 3 ? "✓" : "…"} Ranking them by match score</li>
           <li>… Writing your first 3 emails ({seconds}s)</li>
-        </ul></div>}
+        </ul>
+        {seconds >= 15 && <p className="help" role="status" style={{ marginTop: 18 }}>{seconds < 45 ? "Taking a little longer than usual. Still writing, hang on." : "This is slow right now. Keep this page open; if nothing changes in a minute, go back and try again."}</p>}</div>}
 
       {step === 8 && <div className="step center rise"><span className="kicker gold">Written in {seconds < 60 ? `${Math.max(seconds, 1)} seconds` : `${Math.round(seconds / 60)} min`}</span>
         <h1 style={{ marginTop: 12 }}>Your first 3 emails <span className="it">are ready.</span></h1>
