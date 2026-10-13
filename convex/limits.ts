@@ -8,4 +8,9 @@ export const limits = new RateLimiter(components.rateLimiter, {
   polishPerVisitor: { kind: "fixed window", rate: 10, period: 24 * HOUR }, // "How you'll come across"
   extraEmailsPerFounder: { kind: "fixed window", rate: 17, period: 24 * HOUR }, // "Write email" beyond her top 3
   aiCallsGlobal: { kind: "token bucket", rate: 40, period: HOUR },
+  // Abuse guards (no IPs in Convex, so per-visitor where we can, app-wide caps everywhere)
+  codeTriesPerVisitor: { kind: "fixed window", rate: 10, period: HOUR }, // invite-code guesses
+  badCodesGlobal: { kind: "token bucket", rate: 300, period: HOUR }, // wrong codes across the app
+  invitesGlobal: { kind: "token bucket", rate: 100, period: HOUR }, // waitlist requests across the app
+  newFoundersGlobal: { kind: "token bucket", rate: 120, period: HOUR }, // new sign-ups across the app
 });

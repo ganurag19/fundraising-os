@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { describe, expect, test } from "vitest";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
+import rateLimiter from "@convex-dev/rate-limiter/test";
 
 const modules = import.meta.glob("./**/*.ts");
 const tokenA = "a".repeat(48);
@@ -13,6 +14,7 @@ const nisha = { inviteCode: "TEST-ONE", company: "Ledgerly", name: "Nisha Kulkar
 
 async function setup() {
   const t = convexTest(schema, modules);
+  rateLimiter.register(t);
   await t.mutation(internal.invites.createCode, { code: "TEST-ONE", label: "test", maxUses: 1 });
   return t;
 }
@@ -84,7 +86,13 @@ describe("founder sign-up", () => {
     expect(await nishaIn.mutation(api.founders.claim, { token: tokenA })).toEqual({ ok: true });
     const open = (await nishaIn.query(api.founders.me, { token: tokenA }))!;
     expect(open.unlocked).toBe(true);
-    expect(open.rows[4].email).toBe("hello@fund4.example");
+    expect(open.rows[4].displayName).toBe("Made-up Fund 4");
+    expect(open.rows[4].email).toBeNull(); // revealed only once she asks for that investor's email
+    await t.run(async (ctx) => {
+      const m = (await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId).eq("rank", 4)).unique())!;
+      await ctx.db.insert("drafts", { founderId, investorId: m.investorId, kind: "first", reason: "r", whyFit: [], watchOut: [], subject: "s", body: "b", warnings: [] });
+    });
+    expect((await nishaIn.query(api.founders.me, { token: tokenA }))!.rows[4].email).toBe("hello@fund4.example");
 
     // someone else signed in with her token still can't open or take her list
     const other = t.withIdentity({ subject: `${otherId}|s2` });

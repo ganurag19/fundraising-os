@@ -5,6 +5,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc } from "./_generated/dataModel";
 import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS } from "./lib/match";
 import { domainOf, normaliseLinkedin, normaliseUrl } from "./lib/links";
+import { limits } from "./limits";
 
 const TOKEN = /^[a-f0-9]{48}$/;
 const normaliseCode = (code: string) => code.trim().toUpperCase().replace(/\s+/g, "");
@@ -51,6 +52,7 @@ export const start = mutation({
     const code = normaliseCode(a.inviteCode);
     const invite = await ctx.db.query("inviteCodes").withIndex("by_code", (q) => q.eq("code", code)).unique();
     if (!invite || invite.uses >= invite.maxUses) return { ok: false as const, error: "Your invite code doesn't work any more. Go back and request an invite." };
+    if (!(await limits.limit(ctx, "newFoundersGlobal")).ok) return { ok: false as const, error: "Lots of sign-ups right now. Try again in a few minutes." };
     await ctx.db.patch("inviteCodes", invite._id, { uses: invite.uses + 1 });
     await ctx.db.insert("founders", { token: a.token, inviteCode: code, company, name, sectors, stage: a.stage, ask: a.ask, emailsStatus: "none" });
     await ctx.db.insert("steps", { step: "signup_done" });
@@ -160,7 +162,8 @@ export const me = query({
       rows.push({
         rank: m.rank, score: m.score, kind: inv.kind, city: inv.city ?? null,
         chequeMinLakh: inv.chequeMinLakh ?? null, chequeMaxLakh: inv.chequeMaxLakh ?? null, sentAt: m.sentAt ?? null,
-        displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: open ? inv.email : null,
+        // Beyond her top 3, an email address is only revealed once she asks for that investor's email ("Write email", capped daily).
+        displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: m.rank < 3 || d ? inv.email : null,
         website: open ? inv.website ?? null : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open ? inv.sourceUrls : [],
         draft: d ? { reason: d.reason, whyFit: d.whyFit, watchOut: d.watchOut, hook: d.hook ?? null, subject: d.editedSubject ?? d.subject, body: d.editedBody ?? d.body, warnings: d.warnings } : null,
       });

@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { useConvex, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
-import { rememberInviteCode } from "../lib/token";
+import { rememberInviteCode, visitorToken } from "../lib/token";
 
 export type SheetMode = "request" | "code";
 const STAGES = ["Idea", "Pre-seed", "Seed", "Pre-Series A", "Series A"];
 
 export default function InviteSheet({ mode, onMode, onClose }: { mode: SheetMode; onMode: (m: SheetMode) => void; onClose: () => void }) {
   const requestInvite = useMutation(api.invites.requestInvite);
-  const convex = useConvex();
+  const checkCode = useMutation(api.invites.checkCode);
   const navigate = useNavigate();
   const [f, setF] = useState({ name: "", email: "", company: "", stage: "", code: "" });
   const [busy, setBusy] = useState(false);
@@ -37,9 +37,9 @@ export default function InviteSheet({ mode, onMode, onClose }: { mode: SheetMode
     e.preventDefault();
     setBusy(true); setError("");
     try {
-      const r = await convex.query(api.invites.checkCode, { code: f.code });
+      const r = await checkCode({ code: f.code, token: visitorToken() });
       if (r.valid) { rememberInviteCode(f.code.trim().toUpperCase()); navigate("/start"); }
-      else setError("That code doesn't work. Check it, or request an invite.");
+      else setError(r.error ?? "That code doesn't work. Check it, or request an invite.");
     } catch { setError("Couldn't check that code. Check your connection and try again."); }
     setBusy(false);
   }

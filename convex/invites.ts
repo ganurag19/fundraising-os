@@ -1,4 +1,5 @@
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, mutation } from "./_generated/server";
+import { limits } from "./limits";
 import { v } from "convex/values";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -21,6 +22,7 @@ export const requestInvite = mutation({
     if (!name || name.length > 100) return { ok: false as const, error: "Please enter your name." };
     if (!company || company.length > 100) return { ok: false as const, error: "Please enter your startup's name." };
     if (!STAGES.includes(args.stage)) return { ok: false as const, error: "Please pick your stage." };
+    if (!(await limits.limit(ctx, "invitesGlobal")).ok) return { ok: false as const, error: "Lots of requests right now. Try again in a few minutes." };
 
     const existing = await ctx.db.query("waitlist").withIndex("by_email", (q) => q.eq("email", email)).unique();
     if (existing) return { ok: true as const, alreadyOnList: true };
@@ -30,15 +32,21 @@ export const requestInvite = mutation({
   },
 });
 
-/** Landing page: "I have a code". Only says whether the code works; never lists codes. */
-export const checkCode = query({
-  args: { code: v.string() },
-  returns: v.object({ valid: v.boolean() }),
+const TOKEN = /^[a-f0-9]{48}$/;
+
+/** Landing page: "I have a code". Only says whether the code works; never lists codes.
+ *  A mutation, not a query, so guesses can be rate-limited: 10 an hour per visitor, 300 wrong ones an hour app-wide. */
+export const checkCode = mutation({
+  args: { code: v.string(), token: v.string() },
+  returns: v.object({ valid: v.boolean(), error: v.optional(v.string()) }),
   handler: async (ctx, args) => {
+    if (!TOKEN.test(args.token)) return { valid: false, error: "Please reload the page and try again." };
+    if (!(await limits.limit(ctx, "codeTriesPerVisitor", { key: args.token })).ok) return { valid: false, error: "Too many tries. Wait an hour, or request an invite." };
     const code = normaliseCode(args.code);
-    if (!code || code.length > 40) return { valid: false };
-    const row = await ctx.db.query("inviteCodes").withIndex("by_code", (q) => q.eq("code", code)).unique();
-    return { valid: !!row && row.uses < row.maxUses };
+    const row = code && code.length <= 40 ? await ctx.db.query("inviteCodes").withIndex("by_code", (q) => q.eq("code", code)).unique() : null;
+    const valid = !!row && row.uses < row.maxUses;
+    if (!valid && !(await limits.limit(ctx, "badCodesGlobal")).ok) return { valid: false, error: "Too many tries right now. Request an invite instead." };
+    return { valid };
   },
 });
 
