@@ -37,8 +37,12 @@ export function unsourcedFacts(facts: { text: string; field: string }[], record:
 // Follow-ups: short, no guilt, no stock phrases (AGENTS.md section 4 voice rules).
 const NAGS = ["just bumping", "bumping this", "did you see my", "i know you're busy", "circling back", "touching base", "i hope this finds you well", "as an ai"];
 
-export function checkFollowup(body: string): string[] {
+// Progress words that need a number she gave us. Without traction in her profile, none of these may appear.
+const PROGRESS = /\b(traction|adopt\w*|grow\w*|growth|customers?|clients?|revenue|paying|pilots?|users|signed up|momentum|demand|interest from)\b/i;
+
+export function checkFollowup(body: string, hasTraction = true): string[] {
   const problems: string[] = [];
+  if (!hasTraction && PROGRESS.test(body)) problems.push(`Claims progress she didn't give us: "${body.match(PROGRESS)![0]}"`);
   const n = words(body);
   if (n > 80) problems.push(`Follow-up is ${n} words (limit about 60)`);
   const low = body.toLowerCase();

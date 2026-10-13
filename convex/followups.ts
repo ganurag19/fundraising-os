@@ -35,7 +35,9 @@ export const write = internalAction({
       return null;
     }
     const f = d.founder;
+    const hasTraction = !!(f.traction || f.revenue || f.customers);
     const input = JSON.stringify({
+      ...(hasTraction ? {} : { NOTE: "FOUNDER gave no traction. Do not mention traction, progress, growth, customers, revenue, pilots or adoption in any form." }),
       N: d.followup.n,
       FOUNDER: { name: f.name, company: f.company, oneLiner: f.oneLiner, traction: f.traction, revenue: f.traction ? undefined : f.revenue, customers: f.traction ? undefined : f.customers, raising: f.ask, stage: f.stage },
       INVESTOR: { person: d.investor.person, firm: d.investor.firm ?? d.investor.displayName },
@@ -55,7 +57,13 @@ export const write = internalAction({
         await ctx.runMutation(internal.founders.logAiCall, { founderId: f._id, purpose: `followup_${d.followup.n}`, model: MODEL, input, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, ms: Date.now() - started, inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens });
         if (!out) continue;
         const subject = `Re: ${d.first.editedSubject ?? d.first.subject}`; // keep the thread's subject exactly
-        if (checkFollowup(out.body).length && attempt === 0) continue;
+        const problems = checkFollowup(out.body, hasTraction);
+        if (problems.length) {
+          if (attempt === 0) continue;
+          // never save a follow-up that breaks the rules; mark it failed rather than retry forever
+          await ctx.runMutation(internal.pipeline.saveFollowup, { followupId, failed: true });
+          return null;
+        }
         await ctx.runMutation(internal.pipeline.saveFollowup, { followupId, subject, body: out.body.trim() });
         return null;
       } catch (e) {

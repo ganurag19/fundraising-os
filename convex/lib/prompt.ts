@@ -88,7 +88,7 @@ export const FOLLOWUP_SYSTEM = `You write a short follow-up to a cold email an I
 Return subject and body.
 - subject: "Re: " + FIRST.subject, exactly.
 - body: under 60 words before the sign-off. Start "Hi <same greeting name as FIRST>,".
-  - N = 1: one line that reminds them who she is (company and what it does, in a few words), then one useful new thing ONLY if FOUNDER gives it (traction), then the same small ask (deck, or 20 minutes).
+  - N = 1: one line that reminds them who she is (company and what it does, in a few words), then her traction ONLY if FOUNDER.traction, revenue or customers is given, using those exact numbers; if none is given, say nothing about progress at all. Then the same small ask (deck, or 20 minutes).
   - N = 2: the last nudge. Polite and easy to answer: "If it's not a fit right now, a one-line no helps me plan." Then the ask once more.
 - Sign off with FOUNDER.name on its own line.
 

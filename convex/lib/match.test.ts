@@ -68,6 +68,9 @@ describe("email checks", () => {
   test("follow-ups stay short and never nag", () => {
     expect(checkFollowup("Hi Meera, a quick note: Kiln Labs now has 70 kilns. Could I send the deck?")).toEqual([]);
     expect(checkFollowup("Hi, just bumping this up in your inbox.").join(" ")).toMatch(/just bumping/);
+    // no traction in her profile: any progress claim is invented
+    expect(checkFollowup("Kiln Labs retrofits kilns. We're seeing strong traction.", false).join(" ")).toMatch(/Claims progress/);
+    expect(checkFollowup("Kiln Labs retrofits kilns. Could I send the deck?", false)).toEqual([]);
   });
   test("flags openers that could go to any investor", () => {
     expect(checkDraft({ ...good, body: good.body + " Climate is on your list of sectors." }).join(" ")).toMatch(/Generic/);
