@@ -3,7 +3,7 @@
 Mirrors `convex/lib/prompt.ts`. Every founder, company and investor below is made up.
 
 The email has to be clearly written to this investor. Order:
-hook (one specific thing they did, by name, tied to her company) → her one-liner → her strongest number → her founder line → the ask with the amount → signature with website and LinkedIn.
+hook (a named deal or portfolio company from their record, tied to her company) → who she is and what the company does, in fresh words for each investor (her facts and numbers unchanged) → her proof, with a number → the ask with the amount → signature with website and LinkedIn.
 
 A hook is a named recent deal, a named portfolio company close to her space, or a specific point from what they say they invest in. These are **not** hooks: "climate is on your list of sectors", "you invest at pre-seed", "you back founders from idea to IPO", "this space is familiar to you". The checks flag them.
 

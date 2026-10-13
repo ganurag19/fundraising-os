@@ -8,7 +8,10 @@ const GENERIC = ["on your list of sectors", "among your sectors", "familiar to y
 export const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9₹ ]+/g, " ").replace(/\s+/g, " ").trim();
 
-export type DraftCheckInput = { subject: string; body: string; oneLiner: string; founderLine: string; traction?: string };
+export type DraftCheckInput = { subject: string; body: string; oneLiner: string; founderLine: string; traction?: string; company?: string; investorFacts?: string };
+
+// Numbers as they appear in text: "18%", "₹9L", "3x", "1,200", "six" is not caught (words are fine to rephrase).
+const numbers = (s: string) => (s.match(/\d[\d,.]*/g) ?? []).map((n) => n.replace(/[,]/g, "").replace(/\.$/, ""));
 
 /** Returns a list of problems in plain words. Empty means the email passes. */
 export function checkDraft(d: DraftCheckInput): string[] {
@@ -18,9 +21,13 @@ export function checkDraft(d: DraftCheckInput): string[] {
   const all = (d.subject + " " + d.body).toLowerCase();
   for (const b of BANNED) if (all.includes(b)) problems.push(`Uses a phrase we never use: "${b}"`);
   for (const g of GENERIC) if (all.includes(g)) problems.push(`Generic line, could go to any investor: "${g}"`);
-  if (d.oneLiner && !norm(d.body).includes(norm(d.oneLiner).slice(0, 40))) problems.push("Missing the company one-liner");
-  if (d.founderLine && !norm(d.body).includes(norm(d.founderLine).slice(0, 30))) problems.push("Missing the founder line");
-  if (d.traction && !norm(d.body).includes(norm(d.traction).slice(0, 30))) problems.push("Missing her traction line");
+  // Her story is phrased fresh for each investor, so we check its facts, not its words.
+  if (d.company && !norm(d.body).includes(norm(d.company))) problems.push("Doesn't name her company");
+  const hers = new Set(numbers(`${d.oneLiner} ${d.founderLine} ${d.traction ?? ""}`));
+  const body = new Set(numbers(d.body));
+  for (const n of numbers(d.traction ?? "")) if (!body.has(n)) problems.push(`Leaves out or changes her number "${n}"`);
+  const allowed = new Set([...hers, ...numbers(d.investorFacts ?? ""), "20"]); // "20 minutes" is our ask
+  for (const n of body) if (!allowed.has(n) && !/^\d$/.test(n)) problems.push(`Has a number she didn't give us: "${n}"`);
   return problems;
 }
 

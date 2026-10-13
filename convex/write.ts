@@ -171,7 +171,7 @@ async function writeOne(ctx: ActionCtx, client: Anthropic, founderId: Id<"founde
         ms: Date.now() - started, inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens,
       });
       if (!out || res.stop_reason === "refusal") continue;
-      const problems = checkDraft({ subject: out.subject, body: out.body, oneLiner: founder.oneLiner, founderLine: founder.founderLine, traction: founder.traction });
+      const problems = checkDraft({ subject: out.subject, body: out.body, oneLiner: founder.oneLiner, founderLine: founder.founderLine, traction: [founder.traction, founder.revenue, founder.customers].filter(Boolean).join(" "), company: founder.company, investorFacts: JSON.stringify(facts) + " " + founder.raising + " " + (founder.website ?? "") + " " + (founder.linkedin ?? "") });
       const deal = hookNamesADeal(out.body, facts as { recent?: { company: string }[]; portfolio?: string[] });
       if (deal) problems.push(deal);
       const unsourced = unsourcedFacts(out.factsUsed, facts as Record<string, unknown>);

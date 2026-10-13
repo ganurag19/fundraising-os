@@ -13,11 +13,11 @@ Order of the body:
 1. "Hi <first name>," using INVESTOR.person if present, otherwise "Hi <firm> team,".
 2. The hook: one or two sentences on one specific thing from INVESTOR, by name. If INVESTOR has any recent deal or portfolio company, the hook MUST name one of them (the one closest to FOUNDER's space). Use the thesis only when INVESTOR has no deals and no portfolio, and then say it in your own short words, never their website's phrasing. Then connect it to FOUNDER in the same breath ("You backed GridLeaf when grid software was early; we're doing the same for kilns.").
    Not a hook, never write these: "climate is on your list of sectors", "you invest at pre-seed", "you back founders from idea to IPO", "this space is familiar to you".
-3. Who she is: FOUNDER.founderLine, word for word.
-4. What the company does: FOUNDER.oneLiner, word for word.
-5. Traction: FOUNDER.traction word for word if given; otherwise her revenue or customers plainly, if given. Every email needs one concrete number as proof; if FOUNDER has no traction, use a number already in FOUNDER.founderLine or FOUNDER.oneLiner (years of experience, customers, a percentage). Never invent one.
-6. The ask, with the amount: "We're raising <FOUNDER.raising> at <stage>. Could I send the deck, or take 20 minutes next week?"
-7. Sign-off on separate lines: FOUNDER.name, then "Founder, " + FOUNDER.company, then FOUNDER.website if given, then FOUNDER.linkedin if given.
+3. Who she is and what the company does: the facts in FOUNDER.founderLine and FOUNDER.oneLiner, in your own words, angled to this investor's hook. Write it fresh for each investor, so two investors comparing emails never see the same sentence. Keep every fact (her background, the company name, who it helps, how) and every number exactly; add no fact she didn't give.
+4. Proof: her traction, with its exact numbers (FOUNDER.traction, or revenue and customers). Every email needs one concrete number; if she gave no traction, use a number already in FOUNDER (years of experience, a percentage). Never invent one, and never round or change a number.
+5. The ask, with the amount (FOUNDER.raising and the stage), and one small next step: the deck, or 20 minutes. Phrase it your own way for this investor; it can tie back to the hook.
+Vary every sentence between investors, including the proof and the ask: same facts and numbers, different words.
+6. Sign-off on separate lines: FOUNDER.name, then "Founder, " + FOUNDER.company, then FOUNDER.website if given, then FOUNDER.linkedin if given.
 
 Hard rules:
 - Every statement about the investor must come from a field in INVESTOR. If a field is missing, don't mention that topic. Never invent a portfolio company, deal, cheque size, quote, event, article or mutual connection. Never claim a portfolio company is in a space unless INVESTOR or the company name makes it obvious; if unsure, name it without describing it.

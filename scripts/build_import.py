@@ -1,9 +1,11 @@
 """Turn seed/investors_enriched.json into seed/investors_import.jsonl for Convex.
 
-Keeps only investors we can show: India based, a listed email, not excluded.
+Keeps only investors we can show: India based, a listed email, not excluded, and (for investors
+added by the growth pipeline) passing check_records.py. Grant schemes wait for the application-link
+change in the app (docs/PROPOSAL_EVIDENCE_AND_APPLY.md).
 The output stays in seed/ (gitignored). Load it with:
 
-  npx convex import --table investors --replace seed/investors_import.jsonl          # dev
+  npx convex import --table investors --replace -y seed/investors_import.jsonl       # dev
   npx convex import --table investors --replace --prod seed/investors_import.jsonl   # live
 
 Run: python3 scripts/build_import.py
@@ -16,6 +18,8 @@ import re
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "seed", "investors_enriched.json")
 OUT = os.path.join(ROOT, "seed", "investors_import.jsonl")
+# the app's Funds tab knows vc and corporate_vc; a family office invests like a corporate arm
+IMPORT_KIND = {"family_office": "corporate_vc"}
 
 
 def clean_list(xs, limit):
@@ -33,13 +37,15 @@ def main():
     for r in data["investors"]:
         if not r.get("india_based") or r.get("email_status") != "listed" or r.get("exclude"):
             continue
+        if r.get("import_blocked") or r["kind"] == "grant":
+            continue
         firm = r.get("firm")
         if firm:  # "Venture Catalysts++ | India's 1st Multi-Stage VC" -> "Venture Catalysts++"
             firm = re.split(r"\s[|–—-]\s|\s\(", firm)[0].strip()
         person = r.get("person_name")
         doc = {
             "seedId": r["id"],
-            "kind": r["kind"],
+            "kind": IMPORT_KIND.get(r["kind"], r["kind"]),
             "displayName": firm or person,
             "email": r["email"],
             "sectors": r.get("sectors") or [],
@@ -69,6 +75,10 @@ def main():
     print(f"{len(rows)} investors → {OUT}")
     print(f"  with thesis: {sum(1 for d in rows if d.get('thesis'))}")
     print(f"  with cheque size: {sum(1 for d in rows if 'chequeMaxLakh' in d)}")
+    print(f"  added by the growth pipeline: {sum(1 for d in rows if d['seedId'].startswith('g_'))}")
+    blocked = sum(1 for r in data["investors"] if r.get("import_blocked") and not r.get("exclude"))
+    if blocked:
+        print(f"  held back by checks: {blocked} (see seed/enrichment/checks_report.md)")
 
 
 if __name__ == "__main__":

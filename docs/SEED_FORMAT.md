@@ -13,7 +13,7 @@ No real investor data is in this repo. It lives in `seed/`, which is gitignored.
 | `seed/investors.json` | Cleaned, merged records. The Convex import reads this. |
 | `seed/investors_clean.xlsx` | The same records for review by hand: Summary, Investors, AI-Climate-Deeptech, Needs review. |
 
-Rebuild after changing a raw file: `python3 scripts/clean_investors.py`
+Rebuild after changing a raw file: `python3 scripts/clean_investors.py`, then the steps in docs/DATA_PIPELINE.md.
 
 ## How the cleaning works
 
@@ -44,6 +44,19 @@ Nothing is invented. A fund that gives only an email pattern (`firstname@fund.co
 | `source_date` | Date of the oldest source file. **Not** a check date. |
 | `last_checked` | Set only when a person checks the record by hand |
 | `needs_review[]` | no_email, email_pattern_only, no_sector, no_stage, stage_inferred, no_cheque_size, not_india_based, may_not_be_investor, no_portfolio |
+
+Added by the growth pipeline (docs/DATA_PIPELINE.md):
+
+| Field | Meaning |
+|---|---|
+| `origin` | `growth` for investors found by discovery (id `g_…`, stable across rebuilds); absent for spreadsheet records |
+| `email_source_url` | the page the email is printed on; required for a growth record to import |
+| `application` | `{url, deadline, type}` for accelerators, grants and form-only funds (not imported until the app supports it) |
+| `corporate_parent` | parent company of a corporate arm or family office |
+| `recent_investments[].sector` | one sector key per deal, with its `source_url` |
+| `checks`, `check_failures[]`, `import_blocked` | written by `scripts/check_records.py`; a blocked growth record is skipped by the import |
+
+Extra kinds: `family_office` (imported as `corporate_vc`) and `grant` (held back from the import).
 
 ## Sector keys
 

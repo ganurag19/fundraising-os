@@ -63,7 +63,7 @@ describe("spread and top picks", () => {
 describe("email checks", () => {
   const oneLiner = "Ledgerly helps CA firms file GST returns 3x faster through AI that reads bank statements.";
   const founderLine = "I'm Nisha, a chartered accountant who ran a 40-client practice for five years.";
-  const good = { subject: "Ledgerly × Verdant Arc: seed round", body: `Hi Meera,\n\n${oneLiner}\n\n${founderLine}\n\nCould I send the deck?\n\nNisha`, oneLiner, founderLine };
+  const good = { subject: "Ledgerly × Verdant Arc: seed round", body: `Hi Meera,\n\n${oneLiner}\n\n${founderLine}\n\nCould I send the deck?\n\nNisha`, oneLiner, founderLine, company: "Ledgerly" };
   test("a good email passes", () => expect(checkDraft(good)).toEqual([]));
   test("the hook must name a deal when the record has one", () => {
     const rec = { recent: [{ company: "GridLeaf" }], portfolio: ["Made-up Co"] };
@@ -81,11 +81,18 @@ describe("email checks", () => {
   test("flags openers that could go to any investor", () => {
     expect(checkDraft({ ...good, body: good.body + " Climate is on your list of sectors." }).join(" ")).toMatch(/Generic/);
   });
-  test("catches long subjects, banned phrases and a missing one-liner", () => {
+  test("her story can be rephrased, but her numbers can't change and none can be invented", () => {
+    const traction = "8 CA firms on pilot, 2 paying.";
+    const rephrased = { ...good, traction, body: "Hi Meera,\n\nI ran a 40-client CA practice for five years, so I built Ledgerly: AI that reads bank statements and files GST returns 3x faster. 8 CA firms are on our pilot and 2 pay.\n\nCould I take 20 minutes?\n\nNisha" };
+    expect(checkDraft(rephrased)).toEqual([]);
+    expect(checkDraft({ ...rephrased, body: rephrased.body.replace("8 CA firms", "10 CA firms") }).join(" ")).toMatch(/changes her number "8"/);
+    expect(checkDraft({ ...rephrased, body: rephrased.body + " We grew 300% last quarter." }).join(" ")).toMatch(/number she didn't give us: "300"/);
+  });
+  test("catches long subjects, banned phrases and a missing company name", () => {
     const bad = checkDraft({ ...good, subject: "An exciting opportunity to invest in our seed round today", body: "I hope this finds you well. We disrupt everything." });
     expect(bad.join(" ")).toMatch(/Subject/);
     expect(bad.join(" ")).toMatch(/hope this finds you well/);
-    expect(bad.join(" ")).toMatch(/one-liner/);
+    expect(bad.join(" ")).toMatch(/company/);
   });
   test("flags facts that point at empty fields", () => {
     expect(unsourcedFacts([{ text: "you backed GridLeaf", field: "portfolio" }, { text: "AI for finance", field: "thesis" }], { portfolio: [], thesis: "AI for finance" })).toEqual(["you backed GridLeaf"]);

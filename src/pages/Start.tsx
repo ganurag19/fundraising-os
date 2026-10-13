@@ -143,7 +143,7 @@ export default function Start() {
         {actions(!!(p.oneLiner.trim() && p.founderLine.trim()), submitNotes, "Polish my lines →", true, "Polishing…")}</div>}
 
       {step === 6 && <div className="step rise">{progress}{count(7)}<h1>How you'll <span className="it">come across.</span></h1>
-        <p className="help">These go into every email, word for word. Make them yours.</p>
+        <p className="help">Every email uses these facts, phrased to fit each investor. Make them yours.</p>
         <div className="profile-form">
           <label>You<textarea className="field tall" maxLength={220} value={p.founderLine} onChange={(e) => setP((o) => ({ ...o, founderLine: e.target.value }))} /></label>
           <label>{company}<textarea className="field tall" maxLength={200} value={p.oneLiner} onChange={(e) => setP((o) => ({ ...o, oneLiner: e.target.value }))} /></label>

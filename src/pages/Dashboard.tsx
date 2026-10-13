@@ -13,7 +13,7 @@ import { visitorToken } from "../lib/token";
 import { Page } from "./Emails";
 
 type Tab = "today" | "investors" | "pipeline" | "competition" | "qa" | "dataroom" | "inbox" | "profile" | "settings";
-const RAISE: [Tab, string, string][] = [["today", "Today", "◎"], ["investors", "Investors for you", "★"], ["pipeline", "Pipeline", "▦"]];
+const RAISE: [Tab, string, string][] = [["today", "Today", "◎"], ["investors", "Investors", "★"], ["pipeline", "Pipeline", "▦"]];
 const PREPARE: [Tab, string, string][] = [["competition", "Competition", "⚔"], ["qa", "Investor Q&A", "❝"], ["dataroom", "Data room", "▤"], ["inbox", "Inbox", "✉"]];
 const TITLES: Record<Tab, [string, string]> = {
   today: ["Today's", "moves."], investors: ["Your", "investors."], pipeline: ["Your", "pipeline."],
@@ -42,7 +42,9 @@ export default function Dashboard() {
   const [welcome, setWelcome] = useState(() => !remember("fos_welcomed"));
   const [more, setMore] = useState(false);
   const [theme, setThemeState] = useState<Theme>(savedTheme);
-  const setTheme = (t: Theme) => { applyTheme(t); setThemeState(t); };
+  const setTheme = (t: Theme) => { applyTheme(t, true); setThemeState(t); };
+  // The dashboard has its own theme (light by default); leaving it returns to the dark public pages.
+  useEffect(() => { applyTheme(theme); return () => applyTheme("dark"); }, [theme]);
 
   // Back from Google: move her visitor list to her account (once).
   useEffect(() => {
