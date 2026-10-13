@@ -1,7 +1,9 @@
 """Shared helpers for the investor growth pipeline (see docs/DATA_PIPELINE.md).
 
 Matching rules used everywhere a new name meets the existing list:
-  1. same website domain (personal mail hosts and shared platforms don't count)
+  1. same website domain (personal mail hosts and shared platforms don't count), and the same kind
+     group: a fund, its accelerator and its angel network can share a site but are different
+     entries; grants never match by domain (one ministry site hosts many schemes)
   2. same cleaned firm name, unless both have their own website and the sites differ
   3. same person name, and either the same firm or no firm on one side
 """
@@ -17,7 +19,7 @@ SEED = os.path.join(ROOT, "seed")
 ENR = os.path.join(SEED, "enrichment")
 DISCOVERED = os.path.join(SEED, "discovered")
 
-KINDS = ["vc", "angel", "angel_network", "accelerator", "corporate_vc", "family_office", "grant", "venture_debt", "other"]
+KINDS = ["vc", "angel", "angel_network", "accelerator", "incubator", "corporate_vc", "family_office", "grant", "venture_debt", "other"]
 SECTORS = ["ai", "climate", "deeptech", "b2b_saas", "fintech", "consumer", "health", "edtech", "agritech",
            "web3", "adtech", "impact", "sector_agnostic", "tech_general"]
 STAGES = ["idea", "pre_seed", "seed", "pre_series_a", "series_a", "series_b_plus"]
@@ -32,6 +34,19 @@ SHARED_DOMAINS = {
 
 # An email printed on one of these counts as published by an official source.
 OFFICIAL_SUFFIXES = (".gov.in", ".nic.in", ".ac.in", ".res.in", ".edu")
+
+
+# Incubators (Seed Fund Scheme, Atal Incubation Centres, NIDHI/TBI, BioNEST, campus) vs accelerators
+# (cohort programmes like Antler). Research often says "accelerator" for both.
+INCUBATOR_WORDS = re.compile(
+    r"incubat|\baic\b|\batal\b|\btbi\b|bionest|\bnidhi\b|\bsisfs\b|seed fund scheme|\biit|\biisc|\biiser|\bnit\b|"
+    r"universit|college|institute|venture cent|\bfitt\b|research park|innovation foundation|labs foundation", re.I)
+
+
+def refine_kind(kind, *texts):
+    if kind == "accelerator" and any(t and INCUBATOR_WORDS.search(t) for t in texts):
+        return "incubator"
+    return kind
 
 
 def domain(url_or_email):
@@ -90,35 +105,50 @@ def candidate_key(c):
     return "person:" + (norm_person(c.get("person_name")) or slugify(c.get("person_name")))
 
 
+GROUPS = {"vc": "fund", "corporate_vc": "fund", "family_office": "fund", "venture_debt": "fund",
+          "angel": "people", "angel_network": "people", "accelerator": "programme", "incubator": "programme",
+          "grant": "grant", "other": None}  # None: unsure what it is, so it may match any group
+
+
+def kinds_compatible(a, b):
+    ga, gb = GROUPS.get(a), GROUPS.get(b)
+    if "grant" in (ga, gb):
+        return False
+    return ga is None or gb is None or ga == gb
+
+
 class Matcher:
     """Finds an existing record (or earlier candidate) for a name, by the rules at the top."""
 
     def __init__(self):
         self.by_domain, self.by_firm, self.by_person = {}, {}, {}
 
-    def add(self, ref, firm=None, person=None, website=None, email=None):
+    def add(self, ref, firm=None, person=None, website=None, email=None, kind=None):
         for d in (domain(website), domain(email) if firm else None):
             if d and d not in SHARED_DOMAINS:
-                self.by_domain.setdefault(d, ref)
+                self.by_domain.setdefault(d, []).append((ref, kind))
         f = norm_firm(firm)
         if f:
             d = domain(website)
-            self.by_firm.setdefault(f, (ref, d if d and d not in SHARED_DOMAINS else None))
+            # a record can be known by several sites: the one discovery found and the one research corrected
+            self.by_firm.setdefault(f, []).append((ref, d if d and d not in SHARED_DOMAINS else None))
         p = norm_person(person)
         if p:
             self.by_person.setdefault(p, []).append((f, ref))
 
-    def find(self, firm=None, person=None, website=None):
+    def find(self, firm=None, person=None, website=None, kind=None):
         d = domain(website)
         if d and d not in SHARED_DOMAINS:
-            for known, ref in self.by_domain.items():
+            for known, refs in self.by_domain.items():
                 if same_site(d, known):
-                    return ref, "domain"
+                    for ref, k in refs:
+                        if kinds_compatible(kind, k):
+                            return ref, "domain"
         f = norm_firm(firm)
         if f and f in self.by_firm and not person:
-            ref, known = self.by_firm[f]
-            if not (d and d not in SHARED_DOMAINS and known and not same_site(d, known)):
-                return ref, "firm"
+            for ref, known in self.by_firm[f]:
+                if not (d and d not in SHARED_DOMAINS and known and not same_site(d, known)):
+                    return ref, "firm"
         p = norm_person(person)
         if p and p in self.by_person:
             for kf, ref in self.by_person[p]:
@@ -157,5 +187,5 @@ def read_jsonl(path):
 def matcher_for_records(records):
     m = Matcher()
     for r in records:
-        m.add(("record", r["id"]), r.get("firm"), r.get("person_name"), r.get("website"), r.get("email"))
+        m.add(("record", r["id"]), r.get("firm"), r.get("person_name"), r.get("website"), r.get("email"), r.get("kind"))
     return m

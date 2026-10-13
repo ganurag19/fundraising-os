@@ -58,8 +58,9 @@ def run(seed):
     m = matcher_for_records(records)
     by_id = {r["id"]: r for r in records}
     units = {u["id"]: u for u in queue}
-    for u in queue:
-        m.add(("unit", u["id"]), u.get("firm"), u.get("person_name"), u.get("website"))
+    for u in queue:  # a researched unit is also a record; register its discovery site under the record
+        ref = ("record", u["id"]) if u["id"] in by_id else ("unit", u["id"])
+        m.add(ref, u.get("firm"), u.get("person_name"), u.get("website"), kind=u.get("kind"))
 
     files = sorted(p for p in glob.glob(os.path.join(seed, "discovered", "*.jsonl"))
                    if not os.path.basename(p).startswith("_"))
@@ -73,7 +74,7 @@ def run(seed):
                 rejected.append(f"{os.path.basename(path)}: {c.get('firm') or c.get('person_name')}: {', '.join(p)}")
                 continue
             name = c.get("firm") or c.get("person_name")
-            ref, how = m.find(c.get("firm"), c.get("person_name"), c.get("website"))
+            ref, how = m.find(c.get("firm"), c.get("person_name"), c.get("website"), c.get("kind"))
             found = {"found_via": c.get("found_via"), "source_url": c["source_url"]}
             if ref and ref[0] == "record":
                 rec = by_id[ref[1]]
@@ -91,6 +92,8 @@ def run(seed):
                     u["seed_deals"].append(c["deal"])
                 continue
             key = candidate_key(c)
+            if stable_id(key) in units or stable_id(key) in by_id:  # another programme on the same site
+                key += "/" + slugify(name)
             uid = stable_id(key)
             u = {
                 "id": uid, "key": key, "origin": "growth", "kind": c["kind"],
@@ -105,7 +108,7 @@ def run(seed):
             u["slug"] = "g-" + slugify(name) + "-" + uid[2:6]
             units[uid] = u
             queue.append(u)
-            m.add(("unit", uid), u["firm"], u["person_name"], u["website"])
+            m.add(("unit", uid), u["firm"], u["person_name"], u["website"], kind=u["kind"])
             added.append(u)
 
     for i, u in enumerate(queue, start=1):

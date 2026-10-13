@@ -103,10 +103,26 @@ class MatchingTest(unittest.TestCase):
         self.assertEqual(m.find(firm="Beyondish Capital Fund", website="https://beyondishcapital.test"), (None, None))
         self.assertEqual(m.find(firm="Beyondish Capital Fund")[0], "a")
 
+    def test_programmes_and_grants_on_a_shared_site_stay_apart(self):
+        m = Matcher()
+        m.add("fund", firm="Made-up Partners", website="https://madeup.test", kind="vc")
+        m.add("scheme", firm="Made-up Ministry Seed Grant", website="https://ministry.test/seed", kind="grant")
+        self.assertEqual(m.find(firm="Made-up Surge", website="https://madeup.test/surge", kind="accelerator"), (None, None))
+        self.assertEqual(m.find(firm="Made-up Fund II", website="https://madeup.test", kind="vc")[0], "fund")
+        self.assertEqual(m.find(firm="Made-up Ministry Other Scheme", website="https://ministry.test/other", kind="grant"), (None, None))
+        self.assertEqual(m.find(firm="Made-up Ministry Seed Grant", kind="grant")[0], "scheme")
+
     def test_shared_domains_never_match(self):
         m = Matcher()
         m.add("a", firm="One Fund", website="https://letsventure.com/one")
         self.assertEqual(m.find(firm="Two Fund", website="https://letsventure.com/two"), (None, None))
+
+    def test_incubators_split_from_accelerators(self):
+        from pipeline_common import refine_kind
+        self.assertEqual(refine_kind("accelerator", "AIC Made-up Institute Foundation"), "incubator")
+        self.assertEqual(refine_kind("accelerator", "Fictional Labs", "SISFS incubator"), "incubator")
+        self.assertEqual(refine_kind("accelerator", "Made-up Cohort Program"), "accelerator")
+        self.assertEqual(refine_kind("vc", "Made-up University Fund"), "vc")
 
     def test_stable_id_does_not_change(self):
         self.assertEqual(stable_id("firm:x.test"), stable_id("firm:x.test"))
@@ -135,6 +151,14 @@ class AddCandidatesTest(unittest.TestCase):
         q = self.s.load("enrichment", "queue_growth.json")
         self.assertEqual(q[0]["known_sectors"], ["ai"])
         self.assertEqual(self.s.load("enrichment", "deals.json")[0]["record_id"], "inv_0001")
+
+    def test_two_schemes_on_one_site_get_two_ids(self):
+        self.s.discover("g.jsonl", [candidate(kind="grant", firm="Made-up Scheme One", website="https://ministry.test/one"),
+                                    candidate(kind="grant", firm="Made-up Scheme Two", website="https://ministry.test/two")])
+        self.assertEqual(add_candidates.run(self.s.dir)["added"], 2)
+        ids = [u["id"] for u in self.s.load("enrichment", "queue_growth.json")]
+        self.assertEqual(len(set(ids)), 2)
+        self.assertEqual(add_candidates.run(self.s.dir)["added"], 0)
 
     def test_rerun_adds_nothing_and_keeps_extra_sightings(self):
         self.s.discover("a.jsonl", [candidate(firm="Green Teapot Fund", website="https://greenteapot.test")])
@@ -210,6 +234,7 @@ class MergeAndCheckTest(unittest.TestCase):
 
     def test_accelerator_needs_no_deals_and_keeps_its_application_link(self):
         a = self.by_name["Campus Incubator Test"]
+        self.assertEqual(a["kind"], "incubator")
         self.assertEqual(a["check_failures"], ["active"])
         self.assertFalse(a["import_blocked"])
         self.assertEqual(a["application"]["url"], "https://incubator.ac.in/apply")

@@ -18,7 +18,7 @@ Checks
   active    marked active, or a deal dated this year or last year.
 
 A new investor (origin "growth") that fails contact, sources or india is blocked from the import.
-Failing "active" blocks too, unless it is an accelerator or grant (they run cohorts, not deals).
+Failing "active" blocks too, unless it is an accelerator, incubator or grant (they run cohorts, not deals).
 Records from the spreadsheets are never blocked here; their failures are listed in the report.
 
 Run: python3 scripts/check_records.py [--since 2026-10-13] [--verify-emails]
@@ -36,7 +36,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pipeline_common import OFFICIAL_SUFFIXES, domain, load_json, same_site, save_json  # noqa: E402
 
 BLOCKING = {"contact", "sources", "india", "active"}
-NO_DEALS_KINDS = {"accelerator", "grant"}
+NO_DEALS_KINDS = {"accelerator", "incubator", "grant"}
 FACT_FIELDS = {  # record field -> the "supports" name a source must carry
     "thesis": "thesis", "stages": "stages", "cheque_max_inr_lakh": "cheque", "pitch_route": "pitch_route",
 }

@@ -24,7 +24,7 @@ import sys
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pipeline_common import KINDS, SECTORS, STAGES, load_json, save_json  # noqa: E402
+from pipeline_common import KINDS, SECTORS, STAGES, load_json, refine_kind, save_json  # noqa: E402
 
 
 def load_results(enr):
@@ -231,6 +231,10 @@ def run(seed):
     for rid, ds in by_record.items():
         if rid in by_id:
             deals_added += attach_deals(by_id[rid], [d for d in ds if d.get("company") and d.get("source_url")])
+
+    notes = {u["id"]: u.get("note") for u in growth}
+    for rec in data["investors"]:
+        rec["kind"] = refine_kind(rec["kind"], rec.get("firm"), rec.get("person_name"), notes.get(rec["id"]))
 
     data["enriched_on"] = max((r.get("checked_on") or "" for _, _, r in pairs), default=None)
     save_json(os.path.join(seed, "investors_enriched.json"), data)

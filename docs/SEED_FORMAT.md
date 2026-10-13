@@ -56,7 +56,7 @@ Added by the growth pipeline (docs/DATA_PIPELINE.md):
 | `recent_investments[].sector` | one sector key per deal, with its `source_url` |
 | `checks`, `check_failures[]`, `import_blocked` | written by `scripts/check_records.py`; a blocked growth record is skipped by the import |
 
-Extra kinds: `family_office` (imported as `corporate_vc`) and `grant` (held back from the import).
+Extra kinds: `incubator` (split from accelerator by name in merge_enrichment.py: Atal Incubation Centres, NIDHI/TBI, BioNEST, Seed Fund Scheme and campus incubators), `family_office` (imported as `corporate_vc`) and `grant` (schema 2 only).
 
 ## Sector keys
 

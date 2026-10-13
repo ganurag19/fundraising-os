@@ -30,7 +30,7 @@ One JSON object per line. Every line needs a `source_url`.
  "sectors_hint": ["climate"], "found_via": "sebi_aif", "source_url": "https://...", "deal": null, "note": null}
 ```
 
-- `kind`: vc, angel, angel_network, accelerator, corporate_vc, family_office, grant, venture_debt, other.
+- `kind`: vc, angel, angel_network, accelerator, incubator, corporate_vc, family_office, grant, venture_debt, other.
 - `found_via`: sebi_aif, fund_site, ivca, funding_report, aim, nidhi, startup_india, news, other.
 - `deal` (for a name found in a funding article): `{"company", "year", "round", "sector", "source_url"}`.
 - An individual angel only counts if the article names them as an investor in that round.

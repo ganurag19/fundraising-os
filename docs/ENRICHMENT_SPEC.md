@@ -18,7 +18,7 @@ Research only the investor's **investing work**: what they back, at what stage a
 | `sectors` | keys from docs/SEED_FORMAT.md | their site |
 | `stages` | keys: idea, pre_seed, seed, pre_series_a, series_a, series_b_plus | their site |
 | `cheque_min_inr_lakh`, `cheque_max_inr_lakh` | only if stated. Convert $ at ₹88 | their site, interviews |
-| `kind` | only if the unit's kind is wrong: vc, angel, angel_network, accelerator, corporate_vc, family_office, grant, venture_debt, other. Needs a source with `"kind"` in supports | their site |
+| `kind` | only if the unit's kind is wrong: vc, angel, angel_network, accelerator (cohort programmes like Antler), incubator (Seed Fund Scheme, Atal Incubation Centres, NIDHI/TBI, BioNEST, campus incubators), corporate_vc, family_office, grant, venture_debt, other. Needs a source with `"kind"` in supports | their site |
 | `india_based` | true if they say they invest in India or a dated Indian deal is found; false if they don't | their site, news |
 | `leads_rounds` | true/false only if they say so | their site |
 | `recent_investments` | up to 5, newest first: `{company, year, round, sector, source_url}`. `sector` is one sector key for that company, from the article or the company's own one-line description; null if unclear | portfolio page, single funding-report articles |
