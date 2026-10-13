@@ -309,7 +309,7 @@ function Investors({ me, token, onToast }: { me: Me; token: string; onToast: (s:
     ["all", "All", () => true],
     ["funds", "Funds", (r) => r.kind === "vc" || r.kind === "corporate_vc"],
     ["angels", "Angels", (r) => r.kind === "angel" || r.kind === "angel_network"],
-    ["programmes", "Programmes", (r) => r.kind === "accelerator" || r.kind === "grant"],
+    ["programmes", "Programmes", (r) => r.kind === "accelerator" || r.kind === "incubator" || r.kind === "grant"],
     ["leads", "Leads rounds", (r) => r.leadsRounds],
     ["recent", "Invested lately", (r) => (r.lastDealYear ?? 0) >= year - 1],
   ];
