@@ -88,6 +88,14 @@ function copyText(text: string): boolean {
   return ok;
 }
 
+async function copyOut(text: string, onToast: Toast, done: string) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else if (!copyText(text)) throw new Error("copy failed");
+    onToast(done);
+  } catch { onToast("Couldn't copy. Select the text and copy it."); }
+}
+
 const CopyIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>;
 const day = (t: number) => new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
@@ -99,14 +107,7 @@ function MailBox({ to, mail, warnings = [], sent, onSent, onToast, account, onSa
     const err = await onSave(editing);
     if (err) onToast(err); else { setEditing(null); onToast("Saved. Open in Gmail uses your version."); }
   };
-  const copy = async () => {
-    const text = `${mail.subject}\n\n${mail.body}`;
-    try {
-      if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
-      else if (!copyText(text)) throw new Error("copy failed");
-      onToast("Copied. Paste it into any email.");
-    } catch { onToast("Couldn't copy. Select the text and copy it."); }
-  };
+  const copy = () => copyOut(`${mail.subject}\n\n${mail.body}`, onToast, "Copied. Paste it into any email.");
   return (
     <>
       {editing ? (
@@ -145,7 +146,54 @@ export function EmailBox({ r, d, token, onToast, account = null }: { r: Row; d: 
     const res = await saveEdit({ token, rank: r.rank, subject: m.subject, body: m.body }).catch(() => ({ ok: false as const, error: "Couldn't save. Check your connection." }));
     return res.ok ? null : res.error;
   };
-  return <MailBox to={r.email ?? ""} mail={d} warnings={d.warnings} sent={sent} onSent={onSent} onToast={onToast} account={account} onSave={sent ? undefined : onSave} />;
+  const [via, setVia] = useState<"email" | "linkedin">("email");
+  return (
+    <>
+      <div className="via-tabs" role="tablist" aria-label="How to send">
+        <button role="tab" aria-selected={via === "email"} onClick={() => setVia("email")}>✉ Email</button>
+        <button role="tab" aria-selected={via === "linkedin"} onClick={() => setVia("linkedin")}><b className="li-mark" aria-hidden="true">in</b> LinkedIn note</button>
+      </div>
+      {via === "email"
+        ? <MailBox to={r.email ?? ""} mail={d} warnings={d.warnings} sent={sent} onSent={onSent} onToast={onToast} account={account} onSave={sent ? undefined : onSave} />
+        : <LinkedInBox r={r} note={d.linkedin} token={token} onToast={onToast} />}
+    </>
+  );
+}
+
+/** The same pitch as a LinkedIn connection note. She opens LinkedIn herself and pastes it; nothing is sent for her. */
+function LinkedInBox({ r, note, token, onToast }: { r: Row; note: string | null; token: string; onToast: Toast }) {
+  const writeNote = useAction(api.write.writeNote);
+  const [busy, setBusy] = useState(false);
+  const who = r.person ?? r.displayName ?? "them";
+  // Her own search on LinkedIn when the research has no profile link; we never guess a profile.
+  const url = r.linkedin ?? `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent([r.person, r.displayName].filter(Boolean).join(" "))}`;
+  const write = async () => {
+    setBusy(true);
+    const res = await writeNote({ token, rank: r.rank }).catch(() => ({ ok: false as const, error: "Busy right now. Try again in a few minutes." }));
+    setBusy(false);
+    if (!res.ok) onToast(res.error);
+  };
+  if (!note) {
+    return (
+      <div className="email note-empty">
+        <p>Send the same pitch as a LinkedIn connection note, under 300 characters.</p>
+        <button className="btn primary sm" data-track="click_write_note" disabled={busy} onClick={write}>{busy ? "Writing…" : "Write LinkedIn note"}</button>
+      </div>
+    );
+  }
+  return (
+    <>
+      <div className="email li-note">
+        <div className="to">LinkedIn note to {who} <span className={`muted small${note.length > 300 ? " over" : ""}`}>{note.length}/300</span></div>
+        {note}
+      </div>
+      <div className="email-actions">
+        <a className="btn primary sm" href={url} target="_blank" rel="noreferrer noopener" data-track="click_linkedin">{r.linkedin ? "Open LinkedIn" : "Find on LinkedIn"}</a>
+        <button className="btn ghost sm" data-track="click_copy_note" onClick={() => copyOut(note, onToast, "Copied. On LinkedIn, tap Connect, then Add a note, and paste.")}><CopyIcon /> Copy note</button>
+      </div>
+      <p className="muted small" style={{ margin: "6px 0 0" }}>{r.linkedin ? "On their profile" : "Find their profile"}, tap Connect, then Add a note, and paste.</p>
+    </>
+  );
 }
 
 /** A follow-up that's ready: same buttons; "I sent it" schedules the next one. */

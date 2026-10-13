@@ -82,7 +82,7 @@ export default function Landing() {
           <div className="hero-copy">
             <h1 className="h-xl rise">The journey to your first cheque <span className="it">starts here.</span></h1>
             <p className="lede rise">Your investor outreach starts tonight. Follow-ups run themselves.</p>
-            <div className="facts rise"><span>Free</span><span>4 questions, 2 minutes</span><span>Your 3 best-fit investors, emails ready</span></div>
+            <div className="facts rise"><span>Free</span><span>4 questions, 2 minutes</span><span>Your 3 best-fit investors, emails and LinkedIn notes ready</span></div>
           </div>
           <HeroStart onGo={go} onCode={open("code")} />
           <HeroFeed />
@@ -106,7 +106,7 @@ export default function Landing() {
         </section>
 
         <section className="section">
-          <div className="s-head center"><span className="kicker">What it writes</span><h2 className="h-l">Researched, tailored, <span className="it">in your voice.</span></h2><p className="lede center-lede">No more spray and pray. Every email is written to that investor, about your company, in your words.</p></div>
+          <div className="s-head center"><span className="kicker">What it writes</span><h2 className="h-l">Researched, tailored, <span className="it">in your voice.</span></h2><p className="lede center-lede">No more spray and pray. One researched pitch, two ways in: an email and a LinkedIn note, written to that investor, about your company, in your words.</p></div>
           <ThreeEmails />
         </section>
 

@@ -133,13 +133,14 @@ export async function isUnlocked(ctx: QueryCtx | MutationCtx, f: Doc<"founders">
   return (await getAuthUserId(ctx)) === f.userId;
 }
 
-const draftV = v.object({ reason: v.string(), whyFit: v.array(v.string()), watchOut: v.array(v.string()), hook: v.union(v.string(), v.null()), subject: v.string(), body: v.string(), warnings: v.array(v.string()) });
+const draftV = v.object({ reason: v.string(), whyFit: v.array(v.string()), watchOut: v.array(v.string()), hook: v.union(v.string(), v.null()), subject: v.string(), body: v.string(), warnings: v.array(v.string()), linkedin: v.union(v.string(), v.null()) });
 const rowV = v.object({
   rank: v.number(), score: v.number(), kind: v.string(), city: v.union(v.string(), v.null()),
   chequeMinLakh: v.union(v.number(), v.null()), chequeMaxLakh: v.union(v.number(), v.null()), sentAt: v.union(v.number(), v.null()),
   // null while she's signed out (rows beyond her top 3)
   displayName: v.union(v.string(), v.null()), person: v.union(v.string(), v.null()), email: v.union(v.string(), v.null()),
   website: v.union(v.string(), v.null()), lastChecked: v.union(v.string(), v.null()), sourceUrls: v.array(v.string()),
+  linkedin: v.union(v.string(), v.null()), // the investor's LinkedIn profile, when the research found one
   draft: v.union(v.null(), draftV),
   reason: v.union(v.string(), v.null()), // one line on why they fit
   parts: v.array(v.object({ key: v.string(), label: v.string(), got: v.number(), max: v.number() })), // the score, part by part
@@ -185,6 +186,7 @@ export const me = query({
         // Beyond her top 3, an email address is only revealed once she asks for that investor's email ("Write email", capped daily).
         displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: m.rank < 3 || d ? inv.email ?? null : null,
         website: open ? inv.website ?? null : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open ? inv.sourceUrls : [],
+        linkedin: open ? inv.linkedin ?? null : null,
         reason: d?.reason ?? m.reason ?? null,
         applyUrl: open ? inv.applyUrl ?? null : null, applyDeadline: inv.applyDeadline ?? null, hasEmail: !!inv.email,
         parts: scoreParts(inv, f, new Date(m._creationTime).getFullYear()) ?? [], // the year she was matched (queries don't read the clock)
@@ -194,7 +196,7 @@ export const me = query({
         followups: open ? (await ctx.db.query("followups").withIndex("by_match_and_n", (q) => q.eq("matchId", m._id)).take(4))
           .filter((x) => x.state !== "cancelled")
           .map((x) => ({ id: x._id, n: x.n, state: x.state, dueAt: x.dueAt, subject: x.subject ?? null, body: x.body ?? null })) : [],
-        draft: d ? { reason: d.reason, whyFit: d.whyFit, watchOut: d.watchOut, hook: d.hook ?? null, subject: d.editedSubject ?? d.subject, body: d.editedBody ?? d.body, warnings: d.warnings } : null,
+        draft: d ? { reason: d.reason, whyFit: d.whyFit, watchOut: d.watchOut, hook: d.hook ?? null, subject: d.editedSubject ?? d.subject, body: d.editedBody ?? d.body, warnings: d.warnings, linkedin: d.linkedin ?? null } : null,
       });
     }
     return {
@@ -296,10 +298,35 @@ export const forReasons = internalQuery({
 });
 
 export const saveDraft = internalMutation({
-  args: { founderId: v.id("founders"), investorId: v.id("investors"), hook: v.string(), reason: v.string(), whyFit: v.array(v.string()), watchOut: v.array(v.string()), subject: v.string(), body: v.string(), warnings: v.array(v.string()) },
+  args: { founderId: v.id("founders"), investorId: v.id("investors"), hook: v.string(), reason: v.string(), whyFit: v.array(v.string()), watchOut: v.array(v.string()), subject: v.string(), body: v.string(), warnings: v.array(v.string()), linkedin: v.optional(v.string()) },
   returns: v.null(),
   handler: async (ctx, a) => {
     await ctx.db.insert("drafts", { ...a, kind: "first" });
+    return null;
+  },
+});
+
+/** A signed-in founder's draft for one investor, for writing its LinkedIn note. */
+export const draftForNote = internalQuery({
+  args: { token: v.string(), rank: v.number(), userId: v.id("users") },
+  returns: v.union(v.null(), v.object({ founder: v.any(), investor: v.any(), draftId: v.id("drafts"), body: v.string(), hasNote: v.boolean() })),
+  handler: async (ctx, { token, rank, userId }) => {
+    const f = await founderByToken(ctx, token);
+    if (!f || f.userId !== userId) return null;
+    const m = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id).eq("rank", rank)).unique();
+    if (!m) return null;
+    const inv = await ctx.db.get("investors", m.investorId);
+    const d = await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", f._id).eq("investorId", m.investorId)).first();
+    if (!inv || !d) return null;
+    return { founder: f, investor: inv, draftId: d._id, body: d.editedBody ?? d.body, hasNote: !!d.linkedin };
+  },
+});
+
+export const saveNote = internalMutation({
+  args: { draftId: v.id("drafts"), linkedin: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { draftId, linkedin }) => {
+    await ctx.db.patch("drafts", draftId, { linkedin });
     return null;
   },
 });

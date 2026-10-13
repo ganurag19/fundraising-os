@@ -28,7 +28,7 @@ export function Mark({ children }: { children: React.ReactNode }) {
 /** Hero: small notes of what FirstCheq is doing for a made-up founder, one popping in every few seconds. */
 const NOTES: [string, string][] = [
   ["Northlight Seed · Fit Score 89", "Opens on Smeltwise, from their portfolio."],
-  ["Email ready for Verdant Arc", "Written to Meera, about Kiln Labs."],
+  ["Email + LinkedIn note ready", "For Meera at Verdant Arc, about Kiln Labs."],
   ["86 investors fit Kiln Labs", "Your top 3 have emails ready."],
   ["Day 3: follow-up written", "For Kestrel Ridge Angels. Ready when you are."],
   ["Monsoon Angels added", "Backed two climate deals this year."],

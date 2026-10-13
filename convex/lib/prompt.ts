@@ -34,6 +34,7 @@ Also return, all from INVESTOR facts only, and never repeating each other:
 - whyFit: exactly 2 bullets, each under 12 words, each a different fact from reason. Prefer named deals, cheque size against her round, or who leads; "lists climate as a sector" only if nothing better exists.
 - watchOut: exactly 1 bullet under 14 words: the real risk in the facts (cheque size vs her round, no recent deal on record, broad generalist, stage at the edge). Don't repeat whyFit.
 - factsUsed: every investor fact the email itself relies on, as {text, field}. field must be one of: ${FACT_FIELDS.join(", ")}.
+- linkedin: a LinkedIn connection note to the same investor, at most 280 characters including spaces (LinkedIn's limit is 300). "Hi <first name>," (INVESTOR.person's first name; if there is no person, just "Hi,"), then the same hook in a few words, what FOUNDER.company does with one of her numbers, then a light ask such as sharing the deck. No links, no subject; sign off with FOUNDER.name's first name only. Same hard rules as the email, and don't reuse the email's sentences.
 
 Good example (hook from a recent deal):
 Subject: After GridLeaf, kilns are next
@@ -102,3 +103,13 @@ Return reasons: one item per investor, { i, reason }.
 - reason: under 15 words, the most specific true reason, from that investor's facts only: a named deal or portfolio company close to her space, their stated focus, or how their cheque fits her round. Plain English, no investor name at the start, no hype.
 - If the facts are thin, say what is true and modest, e.g. "Backs seed-stage climate startups; cheque size not published."
 - Never invent a deal, portfolio company, cheque size or focus. Never promise anything.`;
+
+
+export const NOTE_SYSTEM = `You write a LinkedIn connection note from an Indian founder to one investor. You get FOUNDER, INVESTOR (the only facts we have about them) and EMAIL (the cold email she is sending them).
+
+Return linkedin: at most 280 characters including spaces (LinkedIn's limit is 300).
+- "Hi <first name>," using INVESTOR.person's first name; if there is no person, just "Hi,".
+- The same hook as EMAIL, in a few words; what FOUNDER.company does, with one of her numbers; a light ask such as sharing the deck.
+- Sign off with FOUNDER.name's first name only. No links, no subject.
+- Only facts from FOUNDER and INVESTOR. Never invent a deal, number or mutual connection. Keep FOUNDER.company exactly as given. Don't reuse EMAIL's sentences.
+- Never write "I hope this finds you well", "game-changing", "disrupt", "reach out" or any hype, and never say or hint that AI wrote it.`;

@@ -16,7 +16,7 @@ const when = (t: number) => new Date(t).toLocaleString("en-IN", { timeZone: "Asi
 const CLICKS: [string, string][] = [
   ["visit_compare", "Opened the consultant comparison"], ["click_go", "Find my investors"], ["click_code", "I have a code"], ["click_request", "Request invite"],
   ["click_unlock", "Unlock all (Google)"], ["click_gmail", "Open in Gmail"], ["click_copy", "Copy email"],
-  ["click_write", "Write email"], ["click_upgrade", "Upgrade: Request access / call"], ["click_soon", "Coming-soon cards"],
+  ["click_write", "Write email"], ["click_linkedin", "Open / find on LinkedIn"], ["click_copy_note", "Copy LinkedIn note"], ["click_write_note", "Write LinkedIn note"], ["click_upgrade", "Upgrade: Request access / call"], ["click_soon", "Coming-soon cards"],
 ];
 
 const sinceNow = (r: Range) => sinceFor(r, Date.now());

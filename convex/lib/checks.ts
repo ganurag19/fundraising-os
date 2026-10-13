@@ -31,6 +31,19 @@ export function checkDraft(d: DraftCheckInput): string[] {
   return problems;
 }
 
+/** The LinkedIn connection note: LinkedIn's 300-character limit, her company named, no number she or the investor didn't give. */
+export function checkNote(note: string, d: Omit<DraftCheckInput, "subject" | "body">): string[] {
+  const problems: string[] = [];
+  if (note.length > 300) problems.push(`LinkedIn note is ${note.length} characters (limit 300)`);
+  const low = note.toLowerCase();
+  for (const b of BANNED) if (low.includes(b)) problems.push(`LinkedIn note uses a phrase we never use: "${b}"`);
+  for (const g of GENERIC) if (low.includes(g)) problems.push(`LinkedIn note has a generic line: "${g}"`);
+  if (d.company && !norm(note).includes(norm(d.company))) problems.push("LinkedIn note doesn't name her company");
+  const allowed = new Set([...numbers(`${d.oneLiner} ${d.founderLine} ${d.traction ?? ""}`), ...numbers(d.investorFacts ?? ""), "20"]);
+  for (const n of numbers(note)) if (!allowed.has(n) && !/^\d$/.test(n)) problems.push(`LinkedIn note has a number she didn't give us: "${n}"`);
+  return problems;
+}
+
 /** Facts the email used must point at fields that exist in the investor's record. */
 export function unsourcedFacts(facts: { text: string; field: string }[], record: Record<string, unknown>): string[] {
   return facts

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { chequeFits, dealToShow, scoreInvestor, scoreParts, topMatches } from "./match";
-import { checkDraft, checkFollowup, hookNamesADeal, unsourcedFacts } from "./checks";
+import { checkDraft, checkFollowup, checkNote, hookNamesADeal, unsourcedFacts } from "./checks";
 
 // Made-up investors only.
 const base = { sectors: ["ai"], stages: ["seed"], recent: [] as { year?: number; sector?: string }[], email: "hi@fund.example" };
@@ -166,5 +166,20 @@ describe("dealToShow", () => {
     expect(dealToShow(inv, ["Health"])?.company).toBe("Paybee");
     expect(dealToShow({ recent: [], portfolio: ["Smeltwise"] }, ["Health"])).toEqual({ company: "Smeltwise", year: null, round: null, inHers: false });
     expect(dealToShow({ recent: [], portfolio: [] }, ["Health"])).toBeNull();
+  });
+});
+
+describe("checkNote", () => {
+  // Made-up founder.
+  const given = { oneLiner: "Kiln Labs helps brick kilns cut coal use by 18%.", founderLine: "I'm Arjun; I ran kilns for six years.", traction: "62 kilns pay us monthly.", company: "Kiln Labs", investorFacts: '{"recent":[{"company":"GridLeaf","year":2025}]}' };
+  test("passes a short, true note", () => {
+    expect(checkNote("Hi Meera, you backed GridLeaf in 2025. Kiln Labs cuts coal use in brick kilns by 18%, and 62 kilns pay us. Happy to share our deck. Arjun", given)).toEqual([]);
+  });
+  test("catches length, a missing company, and an invented number", () => {
+    const p = checkNote("Hi Meera, we have 500 customers and want to disrupt kilns. " + "x".repeat(260), given);
+    expect(p.some((x) => x.includes("characters"))).toBe(true);
+    expect(p.some((x) => x.includes("doesn't name her company"))).toBe(true);
+    expect(p.some((x) => x.includes('"500"'))).toBe(true);
+    expect(p.some((x) => x.includes("disrupt"))).toBe(true);
   });
 });

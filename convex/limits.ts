@@ -18,5 +18,6 @@ export const limits = new RateLimiter(components.rateLimiter, {
   newFoundersGlobal: { kind: "token bucket", rate: 120, period: HOUR }, // new sign-ups across the app
   eventsPerVisitor: { kind: "fixed window", rate: 300, period: HOUR }, // page visits and clicks we count
   eventsGlobal: { kind: "token bucket", rate: 6000, period: HOUR },
+  notesPerFounder: { kind: "fixed window", rate: 20, period: 24 * HOUR }, // LinkedIn notes for emails written before notes existed
   adminPinTries: { kind: "fixed window", rate: 5, period: HOUR }, // the owner's PIN, per account and app-wide
 });

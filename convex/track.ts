@@ -9,6 +9,7 @@ export const EVENT_NAMES = [
   "visit_landing", "visit_start", "visit_emails", "visit_dashboard", "visit_compare",
   "click_go", "click_code", "click_request", "click_unlock", "click_signin",
   "click_gmail", "click_copy", "click_write", "click_upgrade", "click_soon",
+  "click_linkedin", "click_copy_note", "click_write_note",
 ] as const;
 const NAMES = new Set<string>(EVENT_NAMES);
 

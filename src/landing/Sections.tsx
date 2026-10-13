@@ -128,34 +128,43 @@ export function ProductDemo() {
 const EMAILS = [
   { inv: "Verdant Arc Capital", to: "meera@verdantarc.example", score: 94, parts: [30, 20, 20, 15], hook: "Opens on GridLeaf, their seed deal",
     subj: "After GridLeaf, kilns are next",
-    body: "Hi Meera,\n\nYou backed GridLeaf at seed last year, when few funds would touch software for old industry. Brick kilns are the same bet, ten years behind: India has over a lakh of them, still burning coal by hand.\n\nI'm Arjun; I ran my family's kiln for six years before building Kiln Labs. Our retrofit burner and fuel-tracking app cut coal use by 18%.\n\n62 kilns pay us monthly, up from 9 in March.\n\nWe're raising ₹3 Cr at seed. Could I send the deck?\n\nArjun Rao\nFounder, Kiln Labs" },
+    body: "Hi Meera,\n\nYou backed GridLeaf at seed last year, when few funds would touch software for old industry. Brick kilns are the same bet, ten years behind: India has over a lakh of them, still burning coal by hand.\n\nI'm Arjun; I ran my family's kiln for six years before building Kiln Labs. Our retrofit burner and fuel-tracking app cut coal use by 18%.\n\n62 kilns pay us monthly, up from 9 in March.\n\nWe're raising ₹3 Cr at seed. Could I send the deck?\n\nArjun Rao\nFounder, Kiln Labs", note: "Hi Meera, you backed GridLeaf when few funds touched software for old industry. Kiln Labs cuts coal use in brick kilns by 18%, and 62 kilns now pay us. We're raising ₹3 Cr at seed; happy to share the deck. Arjun" },
   { inv: "Northlight Seed", to: "kabir@northlight.example", score: 89, parts: [30, 20, 15, 15], hook: "Opens on Smeltwise, from their portfolio",
     subj: "Smeltwise, but for brick kilns",
-    body: "Hi Kabir,\n\nSmeltwise showed that heavy industry will pay for software that cuts its fuel bill. Brick kilns, one of India's biggest coal users, have no such tool yet.\n\nKiln Labs fits a retrofit burner and an app that tracks fuel per batch; kilns use 18% less coal from the first month. I learned where the coal goes running my family's kiln for six years.\n\nWe've gone from 9 paying kilns in March to 62.\n\nWe're raising ₹3 Cr at seed. Would 20 minutes next week work?\n\nArjun Rao\nFounder, Kiln Labs" },
+    body: "Hi Kabir,\n\nSmeltwise showed that heavy industry will pay for software that cuts its fuel bill. Brick kilns, one of India's biggest coal users, have no such tool yet.\n\nKiln Labs fits a retrofit burner and an app that tracks fuel per batch; kilns use 18% less coal from the first month. I learned where the coal goes running my family's kiln for six years.\n\nWe've gone from 9 paying kilns in March to 62.\n\nWe're raising ₹3 Cr at seed. Would 20 minutes next week work?\n\nArjun Rao\nFounder, Kiln Labs", note: "Hi Kabir, Smeltwise proved heavy industry pays to cut its fuel bill. Kiln Labs does that for India's brick kilns: 18% less coal, 62 paying kilns, up from 9 in March. Could I send our seed deck? Arjun" },
   { inv: "Kestrel Ridge Angels", to: "anjali@kestrelridge.example", score: 86, parts: [24, 20, 20, 15], hook: "Opens on FurnaceIQ, their 2025 cheque",
     subj: "Your FurnaceIQ cheque, and kilns",
-    body: "Hi Anjali,\n\nYou wrote one of FurnaceIQ's first cheques in 2025. Kiln Labs goes after the same coal bill, in a market with almost no software: India's brick kilns.\n\nSix years running my family's kiln taught me where the coal goes. Our burner and app cut it by 18%.\n\n62 kilns pay us monthly, up from 9 in March, and we're raising ₹3 Cr at seed.\n\nCould I send you the deck?\n\nArjun Rao\nFounder, Kiln Labs" },
+    body: "Hi Anjali,\n\nYou wrote one of FurnaceIQ's first cheques in 2025. Kiln Labs goes after the same coal bill, in a market with almost no software: India's brick kilns.\n\nSix years running my family's kiln taught me where the coal goes. Our burner and app cut it by 18%.\n\n62 kilns pay us monthly, up from 9 in March, and we're raising ₹3 Cr at seed.\n\nCould I send you the deck?\n\nArjun Rao\nFounder, Kiln Labs", note: "Hi Anjali, after your FurnaceIQ cheque, I thought you'd like this: Kiln Labs cuts the coal bill of brick kilns by 18%. 62 kilns pay us monthly. Raising ₹3 Cr at seed; may I share the deck? Arjun" },
 ];
 const PART_LABELS = ["Invests in your space", "Invests at your stage", "Cheque fits your round", "Invested recently"];
 const PART_MAX = [30, 20, 20, 15];
 
 export function ThreeEmails() {
   const [i, setI] = useState(0);
+  const [via, setVia] = useState<"email" | "linkedin">("email");
   const e = EMAILS[i];
   return (
     <div className="three-emails">
       <div className="te-tabs" role="tablist">{EMAILS.map((x, k) => <button key={x.inv} role="tab" aria-selected={k === i} className={k === i ? "on" : ""} onClick={() => setI(k)}><Logo name={x.inv} size={26} /><span>{x.inv}</span></button>)}</div>
       <div className="te-body">
-        <div className="email"><div className="to">To {e.to}</div><div className="subj">{e.subj}</div>{e.body}</div>
+        <div className="te-mail">
+          <div className="via-tabs" role="tablist" aria-label="Email or LinkedIn">
+            <button role="tab" aria-selected={via === "email"} onClick={() => setVia("email")}>✉ Email</button>
+            <button role="tab" aria-selected={via === "linkedin"} onClick={() => setVia("linkedin")}><b className="li-mark" aria-hidden="true">in</b> LinkedIn note</button>
+          </div>
+          {via === "email"
+            ? <div className="email"><div className="to">To {e.to}</div><div className="subj">{e.subj}</div>{e.body}</div>
+            : <div className="email li-note"><div className="to">LinkedIn note to {e.to.split("@")[0].replace(/^./, (c) => c.toUpperCase())} <span className="muted small">{e.note.length}/300</span></div>{e.note}</div>}
+        </div>
         <aside className="te-why">
           <div className="te-score"><Dial score={e.score} size={56} /><div className="te-label"><b>FirstCheq Fit Score</b><span>{e.hook}</span></div></div>
           {PART_LABELS.map((l, k) => (
             <div className="bd-row" key={l}><span>{l}</span><span className="bd-bar" aria-hidden="true"><i className={e.parts[k] / PART_MAX[k] >= 0.75 ? "hi" : "mid"} style={{ width: `${(e.parts[k] / PART_MAX[k]) * 100}%` }} /></span><b>{e.parts[k]}/{PART_MAX[k]}</b></div>
           ))}
-          <ul className="te-notes"><li>Opens on their deal</li><li>Your story, your numbers</li><li>Follow-ups written, stopped when they reply</li></ul>
+          <ul className="te-notes"><li>Opens on their deal</li><li>Your story, your numbers</li><li>An email and a LinkedIn note, same research</li><li>Follow-ups written, stopped when they reply</li></ul>
         </aside>
       </div>
-      <p className="muted small center">Same founder, three investors, three different emails. Made-up example.</p>
+      <p className="muted small center">Same founder, three investors, three different emails and LinkedIn notes. Made-up example.</p>
     </div>
   );
 }
@@ -184,6 +193,7 @@ const ROWS: [string, string, string, string, string][] = [
   ["Time to your first email", "2–4 weeks", "4–8 weeks to hire and ramp up", "2–4 weeks to onboard", "2 minutes"],
   ["Targeted reach", "Anyone you can find, by guesswork", "Their own network", "Their own network", "Only investors who fit your space, stage and round, ranked by Fit Score"],
   ["Personalised emails", "Hours each, or a generic draft", "Varies", "Templates at scale", "Researched and written to each investor, opening on a real deal"],
+  ["Ways in", "Whatever you have time for", "Usually email", "Usually email", "An email and a LinkedIn note for each, same research"],
   ["Follow-ups", "Easy to forget", "Manual", "Usually", "Written for you, on time"],
   ["Your effort a week", "10–15 hours", "Managing a hire", "Calls and reviews", "About 1 hour"],
   ["Cost", "Your evenings", "₹70k–1.5L a month", "₹50k–2L a month + 2–5% success fee", "Free to start"],

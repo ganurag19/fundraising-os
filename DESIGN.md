@@ -61,6 +61,7 @@ Buttons say what happens next ("Open email", "Send follow-up"), never "Submit" o
 - **Verification ladder:** ◌ Researched → ◐ Checked by our team → ● Confirmed by investor.
 - **Faces and logos:** fund logo from the fund's own site. People show their own photo only once they confirm their profile; until then, initials or an illustrated face. Never photos taken from LinkedIn.
 - **Email panel:** To, Subject, Body (editable). Lines from her profile are highlighted blue; unsourced claims get an amber "check this". Word count. Buttons: Open in Gmail (main), Copy, I sent it.
+- **Email / LinkedIn note switch** above each email. The LinkedIn note: "LinkedIn note to {person}", the note, a character count out of 300. Buttons: Open LinkedIn (when we have their profile link) or Find on LinkedIn (a LinkedIn search she opens), and Copy note. Help line: "tap Connect, then Add a note, and paste." Old emails without a note show "Write LinkedIn note".
 - **Pipeline row:** face or logo, the next action and why, a status tag, a due chip (red for today, amber for later), one action button, and "Status ▾".
 - **"Coming soon" tag:** small mono "SOON" label; the button is shown but does nothing except a toast.
 

@@ -10,8 +10,8 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { rankMatches, topMatches } from "./lib/match";
 import { shortUrl } from "./lib/links";
-import { checkDraft, hookNamesADeal, unsourcedFacts } from "./lib/checks";
-import { DRAFT_SYSTEM, FACT_FIELDS, REASONS_SYSTEM } from "./lib/prompt";
+import { checkDraft, checkNote, hookNamesADeal, unsourcedFacts } from "./lib/checks";
+import { DRAFT_SYSTEM, FACT_FIELDS, NOTE_SYSTEM, REASONS_SYSTEM } from "./lib/prompt";
 import { limits } from "./limits";
 
 const MODEL = "claude-sonnet-5-5"; // each founder's first three drafts (AGENTS.md section 4)
@@ -27,7 +27,9 @@ const Draft = z.object({
   whyFit: z.array(z.string()),
   watchOut: z.array(z.string()),
   factsUsed: z.array(z.object({ text: z.string(), field: z.enum(FACT_FIELDS) })),
+  linkedin: z.string(),
 });
+const Note = z.object({ linkedin: z.string() });
 
 export const oneLinerOf = (f: Doc<"founders">) =>
   f.oneLiner ?? `${f.company} helps ${f.forWho} ${f.outcome} through ${f.how}${f.reduce ? `, reducing ${f.reduce}` : ""}.`;
@@ -177,17 +179,20 @@ async function writeOne(ctx: ActionCtx, client: Anthropic, founderId: Id<"founde
         ms: Date.now() - started, inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens,
       });
       if (!out || res.stop_reason === "refusal") continue;
-      const problems = checkDraft({ subject: out.subject, body: out.body, oneLiner: founder.oneLiner, founderLine: founder.founderLine, traction: [founder.traction, founder.revenue, founder.customers].filter(Boolean).join(" "), company: founder.company, investorFacts: JSON.stringify(facts) + " " + founder.raising + " " + (founder.website ?? "") + " " + (founder.linkedin ?? "") });
+      const given = { oneLiner: founder.oneLiner, founderLine: founder.founderLine, traction: [founder.traction, founder.revenue, founder.customers].filter(Boolean).join(" "), company: founder.company, investorFacts: JSON.stringify(facts) + " " + founder.raising + " " + (founder.website ?? "") + " " + (founder.linkedin ?? "") };
+      const problems = checkDraft({ subject: out.subject, body: out.body, ...given });
+      const noteProblems = checkNote(out.linkedin, given);
       const deal = hookNamesADeal(out.body, facts as { recent?: { company: string }[]; portfolio?: string[] });
       if (deal) problems.push(deal);
       const unsourced = unsourcedFacts(out.factsUsed, facts as Record<string, unknown>);
-      if ((problems.length || unsourced.length) && attempt === 0) {
-        fixNote = `\n\nYour last draft had these problems. Fix them and keep everything else true:\n- ${[...problems, ...unsourced.map((u) => `Not in INVESTOR: ${u}`)].join("\n- ")}`;
+      if ((problems.length || unsourced.length || noteProblems.length) && attempt === 0) {
+        fixNote = `\n\nYour last draft had these problems. Fix them and keep everything else true:\n- ${[...problems, ...noteProblems, ...unsourced.map((u) => `Not in INVESTOR: ${u}`)].join("\n- ")}`;
         continue;
       }
       await ctx.runMutation(internal.founders.saveDraft, {
         founderId, investorId: inv._id, hook: out.hook, reason: out.reason, whyFit: out.whyFit.slice(0, 2), watchOut: out.watchOut.slice(0, 1),
         subject: out.subject, body: out.body, warnings: [...problems, ...unsourced.map((u) => `Check this: "${u}"`)],
+        linkedin: noteProblems.length ? undefined : out.linkedin.trim(), // a note that fails its checks is left out; she can ask for a new one
       });
       return true;
     } catch (e) {
@@ -197,3 +202,44 @@ async function writeOne(ctx: ActionCtx, client: Anthropic, founderId: Id<"founde
   }
   return false;
 }
+
+/** A LinkedIn note for an email written before notes existed (or whose note failed its checks). Haiku, capped per founder. */
+export const writeNote = action({
+  args: { token: v.string(), rank: v.number() },
+  returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
+  handler: async (ctx, { token, rank }): Promise<{ ok: true } | { ok: false; error: string }> => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { ok: false as const, error: "Please sign in to write LinkedIn notes." };
+    const row: { founder: Doc<"founders">; investor: Doc<"investors">; draftId: Id<"drafts">; body: string; hasNote: boolean } | null = await ctx.runQuery(internal.founders.draftForNote, { token, rank, userId });
+    if (!row) return { ok: false as const, error: "Write the email first." };
+    if (row.hasNote) return { ok: true as const };
+    if (!(await limits.limit(ctx, "notesPerFounder", { key: row.founder._id })).ok) return { ok: false as const, error: "That's today's LinkedIn notes. Come back tomorrow." };
+    if (!(await limits.limit(ctx, "aiCallsGlobal", { count: 1 })).ok) return { ok: false as const, error: BUSY };
+    const founder = briefOf(row.founder), facts = investorFacts(row.investor);
+    const given = { oneLiner: founder.oneLiner, founderLine: founder.founderLine, traction: [founder.traction, founder.revenue, founder.customers].filter(Boolean).join(" "), company: founder.company, investorFacts: JSON.stringify(facts) + " " + founder.raising };
+    const userText = `FOUNDER:\n${JSON.stringify(founder)}\n\nINVESTOR:\n${JSON.stringify(facts)}\n\nEMAIL:\n${row.body}`;
+    const client = new Anthropic();
+    let fix = "";
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const started = Date.now();
+      try {
+        const res = await client.messages.parse({
+          model: MORE_MODEL, max_tokens: 400, system: NOTE_SYSTEM,
+          messages: [{ role: "user", content: userText + fix }],
+          output_config: { format: zodOutputFormat(Note) },
+        });
+        const out = res.parsed_output;
+        await ctx.runMutation(internal.founders.logAiCall, { founderId: row.founder._id, purpose: "linkedin_note", model: MORE_MODEL, input: userText + fix, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, ms: Date.now() - started, inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens });
+        if (!out) continue;
+        const problems = checkNote(out.linkedin, given);
+        if (problems.length) { fix = `\n\nYour last note had these problems. Fix them:\n- ${problems.join("\n- ")}`; continue; }
+        await ctx.runMutation(internal.founders.saveNote, { draftId: row.draftId, linkedin: out.linkedin.trim() });
+        return { ok: true as const };
+      } catch (e) {
+        const msg = e instanceof Anthropic.APIError ? `API ${e.status}: ${e.message}` : e instanceof Error ? e.message : String(e);
+        await ctx.runMutation(internal.founders.logAiCall, { founderId: row.founder._id, purpose: "linkedin_note", model: MORE_MODEL, input: userText, output: "", ms: Date.now() - started, error: msg.slice(0, 500) });
+      }
+    }
+    return { ok: false as const, error: BUSY };
+  },
+});

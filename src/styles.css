@@ -725,3 +725,13 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .tbl.compare td.us-end{border-bottom:1.5px solid var(--blue);border-radius:0 0 16px 16px}
 .tbl.compare td.us::before{content:"✓ ";color:var(--green);font-weight:700}
 .why-panel .breakdown{border:0;padding:0;background:none;box-shadow:none}
+/* Email / LinkedIn switch on each investor */
+.via-tabs{display:inline-flex;gap:4px;padding:3px;border:1px solid var(--line2);border-radius:999px;background:var(--card2);margin:4px 0 8px;align-self:flex-start}
+.via-tabs button{border:0;background:none;color:var(--fg2);font:600 13px/1 var(--body);padding:7px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.via-tabs button[aria-selected="true"]{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.li-mark{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:4px;background:#0A66C2;color:#fff;font:700 10px/1 var(--body)}
+.li-note .to{display:flex;justify-content:space-between;gap:10px}
+.li-note .over{color:var(--red)}
+.note-empty{display:flex;flex-direction:column;gap:10px;align-items:flex-start} .note-empty p{margin:0}
+.email-actions a.btn{text-decoration:none}
+.te-mail{display:flex;flex-direction:column;min-width:0}

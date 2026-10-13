@@ -49,6 +49,7 @@ export default defineSchema({
     sourceUrls: v.array(v.string()),
     sourceDate: v.optional(v.string()),
     lastChecked: v.optional(v.string()),
+    linkedin: v.optional(v.string()), // public LinkedIn profile of the person (or the firm), from the research; never guessed
     retired: v.optional(v.boolean()), // dropped from the research (stopped investing, failed checks): kept for existing lists, never matched again
   }).index("by_seedId", ["seedId"]),
 
@@ -138,6 +139,7 @@ export default defineSchema({
     warnings: v.array(v.string()),
     editedSubject: v.optional(v.string()),
     editedBody: v.optional(v.string()),
+    linkedin: v.optional(v.string()), // the LinkedIn connection note (300 characters at most), same facts as the email
   }).index("by_founder_and_investor", ["founderId", "investorId"]),
 
   // Log of every AI call (AGENTS.md section 4).
