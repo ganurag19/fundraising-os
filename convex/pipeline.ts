@@ -132,13 +132,12 @@ export const retryLater = internalMutation({
   },
 });
 
-/** Dev only, from the terminal: make her due follow-ups come due now, to see them without waiting days.
- *  npx convex run pipeline:fastForward '{"token":"<her token>"}' */
+/** Testing, from the terminal only (internal): make one founder's scheduled follow-ups come due now.
+ *  npx convex run [--prod] pipeline:fastForward '{"token":"<her token>"}' */
 export const fastForward = internalMutation({
   args: { token: v.string() },
   returns: v.number(),
   handler: async (ctx, { token }) => {
-    if ((process.env.CONVEX_CLOUD_URL ?? "").includes("dazzling-fox-925")) throw new Error("Not on production");
     const f = await founderByToken(ctx, token);
     if (!f) return 0;
     const due = await ctx.db.query("followups").withIndex("by_founder_and_state", (q) => q.eq("founderId", f._id).eq("state", "scheduled")).take(50);

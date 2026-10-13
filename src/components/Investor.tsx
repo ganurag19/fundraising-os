@@ -13,7 +13,7 @@ type Draft = NonNullable<Row["draft"]>;
 type Mail = { subject: string; body: string };
 type Toast = (s: string) => void;
 
-const site = (u: string) => u.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
+const site = (u: string) => u.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/$/, "").toLowerCase();
 const enc = encodeURIComponent;
 const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const isAndroid = () => /Android/i.test(navigator.userAgent);
