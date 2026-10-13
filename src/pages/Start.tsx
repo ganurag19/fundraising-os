@@ -6,7 +6,7 @@ import { LogoMark, Wordmark } from "../components/Brand";
 import { savedInviteCode, visitorToken } from "../lib/token";
 import { normaliseLinkedin, normaliseUrl } from "../../convex/lib/links";
 
-const SECTORS: [string, boolean][] = [["AI", true], ["Climate & Energy", true], ["Deeptech", true], ["Fintech", false], ["B2B software", false], ["Health", false], ["Consumer brands", false]];
+const SECTORS: [string, boolean][] = ["AI", "Climate & Energy", "Deeptech", "Fintech", "B2B SaaS", "Health", "Consumer brands", "Edtech", "Agritech", "Media & adtech", "Web3", "Impact"].map((n) => [n, true]);
 const STAGES = ["Idea", "Pre-seed", "Seed", "Pre-Series A", "Series A"];
 const ASKS = ["₹25–50L", "₹50L–1Cr", "₹1–3 Cr", "₹3–5 Cr", "₹5–10 Cr"];
 const LEFT = ["~2 min left", "~2 min left", "~2 min left", "~1 min left", "~1 min left", "Almost there", "Last step"];
@@ -114,8 +114,8 @@ export default function Start() {
         <input className="field" autoFocus placeholder="Your full name" autoComplete="name" maxLength={80} value={f.name} onChange={(e) => setF((o) => ({ ...o, name: e.target.value }))} onKeyDown={onEnter(!!f.name.trim())} />
         {actions(!!f.name.trim(), next)}</div>}
 
-      {step === 2 && <div className="step rise">{progress}{count(3)}<h1>What space are you in?</h1><p className="help">{f.sectors.length ? `${f.sectors.length} selected` : "Pick all that fit. AI, Climate and Deeptech are open first."}</p>
-        <div className="pick">{SECTORS.map(([n, on]) => <button key={n} aria-pressed={f.sectors.includes(n)} disabled={!on} onClick={() => setF((o) => ({ ...o, sectors: o.sectors.includes(n) ? o.sectors.filter((x) => x !== n) : [...o.sectors, n] }))}>{n}{on ? "" : " · soon"}</button>)}</div>
+      {step === 2 && <div className="step rise">{progress}{count(3)}<h1>What space are you in?</h1><p className="help">{f.sectors.length ? `${f.sectors.length} selected` : "Pick up to 3 that fit."}</p>
+        <div className="pick">{SECTORS.map(([n, on]) => <button key={n} aria-pressed={f.sectors.includes(n)} disabled={!on} onClick={() => setF((o) => ({ ...o, sectors: o.sectors.includes(n) ? o.sectors.filter((x) => x !== n) : o.sectors.length < 3 ? [...o.sectors, n] : o.sectors }))}>{n}{on ? "" : " · soon"}</button>)}</div>
         {actions(f.sectors.length > 0, next)}</div>}
 
       {step === 3 && <div className="step rise">{progress}{count(4)}<h1>Tell us about your round.</h1><p className="help">So every investor we show can write your size of cheque.</p>

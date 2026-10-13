@@ -55,7 +55,7 @@ export default function InviteSheet({ mode, onMode, onClose }: { mode: SheetMode
         {mode === "request" && done && (
           <>
             <h2>{done === "new" ? <>You're on the list. <span className="it">We'll be in touch.</span></> : <>You're already on the list.</>}</h2>
-            <p className="fg2" style={{ margin: 0 }}>We let founders in every week, starting with AI, Climate and Deeptech. Your invite comes to <b>{f.email.trim().toLowerCase()}</b>.</p>
+            <p className="fg2" style={{ margin: 0 }}>We let founders in every week. Your invite comes to <b>{f.email.trim().toLowerCase()}</b>.</p>
             <div className="row"><button className="btn primary" onClick={onClose}>Back to the page</button></div>
           </>
         )}

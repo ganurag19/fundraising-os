@@ -10,7 +10,7 @@ import type { Me } from "../components/Investor";
 import { LogoMark, Wordmark } from "../components/Brand";
 import { visitorToken } from "../lib/token";
 
-const SPACE: Record<string, string> = { AI: "AI", "Climate & Energy": "climate", Deeptech: "deeptech" };
+const SPACE: Record<string, string> = { AI: "AI", "Climate & Energy": "climate", "B2B SaaS": "B2B SaaS", "Consumer brands": "consumer", "Media & adtech": "media and adtech", Web3: "Web3" };
 
 // The reveal, before sign-in: her 3 top picks with emails ready, then a taste of the rest.
 export default function Emails() {

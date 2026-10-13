@@ -2,7 +2,12 @@
 // Weights follow the Fit Score in the strategy page: what they invest in 30, stage 20, cheque 20,
 // recent activity 15, researched thesis 10, checked recently 5.
 
-export const SECTOR_KEYS: Record<string, string> = { AI: "ai", "Climate & Energy": "climate", Deeptech: "deeptech" };
+export const SECTOR_KEYS: Record<string, string> = {
+  AI: "ai", "Climate & Energy": "climate", Deeptech: "deeptech", Fintech: "fintech", "B2B SaaS": "b2b_saas", Health: "health",
+  "Consumer brands": "consumer", Edtech: "edtech", Agritech: "agritech", "Media & adtech": "adtech", Web3: "web3", Impact: "impact",
+};
+// How a sector reads inside a sentence ("3 of 7 recent deals are fintech").
+const SECTOR_WORD: Record<string, string> = { AI: "AI", "Climate & Energy": "climate", "B2B SaaS": "B2B SaaS", "Consumer brands": "consumer", "Media & adtech": "media and adtech", Web3: "Web3" };
 export const STAGE_KEYS: Record<string, string> = { Idea: "idea", "Pre-seed": "pre_seed", Seed: "seed", "Pre-Series A": "pre_series_a", "Series A": "series_a" };
 // Ask bands in ₹ lakh: [smallest round, largest round]
 export const ASK_LAKH: Record<string, [number, number]> = { "₹25–50L": [25, 50], "₹50L–1Cr": [50, 100], "₹1–3 Cr": [100, 300], "₹3–5 Cr": [300, 500], "₹5–10 Cr": [500, 1000] };
@@ -19,7 +24,7 @@ export function sectorEvidence(inv: MatchInvestor, f: FounderAsk, currentYear: n
   const wanted = f.sectors.map((s) => SECTOR_KEYS[s]).filter(Boolean);
   const tagged = inv.recent.filter((r) => r.year !== undefined && r.year >= currentYear - 2 && r.sector);
   const inHers = tagged.filter((r) => wanted.includes(r.sector!)).length;
-  const name = f.sectors.length === 1 ? f.sectors[0].replace(" & Energy", "").toLowerCase().replace(/^ai$/, "AI") : "your space";
+  const name = f.sectors.length === 1 ? SECTOR_WORD[f.sectors[0]] ?? f.sectors[0].toLowerCase() : "your space";
   return { inHers, tagged: tagged.length, label: tagged.length ? `${inHers} of ${tagged.length} recent deals are ${name}` : null };
 }
 
@@ -42,6 +47,15 @@ const THESIS_WORDS: Record<string, RegExp> = {
   ai: /\b(ai|artificial intelligence|machine learning|ml|genai|llms?|agentic)\b/i,
   climate: /climate|energy|sustainab|clean ?tech|carbon|decarboni|\bev\b|electric|renewable/i,
   deeptech: /deep ?tech|hardware|robotic|semiconductor|space|biotech|frontier|ip-led/i,
+  fintech: /fintech|financial|payments?|lending|credit|insur|wealth|banking|neo-?bank/i,
+  b2b_saas: /\bsaas\b|b2b|enterprise|software|developer tools|vertical saas/i,
+  health: /health|medtech|medical|biotech|pharma|wellness|diagnostic|care\b/i,
+  consumer: /consumer|d2c|brands?|retail|commerce|lifestyle|food|beauty/i,
+  edtech: /edtech|education|learning|skilling|upskilling/i,
+  agritech: /agri|farm|food systems|rural/i,
+  adtech: /adtech|media|marketing|creator|content/i,
+  web3: /web3|crypto|blockchain|defi/i,
+  impact: /impact|social|inclusion|sustainab|bharat/i,
 };
 
 export type ScorePart = { key: string; label: string; got: number; max: number };
