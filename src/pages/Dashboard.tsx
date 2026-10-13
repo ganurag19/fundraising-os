@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
-import { InvestorRow, SoonCards } from "../components/Investor";
+import { InvestorRow, Pipeline, SoonCards } from "../components/Investor";
 import { visitorToken } from "../lib/token";
 import { Page } from "./Emails";
 
@@ -34,7 +34,8 @@ export default function Dashboard() {
   const top = me.rows.filter((r) => r.rank < 3);
   const rest = me.rows.filter((r) => r.rank >= 3);
   const ready = me.rows.filter((r) => r.draft).length;
-  const sent = me.rows.filter((r) => r.sentAt).length;
+  const sent = me.rows.filter((r) => r.status !== "new").length;
+  const notSent = (r: (typeof me.rows)[number]) => r.status === "new";
 
   return (
     <Page right={<button className="btn ghost sm" onClick={() => void signOut()}>Sign out</button>}>
@@ -48,12 +49,14 @@ export default function Dashboard() {
         <div><b>{sent}</b><span>sent</span></div>
       </div>
 
-      <h2 className="dash-h">Top picks</h2>
-      <div className="rows">{top.map((r) => <InvestorRow key={r.rank} r={r} token={token} onToast={setToast} account={me.gmail} startOpen={!r.sentAt && r.rank === 0} />)}</div>
+      <Pipeline rows={me.rows} token={token} onToast={setToast} account={me.gmail} />
+
+      {top.some(notSent) && <h2 className="dash-h">Top picks</h2>}
+      <div className="rows">{top.filter(notSent).map((r) => <InvestorRow key={r.rank} r={r} token={token} onToast={setToast} account={me.gmail} startOpen={!r.sentAt && r.rank === 0} />)}</div>
 
       {rest.length > 0 && <>
         <h2 className="dash-h">Next best <span className="muted small">· tap Write email for any of them</span></h2>
-        <div className="rows">{rest.map((r) => <InvestorRow key={r.rank} r={r} token={token} onToast={setToast} account={me.gmail} />)}</div>
+        <div className="rows">{rest.filter(notSent).map((r) => <InvestorRow key={r.rank} r={r} token={token} onToast={setToast} account={me.gmail} />)}</div>
         {me.matchCount > me.rows.length && <p className="muted small" style={{ marginTop: 10 }}>Showing your best {me.rows.length} of {me.matchCount}. More as you send.</p>}
       </>}
 

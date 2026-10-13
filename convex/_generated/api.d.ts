@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
+import type * as followups from "../followups.js";
 import type * as founders from "../founders.js";
 import type * as http from "../http.js";
 import type * as invites from "../invites.js";
@@ -18,6 +19,7 @@ import type * as lib_links from "../lib/links.js";
 import type * as lib_match from "../lib/match.js";
 import type * as lib_prompt from "../lib/prompt.js";
 import type * as limits from "../limits.js";
+import type * as pipeline from "../pipeline.js";
 import type * as suggest from "../suggest.js";
 import type * as watch from "../watch.js";
 import type * as write from "../write.js";
@@ -31,6 +33,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   crons: typeof crons;
+  followups: typeof followups;
   founders: typeof founders;
   http: typeof http;
   invites: typeof invites;
@@ -39,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   "lib/match": typeof lib_match;
   "lib/prompt": typeof lib_prompt;
   limits: typeof limits;
+  pipeline: typeof pipeline;
   suggest: typeof suggest;
   watch: typeof watch;
   write: typeof write;

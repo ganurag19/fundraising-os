@@ -86,7 +86,25 @@ export default defineSchema({
     rank: v.number(),
     score: v.number(),
     sentAt: v.optional(v.number()), // she tapped "I sent it"
+    // Pipeline status (plain updates, AGENTS.md section 1). Unset means not sent yet.
+    status: v.optional(v.union(v.literal("sent"), v.literal("replied"), v.literal("meeting"), v.literal("passed"))),
+    statusAt: v.optional(v.number()),
   }).index("by_founder_and_rank", ["founderId", "rank"]),
+
+  // Follow-ups: #1 is written 3 days after she sends, #2 seven days after she sends #1.
+  // A reply, meeting or pass cancels whatever is still scheduled or ready.
+  followups: defineTable({
+    founderId: v.id("founders"),
+    matchId: v.id("matches"),
+    n: v.number(), // 1 or 2
+    dueAt: v.number(),
+    state: v.union(v.literal("scheduled"), v.literal("ready"), v.literal("sent"), v.literal("cancelled"), v.literal("failed")),
+    subject: v.optional(v.string()),
+    body: v.optional(v.string()),
+    sentAt: v.optional(v.number()),
+  })
+    .index("by_match_and_n", ["matchId", "n"])
+    .index("by_founder_and_state", ["founderId", "state"]),
 
   // Every email we wrote, and what the founder later changed it to.
   drafts: defineTable({

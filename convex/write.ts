@@ -49,11 +49,12 @@ export const writeFirstEmails = action({
   args: { token: v.string() },
   returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
   handler: async (ctx, { token }): Promise<{ ok: true } | { ok: false; error: string }> => {
-    const data: { founder: Doc<"founders">; investors: Doc<"investors">[] } | null = await ctx.runQuery(internal.founders.forDrafting, { token });
+    const data: { founder: Doc<"founders">; investors: Doc<"investors">[]; hasSent: boolean } | null = await ctx.runQuery(internal.founders.forDrafting, { token });
     if (!data) return { ok: false as const, error: "Please start again from the first step." };
     const f = data.founder;
     if (!(f.oneLiner || f.forWho) || !f.founderLine) return { ok: false as const, error: "Please fill in the short profile first." };
     if (f.emailsStatus === "writing") return { ok: true as const };
+    if (data.hasSent) return { ok: false as const, error: "You've started sending, so your list is kept as it is." };
 
     const run = await limits.limit(ctx, "runsPerVisitor", { key: f._id });
     if (!run.ok) return { ok: false as const, error: "You've used today's 3 runs. Come back tomorrow." };

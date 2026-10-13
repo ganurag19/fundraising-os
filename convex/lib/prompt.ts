@@ -82,3 +82,14 @@ Rules:
 - If she gave a vision, build on it. If not, a modest one from what the company does.
 - Fix capitals and spelling: names and companies capitalised ("anurag" → "Anurag", "ex-iit delhi" → "IIT Delhi alumnus"). Money as ₹, never "INR" or "Rs".
 - Plain, warm Indian English. No hype: never "passionate", "visionary", "revolutionise", "disrupt", "game-changing".`;
+
+export const FOLLOWUP_SYSTEM = `You write a short follow-up to a cold email an Indian founder sent to an investor who hasn't replied. You get JSON: FOUNDER, INVESTOR (name only), FIRST (her first email), EARLIER (her first follow-up, if this is the second), and N (1 or 2).
+
+Return subject and body.
+- subject: "Re: " + FIRST.subject, exactly.
+- body: under 60 words before the sign-off. Start "Hi <same greeting name as FIRST>,".
+  - N = 1: one line that reminds them who she is (company and what it does, in a few words), then one useful new thing ONLY if FOUNDER gives it (traction), then the same small ask (deck, or 20 minutes).
+  - N = 2: the last nudge. Polite and easy to answer: "If it's not a fit right now, a one-line no helps me plan." Then the ask once more.
+- Sign off with FOUNDER.name on its own line.
+
+Never: guilt or pressure ("just bumping this", "I know you're busy", "did you see my email?"), invent progress, numbers or a mutual connection, state any new fact about the investor, say AI wrote it, promise returns, or use "I hope this finds you well", "circling back", "touching base".`;

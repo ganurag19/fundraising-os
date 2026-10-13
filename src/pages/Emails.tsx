@@ -4,7 +4,7 @@ import { useConvexAuth, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
 import { Dial } from "../components/Art";
-import { PickCard, SoonCards } from "../components/Investor";
+import { PickCard, Pipeline, SoonCards } from "../components/Investor";
 import { cheque } from "../lib/investor";
 import type { Me } from "../components/Investor";
 import { LogoMark, Wordmark } from "../components/Brand";
@@ -40,6 +40,7 @@ export default function Emails() {
         <h1>3 investors to email <span className="it">today.</span></h1>
         {me.matchCount > 3 && <p className="fg2">Picked from {me.matchCount} that fit {me.company}.</p>}
       </header>
+      <Pipeline rows={picks} token={token} onToast={setToast} account={null} />
       <div className="picks">{picks.map((r) => <PickCard key={r.rank} r={r} token={token} onToast={setToast} />)}</div>
       {me.matchCount > 3 && <Teaser me={me} onToast={setToast} />}
       {toast && <div className="toast" role="status">{toast}</div>}

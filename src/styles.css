@@ -296,3 +296,12 @@ textarea.field.tall{min-height:128px;field-sizing:content}
 .legal p,.legal li{color:var(--fg2);line-height:1.65}
 .legal ul{padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .legal a{color:var(--blue-ink)}
+
+/* Pipeline (milestones 5–7) */
+.pipeline{margin-top:8px}
+.pipe-stats .hot{border-color:var(--red);background:var(--red-soft)}
+.pipe-stats .hot b{color:var(--red)}
+.due{flex:none;font:600 11px/1 var(--mono);letter-spacing:.04em;padding:5px 8px;border-radius:7px;background:var(--amber-soft);color:var(--amber);white-space:nowrap}
+.due.today{background:var(--red-soft);color:var(--red)}
+.status-menu{flex:none;background:var(--card2);color:var(--fg);border:1px solid var(--line2);border-radius:10px;padding:6px 8px;font-size:13px;max-width:140px}
+@media (max-width:520px){ .row-main{flex-wrap:wrap} .row-main .pick-head{flex:1 1 60%} }

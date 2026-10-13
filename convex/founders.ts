@@ -105,21 +105,6 @@ export const claim = mutation({
   },
 });
 
-/** "I sent it" on one investor (tap again to undo). */
-export const markSent = mutation({
-  args: { token: v.string(), rank: v.number(), sent: v.boolean() },
-  returns: v.null(),
-  handler: async (ctx, { token, rank, sent }) => {
-    const f = await founderByToken(ctx, token);
-    if (!f) return null;
-    const m = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id).eq("rank", rank)).unique();
-    if (!m) return null;
-    await ctx.db.patch("matches", m._id, { sentAt: sent ? Date.now() : undefined });
-    if (sent) await ctx.db.insert("steps", { step: "sent" });
-    return null;
-  },
-});
-
 /** Signed in, and the list is hers. Until then the names and emails beyond her top 3 stay on the server. */
 export async function isUnlocked(ctx: QueryCtx | MutationCtx, f: Doc<"founders">) {
   if (!f.userId) return false;
@@ -134,6 +119,8 @@ const rowV = v.object({
   displayName: v.union(v.string(), v.null()), person: v.union(v.string(), v.null()), email: v.union(v.string(), v.null()),
   website: v.union(v.string(), v.null()), lastChecked: v.union(v.string(), v.null()), sourceUrls: v.array(v.string()),
   draft: v.union(v.null(), draftV),
+  status: v.union(v.literal("new"), v.literal("sent"), v.literal("replied"), v.literal("meeting"), v.literal("passed")),
+  followups: v.array(v.object({ id: v.id("followups"), n: v.number(), state: v.string(), dueAt: v.number(), subject: v.union(v.string(), v.null()), body: v.union(v.string(), v.null()) })),
 });
 
 /** What the founder screens show: her details, writing status, her list and the emails written so far. */
@@ -165,6 +152,10 @@ export const me = query({
         // Beyond her top 3, an email address is only revealed once she asks for that investor's email ("Write email", capped daily).
         displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: m.rank < 3 || d ? inv.email : null,
         website: open ? inv.website ?? null : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open ? inv.sourceUrls : [],
+        status: m.status ?? ("new" as const),
+        followups: open ? (await ctx.db.query("followups").withIndex("by_match_and_n", (q) => q.eq("matchId", m._id)).take(4))
+          .filter((x) => x.state !== "cancelled")
+          .map((x) => ({ id: x._id, n: x.n, state: x.state, dueAt: x.dueAt, subject: x.subject ?? null, body: x.body ?? null })) : [],
         draft: d ? { reason: d.reason, whyFit: d.whyFit, watchOut: d.watchOut, hook: d.hook ?? null, subject: d.editedSubject ?? d.subject, body: d.editedBody ?? d.body, warnings: d.warnings } : null,
       });
     }
@@ -208,7 +199,9 @@ export const forDrafting = internalQuery({
     const f = await founderByToken(ctx, token);
     if (!f) return null;
     const investors = await ctx.db.query("investors").take(2000);
-    return { founder: f, investors };
+    // Re-running matching rewrites her list; never do that once her pipeline has started.
+    const mine = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(50);
+    return { founder: f, investors, hasSent: mine.some((m) => !!m.sentAt) };
   },
 });
 

@@ -33,3 +33,15 @@ export function unsourcedFacts(facts: { text: string; field: string }[], record:
     })
     .map((f) => f.text);
 }
+
+// Follow-ups: short, no guilt, no stock phrases (AGENTS.md section 4 voice rules).
+const NAGS = ["just bumping", "bumping this", "did you see my", "i know you're busy", "circling back", "touching base", "i hope this finds you well", "as an ai"];
+
+export function checkFollowup(body: string): string[] {
+  const problems: string[] = [];
+  const n = words(body);
+  if (n > 80) problems.push(`Follow-up is ${n} words (limit about 60)`);
+  const low = body.toLowerCase();
+  for (const p of NAGS) if (low.includes(p)) problems.push(`Uses a phrase we never use: "${p}"`);
+  return problems;
+}

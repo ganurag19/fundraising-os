@@ -10,18 +10,19 @@ import { cheque, SOON } from "../lib/investor";
 export type Me = NonNullable<FunctionReturnType<typeof api.founders.me>>;
 export type Row = Me["rows"][number];
 type Draft = NonNullable<Row["draft"]>;
+type Mail = { subject: string; body: string };
 type Toast = (s: string) => void;
 
 const site = (u: string) => u.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
 const enc = encodeURIComponent;
 const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const isAndroid = () => /Android/i.test(navigator.userAgent);
-const mailto = (to: string, d: Draft) => `mailto:${to}?subject=${enc(d.subject)}&body=${enc(d.body)}`;
+const mailto = (to: string, d: Mail) => `mailto:${to}?subject=${enc(d.subject)}&body=${enc(d.body)}`;
 /** Laptop: Gmail's compose window in her signed-in account. Phones ignore that link, so they get the app instead. */
-const gmailWeb = (to: string, d: Draft, account: string | null) =>
+const gmailWeb = (to: string, d: Mail, account: string | null) =>
   `https://mail.google.com/mail/${account ? `?authuser=${enc(account)}&` : "?"}view=cm&fs=1&to=${enc(to)}&su=${enc(d.subject)}&body=${enc(d.body)}`;
 
-function openInGmail(to: string, d: Draft, account: string | null) {
+function openInGmail(to: string, d: Mail, account: string | null) {
   if (isIOS()) {
     // Gmail app if it's installed; if the page is still showing a moment later, her default mail app
     const fallback = setTimeout(() => { if (!document.hidden) window.location.href = mailto(to, d); }, 1200);
@@ -74,10 +75,13 @@ function copyText(text: string): boolean {
   return ok;
 }
 
-export function EmailBox({ r, d, token, onToast, account = null }: { r: Row; d: Draft; token: string; onToast: Toast; account?: string | null }) {
-  const markSent = useMutation(api.founders.markSent);
+const CopyIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>;
+const day = (t: number) => new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+
+/** One email (first or follow-up): To, subject, body, then Open in Gmail, copy, and her "I sent it". */
+function MailBox({ to, mail, warnings = [], sent, onSent, onToast, account }: { to: string; mail: Mail; warnings?: string[]; sent: boolean; onSent: () => void; onToast: Toast; account: string | null }) {
   const copy = async () => {
-    const text = `${d.subject}\n\n${d.body}`;
+    const text = `${mail.subject}\n\n${mail.body}`;
     try {
       if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
       else if (!copyText(text)) throw new Error("copy failed");
@@ -87,21 +91,99 @@ export function EmailBox({ r, d, token, onToast, account = null }: { r: Row; d: 
   return (
     <>
       <div className="email">
-        <div className="to">To {r.email}</div>
-        <div className="subj">{d.subject}</div>
-        {d.body}
+        <div className="to">To {to}</div>
+        <div className="subj">{mail.subject}</div>
+        {mail.body}
       </div>
-      {d.warnings.map((w) => <div className="warn" key={w}>⚠ {w}</div>)}
+      {warnings.map((w) => <div className="warn" key={w}>⚠ {w}</div>)}
       <div className="email-actions">
-        <button className="btn primary sm" onClick={() => openInGmail(r.email ?? "", d, account)}>Open in Gmail</button>
-        <button className="btn ghost sm icon" onClick={copy} aria-label="Copy email" title="Copy email">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
-        </button>
-        <button className={`btn sm ${r.sentAt ? "sent" : "ghost"}`} aria-pressed={!!r.sentAt} onClick={() => markSent({ token, rank: r.rank, sent: !r.sentAt })}>
-          {r.sentAt ? "✓ Sent" : "I sent it"}
-        </button>
+        <button className="btn primary sm" onClick={() => openInGmail(to, mail, account)}>Open in Gmail</button>
+        <button className="btn ghost sm icon" onClick={copy} aria-label="Copy email" title="Copy email"><CopyIcon /></button>
+        <button className={`btn sm ${sent ? "sent" : "ghost"}`} aria-pressed={sent} onClick={onSent}>{sent ? "✓ Sent" : "I sent it"}</button>
       </div>
     </>
+  );
+}
+
+export function EmailBox({ r, d, token, onToast, account = null }: { r: Row; d: Draft; token: string; onToast: Toast; account?: string | null }) {
+  const setStatus = useMutation(api.pipeline.setStatus);
+  const sent = r.status !== "new";
+  const onSent = () => {
+    void setStatus({ token, rank: r.rank, status: sent ? "new" : "sent" });
+    onToast(sent ? "Marked as not sent." : `Sent. We'll write your first follow-up for ${day(Date.now() + 3 * 864e5)}.`);
+  };
+  return <MailBox to={r.email ?? ""} mail={d} warnings={d.warnings} sent={sent} onSent={onSent} onToast={onToast} account={account} />;
+}
+
+/** A follow-up that's ready: same buttons; "I sent it" schedules the next one. */
+export function FollowupBox({ r, fu, token, onToast, account = null }: { r: Row; fu: Row["followups"][number]; token: string; onToast: Toast; account?: string | null }) {
+  const followupSent = useMutation(api.pipeline.followupSent);
+  if (!fu.subject || !fu.body) return null;
+  const onSent = () => {
+    void followupSent({ token, followupId: fu.id });
+    onToast(fu.n === 1 ? `Sent. If they're quiet, a last follow-up on ${day(Date.now() + 7 * 864e5)}.` : "Sent. That was the last follow-up for this investor.");
+  };
+  return <MailBox to={r.email ?? ""} mail={{ subject: fu.subject, body: fu.body }} sent={false} onSent={onSent} onToast={onToast} account={account} />;
+}
+
+const STATUSES = [["new", "Not sent"], ["sent", "Waiting on them"], ["replied", "Replied"], ["meeting", "Meeting"], ["passed", "Passed"]] as const;
+
+/** Status ▾: plain updates. A reply, meeting or pass stops the follow-ups. */
+export function StatusMenu({ r, token, onToast }: { r: Row; token: string; onToast: Toast }) {
+  const setStatus = useMutation(api.pipeline.setStatus);
+  return (
+    <select className="status-menu" aria-label="Status" value={r.status} onChange={(e) => {
+      const status = e.target.value as Row["status"];
+      void setStatus({ token, rank: r.rank, status });
+      if (status === "replied" || status === "meeting") onToast("Nice. Follow-ups for this investor are stopped.");
+      if (status === "passed") onToast("Noted. No more follow-ups to them.");
+    }}>
+      {STATUSES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+    </select>
+  );
+}
+
+/** The pipeline on the dashboard: Your move, Waiting on them, Replied and meetings, Passed. */
+export function Pipeline({ rows, token, onToast, account }: { rows: Row[]; token: string; onToast: Toast; account: string | null }) {
+  const [now] = useState(() => Date.now());
+  const ready = (r: Row) => r.followups.find((f) => f.state === "ready");
+  const next = (r: Row) => r.followups.find((f) => f.state === "scheduled");
+  const yourMove = rows.filter((r) => r.status === "sent" && ready(r));
+  const waiting = rows.filter((r) => r.status === "sent" && !ready(r));
+  const talking = rows.filter((r) => r.status === "replied" || r.status === "meeting");
+  const passed = rows.filter((r) => r.status === "passed");
+  if (!yourMove.length && !waiting.length && !talking.length && !passed.length) return null;
+  const since = (t: number | null) => { if (!t) return ""; const d = Math.floor((now - t) / 864e5); return d <= 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`; };
+  return (
+    <section className="pipeline">
+      <div className="stats pipe-stats">
+        <div className={yourMove.length ? "hot" : ""}><b>{yourMove.length}</b><span>your move</span></div>
+        <div><b>{waiting.length}</b><span>waiting on them</span></div>
+        <div><b>{talking.length}</b><span>replied or meeting</span></div>
+      </div>
+      {yourMove.length > 0 && <>
+        <h2 className="dash-h">Your move</h2>
+        <div className="rows">{yourMove.map((r) => { const fu = ready(r)!; return (
+          <div className="row-card" key={r.rank}>
+            <div className="row-main"><Head r={r} /><span className="due today">Follow-up {fu.n} due</span><StatusMenu r={r} token={token} onToast={onToast} /></div>
+            <div className="row-email"><p className="fg2 small">You emailed them {since(r.sentAt)} and haven't heard back. Here's a short nudge.</p><FollowupBox r={r} fu={fu} token={token} onToast={onToast} account={account} /></div>
+          </div>
+        ); })}</div>
+      </>}
+      {waiting.length > 0 && <>
+        <h2 className="dash-h">Waiting on them</h2>
+        <div className="rows">{waiting.map((r) => { const n = next(r); return (
+          <div className="row-card" key={r.rank}>
+            <div className="row-main"><Head r={r} /><span className="due">{n ? `Follow-up ${n.n} on ${day(n.dueAt)}` : `Sent ${since(r.sentAt)}`}</span><StatusMenu r={r} token={token} onToast={onToast} /></div>
+          </div>
+        ); })}</div>
+      </>}
+      {talking.length > 0 && <>
+        <h2 className="dash-h">Replied and meetings</h2>
+        <div className="rows">{talking.map((r) => <div className="row-card" key={r.rank}><div className="row-main"><Head r={r} /><StatusMenu r={r} token={token} onToast={onToast} /></div></div>)}</div>
+      </>}
+      {passed.length > 0 && <p className="muted small" style={{ marginTop: 12 }}>Passed: {passed.map((r) => r.displayName).join(", ")}</p>}
+    </section>
   );
 }
 
