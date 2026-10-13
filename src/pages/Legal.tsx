@@ -4,7 +4,7 @@ import { LogoMark, Wordmark } from "../components/Brand";
 // Privacy Policy and Terms. Plain words, matching what the app actually stores (convex/schema.ts).
 // Draft written for the beta; have a lawyer review before paid ads or payments.
 
-const UPDATED = "13 October 2026";
+const UPDATED = "14 October 2026";
 const CONTACT = "hello@firstcheq.ai";
 
 function Doc({ title, children }: { title: string; children: React.ReactNode }) {
@@ -31,7 +31,7 @@ export function Privacy() {
         <li><b>When you sign in with Google:</b> your name, email address and profile picture link, from Google.</li>
         <li><b>A random code in your browser</b> that keeps your list yours before you sign in. It isn't used to track you anywhere else.</li>
         <li><b>If you ask for an invite:</b> your name, email, startup's name and stage.</li>
-        <li><b>Usage counts:</b> which steps were reached and when, without names or emails, so we can see where people get stuck.</li>
+        <li><b>Usage counts:</b> which pages were opened, which buttons were pressed and which steps were reached, and when, so we can see where people get stuck. These are linked to a scrambled form of the random code in your browser, never to your name or email, and never include what you type.</li>
       </ul>
 
       <h2>How we use it</h2>

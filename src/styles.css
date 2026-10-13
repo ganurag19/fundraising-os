@@ -589,3 +589,31 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .tbl.compare .lbl{position:sticky;left:0;z-index:1;background:var(--card);min-width:120px}
 .tbl.compare td,.tbl.compare th{min-width:150px}
 .three-emails .te-label b{color:var(--gold)}
+/* owner dashboard (/admin) */
+.admin-gate{display:flex;flex-direction:column;gap:12px;max-width:340px;margin:60px auto;align-items:stretch}
+.admin-gate h1{margin:0 0 6px}
+.admin-head{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.admin-ranges{display:flex;gap:6px;flex-wrap:wrap}
+.admin-ranges button{border:1px solid var(--line2);background:var(--card);color:var(--fg2);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:600;cursor:pointer}
+.admin-ranges button.on{border-color:var(--blue-line);background:var(--blue-soft);color:var(--fg)}
+.admin-funnel{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:10px}
+.admin-funnel div{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.admin-funnel b{font:700 28px/1.1 var(--display);letter-spacing:-.02em}
+.admin-funnel span{font-size:13px;color:var(--muted)}
+.admin-funnel i{position:absolute;top:12px;right:12px;font:600 11px/1 var(--mono);font-style:normal;color:var(--blue-ink)}
+.admin-funnel .bad b{color:var(--red)}
+.small-funnel b{font-size:22px}
+.admin-table{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
+.admin-tr{display:grid;grid-template-columns:minmax(0,1fr) 64px 64px;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);font-size:14px}
+.admin-tr:first-child{border-top:0}
+.admin-tr.head{font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.admin-tr.wide{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto}
+.admin-tr a{color:var(--blue-ink);overflow-wrap:anywhere}
+@media (max-width:600px){.admin-tr.wide{grid-template-columns:minmax(0,1fr)}}
+.admin-people{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:10px}
+.admin-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:4px;font-size:14px;min-width:0}
+.admin-card a{color:var(--blue-ink)}
+.admin-card-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.admin-card-top b{font-size:16px;overflow-wrap:anywhere}
+.admin-h3{font-size:15px;margin:18px 0 8px;color:var(--fg2)}
+.admin .err{overflow-wrap:anywhere}

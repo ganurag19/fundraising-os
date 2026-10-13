@@ -125,8 +125,8 @@ function MailBox({ to, mail, warnings = [], sent, onSent, onToast, account, onSa
       )}
       {warnings.map((w) => <div className="warn" key={w}>⚠ {w}</div>)}
       {!editing && <div className="email-actions">
-        <button className="btn primary sm" onClick={() => openInGmail(to, mail, account)}>Open in Gmail</button>
-        <button className="btn ghost sm icon" onClick={copy} aria-label="Copy email" title="Copy email"><CopyIcon /></button>
+        <button className="btn primary sm" data-track="click_gmail" onClick={() => openInGmail(to, mail, account)}>Open in Gmail</button>
+        <button className="btn ghost sm icon" data-track="click_copy" onClick={copy} aria-label="Copy email" title="Copy email"><CopyIcon /></button>
         <button className={`btn sm ${sent ? "sent" : "ghost"}`} aria-pressed={sent} onClick={onSent}>{sent ? "✓ Sent" : "I sent it"}</button>
       </div>}
     </>
@@ -284,7 +284,7 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
           ? <a className="btn primary sm" href={r.applyUrl!} target="_blank" rel="noreferrer">Apply</a>
           : r.draft
           ? <button className="btn ghost sm" onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Email"}</button>
-          : <button className="btn primary sm" disabled={busy} onClick={write}>{busy ? "Writing…" : "Write email"}</button>}
+          : <button className="btn primary sm" data-track="click_write" disabled={busy} onClick={write}>{busy ? "Writing…" : "Write email"}</button>}
       </div>
       {applyOnly && r.status === "new" && (
         <div className="apply-row">
@@ -309,7 +309,7 @@ export function SoonCards({ onToast, company, sector, stage }: { onToast: Toast;
   return (
     <div className="soon-grid">
       {soonFor(company, sector, stage).map((s) => (
-        <button className="soon-card" key={s.title} onClick={() => onToast(`${s.title}: coming soon.`)}>
+        <button className="soon-card" data-track="click_soon" key={s.title} onClick={() => onToast(`${s.title}: coming soon.`)}>
           <span className="soon-icon" aria-hidden="true">{s.icon}</span>
           <span className="soon-text"><b>{s.title} <span className="soon-tag">SOON</span></b><span>{s.line}</span></span>
         </button>
@@ -323,8 +323,8 @@ export function UpgradeCard({ onRequest }: { onRequest: (plan: "round_pass" | "c
   return (
     <div className="plans">
       <div className="plan"><span className="plan-name">Free <span className="tag green">You're on this</span></span><ul><li>Your best-fit investors, ranked</li><li>Emails for your top picks</li><li>Follow-ups and pipeline</li></ul></div>
-      <div className="plan featured"><span className="plan-name">Round Pass</span><ul><li>Up to 100 investors, each with an email</li><li>More emails a day</li><li>Deck review and investor Q&A prep</li></ul><button className="btn primary" onClick={() => onRequest("round_pass")}>Request access</button></div>
-      <div className="plan"><span className="plan-name">Custom</span><ul><li>We work through your raise with you</li><li>List, emails, deck and meeting prep</li><li>You send every email</li></ul><button className="btn ghost" onClick={() => onRequest("custom")}>Request a call</button></div>
+      <div className="plan featured"><span className="plan-name">Round Pass</span><ul><li>Up to 100 investors, each with an email</li><li>More emails a day</li><li>Deck review and investor Q&A prep</li></ul><button className="btn primary" data-track="click_upgrade" onClick={() => onRequest("round_pass")}>Request access</button></div>
+      <div className="plan"><span className="plan-name">Custom</span><ul><li>We work through your raise with you</li><li>List, emails, deck and meeting prep</li><li>You send every email</li></ul><button className="btn ghost" data-track="click_upgrade" onClick={() => onRequest("custom")}>Request a call</button></div>
     </div>
   );
 }

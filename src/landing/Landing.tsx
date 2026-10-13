@@ -33,7 +33,7 @@ function StickyCta({ onOpen }: { onOpen: () => void }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  return <div className={`sticky-cta${show ? " show" : ""}`} aria-hidden={!show}><button className="btn primary" tabIndex={show ? 0 : -1} onClick={onOpen}>{GO}</button></div>;
+  return <div className={`sticky-cta${show ? " show" : ""}`} aria-hidden={!show}><button className="btn primary" data-track="click_go" tabIndex={show ? 0 : -1} onClick={onOpen}>{GO}</button></div>;
 }
 
 /** Live counts from the investor table, so the numbers are always true. */
@@ -65,8 +65,8 @@ export default function Landing() {
       <header className="nav"><div className="nav-in">
         <a className="logo" href="/" aria-label="FirstCheq home"><LogoMark /><Wordmark /></a>
         <span style={{ flex: 1 }} />
-        <button className="btn ghost sm hide-sm" onClick={open("code")}>I have a code</button>
-        <button className="btn primary sm" onClick={open("request")}>Request invite</button>
+        <button className="btn ghost sm hide-sm" data-track="click_code" onClick={open("code")}>I have a code</button>
+        <button className="btn primary sm" data-track="click_request" onClick={open("request")}>Request invite</button>
       </div></header>
 
       <div className="wrap">
@@ -128,7 +128,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <div className="cta-band"><h2 className="h-l" style={{ marginTop: 0 }}>Your first cheque starts with <span className="it">one email.</span></h2><div className="cta-row" style={{ justifyContent: "center" }}><button className="btn white" onClick={() => go()}>{GO}</button></div></div>
+        <div className="cta-band"><h2 className="h-l" style={{ marginTop: 0 }}>Your first cheque starts with <span className="it">one email.</span></h2><div className="cta-row" style={{ justifyContent: "center" }}><button className="btn white" data-track="click_go" onClick={() => go()}>{GO}</button></div></div>
         <footer><div className="foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Not affiliated with any fund · Example founders and investors on this page are made up · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span></div></footer>
       </div>
 

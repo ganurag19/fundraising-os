@@ -5,9 +5,13 @@ import Emails from "./pages/Emails";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { Privacy, Terms } from "./pages/Legal";
+import Admin from "./pages/Admin";
+import Tracker from "./lib/Tracker";
 
 export default function App() {
   return (
+    <>
+    <Tracker />
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/start" element={<Start />} />
@@ -15,7 +19,9 @@ export default function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/admin" element={<Admin />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </>
   );
 }

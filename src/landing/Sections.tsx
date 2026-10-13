@@ -23,8 +23,8 @@ export function HeroStart({ onGo, onCode }: { onGo: (a: StartAnswers) => void; o
         <label>Raising<select className="field" value={a.ask} onChange={(e) => { const ask = e.target.value; setA((o) => ({ ...o, ask })); }}><option value="">Choose</option>{ASKS.map((s) => <option key={s}>{s}</option>)}</select></label>
       </div>
       <div className="sc-actions">
-        <button className="btn primary" type="submit">Find my 3 best investors, free →</button>
-        <button className="btn ghost" type="button" onClick={onCode}>I have a code</button>
+        <button className="btn primary" type="submit" data-track="click_go">Find my 3 best investors, free →</button>
+        <button className="btn ghost" type="button" data-track="click_code" onClick={onCode}>I have a code</button>
       </div>
     </form>
   );

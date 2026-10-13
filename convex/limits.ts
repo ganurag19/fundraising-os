@@ -16,4 +16,7 @@ export const limits = new RateLimiter(components.rateLimiter, {
   badCodesGlobal: { kind: "token bucket", rate: 300, period: HOUR }, // wrong codes across the app
   invitesGlobal: { kind: "token bucket", rate: 100, period: HOUR }, // waitlist requests across the app
   newFoundersGlobal: { kind: "token bucket", rate: 120, period: HOUR }, // new sign-ups across the app
+  eventsPerVisitor: { kind: "fixed window", rate: 300, period: HOUR }, // page visits and clicks we count
+  eventsGlobal: { kind: "token bucket", rate: 6000, period: HOUR },
+  adminPinTries: { kind: "fixed window", rate: 5, period: HOUR }, // the owner's PIN, per account and app-wide
 });

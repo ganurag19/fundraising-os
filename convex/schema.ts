@@ -163,4 +163,10 @@ export default defineSchema({
 
   // Funnel: step name and time only. No names, emails or company details.
   steps: defineTable({ step: v.string() }),
+
+  // Page visits and button clicks, for the owner's dashboard. visitor is a hash of the browser's random code, never the code itself.
+  events: defineTable({ name: v.string(), visitor: v.string() }),
+
+  // The owner's /admin unlocks: Google sign-in as ADMIN_EMAIL plus ADMIN_PIN. Each one is deleted when it expires.
+  adminSessions: defineTable({ key: v.string(), userId: v.id("users") }).index("by_key", ["key"]),
 });
