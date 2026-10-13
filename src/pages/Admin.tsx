@@ -14,7 +14,7 @@ const sinceFor = (r: Range, now: number) => r === "all" ? 0 : r === "today" ? Ma
 const when = (t: number) => new Date(t).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
 const CLICKS: [string, string][] = [
-  ["click_go", "Find my investors"], ["click_code", "I have a code"], ["click_request", "Request invite"],
+  ["visit_compare", "Opened the consultant comparison"], ["click_go", "Find my investors"], ["click_code", "I have a code"], ["click_request", "Request invite"],
   ["click_unlock", "Unlock all (Google)"], ["click_gmail", "Open in Gmail"], ["click_copy", "Copy email"],
   ["click_write", "Write email"], ["click_upgrade", "Upgrade: Request access / call"], ["click_soon", "Coming-soon cards"],
 ];

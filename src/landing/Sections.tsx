@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Dial, Logo, Medal } from "../components/Art";
+import { FitTable } from "./More";
 
 // Landing sections (v6). Every founder and investor on this page is made up.
 
@@ -173,13 +174,7 @@ export function FitScore() {
         {parts.map(([t, d]) => <div className="fit-item" key={t}><b>{t}</b><span>{d}</span></div>)}
         <p className="muted small">Every investor comes with the reason and the source.</p>
       </div>
-      <div className="fit-card">
-        <div className="te-score"><Dial score={88} size={64} /><div className="te-label"><b>Verdant Arc Capital</b><span>3 of 4 recent deals are climate</span></div></div>
-        {parts.map(([t, , got, max]) => (
-          <div className="bd-row" key={t}><span>{t}</span><span className="bd-bar" aria-hidden="true"><i className={got / max >= 0.75 ? "hi" : "mid"} style={{ width: `${(got / max) * 100}%` }} /></span><b>{got}/{max}</b></div>
-        ))}
-        <p className="muted small" style={{ margin: 0 }}>Example score, made up.</p>
-      </div>
+      <FitTable />
     </div>
   );
 }

@@ -56,6 +56,8 @@ Investor side (confirm profile, founders for you, team members) · founder ratin
 
 ## Parked (not now)
 
+- More comparison pages (vs ChatGPT, vs buying an investor list) and one page per sector ("Investors for Indian climate startups"), counts and made-up examples only, never real investor names. First one live: /compare/fundraising-consultant.
+- A real testimonial on the landing page, once a founder agrees (never a made-up one).
 - hello@ and anurag@ inboxes for firstcheq.ai (free: ImprovMX forwarding to Gmail + Gmail "Send mail as" through Resend SMTP; or Google Workspace). **Do before ads or a wider launch**: Privacy, Terms and the grievance contact point to hello@firstcheq.ai, which receives nothing until then.
 - Skip an investor she already knows; "rewrite with this note"; "passed" suggests 3 next names; odd ask-size warning
 - Import her Sheet; export to a Sheet

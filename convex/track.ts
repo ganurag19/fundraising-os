@@ -6,7 +6,7 @@ const TOKEN = /^[a-f0-9]{48}$/;
 
 /** Every name we count. Anything else is ignored. */
 export const EVENT_NAMES = [
-  "visit_landing", "visit_start", "visit_emails", "visit_dashboard",
+  "visit_landing", "visit_start", "visit_emails", "visit_dashboard", "visit_compare",
   "click_go", "click_code", "click_request", "click_unlock", "click_signin",
   "click_gmail", "click_copy", "click_write", "click_upgrade", "click_soon",
 ] as const;

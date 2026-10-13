@@ -7,6 +7,7 @@ import InviteSheet from "./InviteSheet";
 import type { SheetMode } from "./InviteSheet";
 import { BeforeAfter, Compare, FitScore, HeroStart, ProductDemo, ThreeEmails, WhatsMore } from "./Sections";
 import type { StartAnswers } from "./Sections";
+import { Choose, HeroFeed, Mark, Reminder } from "./More";
 import { savedInviteCode, savePrefill } from "../lib/token";
 
 const GO = "Find my 3 best investors, free →";
@@ -36,6 +37,12 @@ function StickyCta({ onOpen }: { onOpen: () => void }) {
   return <div className={`sticky-cta${show ? " show" : ""}`} aria-hidden={!show}><button className="btn primary" data-track="click_go" tabIndex={show ? 0 : -1} onClick={onOpen}>{GO}</button></div>;
 }
 
+/** A thin bar over the nav, with the live investor count. */
+function TopBar() {
+  const s = useQuery(api.founders.publicStats, {});
+  return <div className="topbar">Live for Indian founders<span className="hide-xs"> · {s?.total ?? "650+"} investors, checked every week</span></div>;
+}
+
 /** Live counts from the investor table, so the numbers are always true. */
 function ProofBar() {
   const s = useQuery(api.founders.publicStats, {});
@@ -62,6 +69,7 @@ export default function Landing() {
 
   return (
     <>
+      <TopBar />
       <header className="nav"><div className="nav-in">
         <a className="logo" href="/" aria-label="FirstCheq home"><LogoMark /><Wordmark /></a>
         <span style={{ flex: 1 }} />
@@ -74,15 +82,16 @@ export default function Landing() {
           <div className="hero-copy">
             <h1 className="h-xl rise">The journey to your first cheque <span className="it">starts here.</span></h1>
             <p className="lede rise">Your investor outreach starts tonight. Follow-ups run themselves.</p>
-            <div className="facts rise"><span>Free</span><span>2 minutes</span><span>Your 3 best-fit investors, emails ready</span></div>
+            <div className="facts rise"><span>Free</span><span>4 questions, 2 minutes</span><span>Your 3 best-fit investors, emails ready</span></div>
           </div>
           <HeroStart onGo={go} onCode={open("code")} />
+          <HeroFeed />
         </section>
 
         <ProofBar />
 
         <section className="section">
-          <div className="s-head center"><span className="kicker">Before and after</span><h2 className="h-l">Nine steps of guesswork. <span className="it">Or three.</span></h2></div>
+          <div className="s-head center"><span className="kicker">Before and after</span><h2 className="h-l">Nine steps of guesswork. <span className="it"><Mark>Or three.</Mark></span></h2></div>
           <BeforeAfter />
         </section>
 
@@ -101,14 +110,20 @@ export default function Landing() {
           <ThreeEmails />
         </section>
 
+        <section className="section"><Reminder /></section>
+
         <section className="section">
-          <div className="s-head center"><span className="kicker-pill">FirstCheq Fit Score</span><h2 className="h-l">Goodbye, spray and pray. <span className="it">Find the investors looking for you.</span></h2><p className="lede center-lede">Not a list of 5,000. The few who back your space, your stage and your size of round, ranked with the reason.</p></div>
+          <div className="s-head center"><span className="kicker-pill">FirstCheq Fit Score</span><h2 className="h-l">Goodbye, spray and pray. <span className="it"><Mark>Find the investors looking for you.</Mark></span></h2><p className="lede center-lede">Not a list of 5,000. The few who back your space, your stage and your size of round, ranked with the reason.</p></div>
           <FitScore />
         </section>
 
         <section className="section">
           <div className="s-head center"><span className="kicker">Why not just…</span><h2 className="h-l">Do it yourself, hire, <span className="it">or FirstCheq?</span></h2><p className="lede center-lede">The fastest, cheapest and most effective path to your first cheque.</p></div>
+          <h3 className="choose-h">Which should you choose?</h3>
+          <Choose />
+          <h3 className="choose-h">The key differences</h3>
           <Compare />
+          <p className="center" style={{ marginTop: 14 }}><a className="text-link" href="/compare/fundraising-consultant">Read the full comparison: FirstCheq vs a fundraising consultant →</a></p>
         </section>
 
         <section className="section">
@@ -128,8 +143,8 @@ export default function Landing() {
           </div>
         </section>
 
-        <div className="cta-band"><h2 className="h-l" style={{ marginTop: 0 }}>Your first cheque starts with <span className="it">one email.</span></h2><div className="cta-row" style={{ justifyContent: "center" }}><button className="btn white" data-track="click_go" onClick={() => go()}>{GO}</button></div></div>
-        <footer><div className="foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Not affiliated with any fund · Example founders and investors on this page are made up · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span></div></footer>
+        <div className="cta-band"><h2 className="h-l" style={{ marginTop: 0 }}>You build. <span className="it"><Mark>We find who backs it.</Mark></span></h2><p className="lede center-lede" style={{ marginBottom: 22 }}>Good companies deserve a first look. Yours starts with one email.</p><div className="cta-row" style={{ justifyContent: "center" }}><button className="btn white" data-track="click_go" onClick={() => go()}>{GO}</button></div></div>
+        <footer><div className="foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Not affiliated with any fund · Example founders and investors on this page are made up · <a href="/compare/fundraising-consultant">Compare</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span></div></footer>
       </div>
 
       {sheet && <InviteSheet mode={sheet} onMode={setSheet} onClose={() => setSheet(null)} />}
