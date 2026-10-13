@@ -88,6 +88,7 @@ describe("deal evidence and apply links", () => {
     expect(scoreInvestor(acc, seedAi, 2026)).toBeNull();
     expect(scoreInvestor({ ...acc, kind: "grant" }, seedAi, 2026)).not.toBeNull();
     expect(scoreInvestor({ ...base, email: undefined }, seedAi, 2026)).toBeNull();
+    expect(scoreInvestor({ ...base, retired: true }, seedAi, 2026)).toBeNull();
   });
   test("apply-only programmes take at most 5 places in her list of 20", () => {
     const programmes = Array.from({ length: 12 }, (_, i) => ({ ...base, firm: `Made-up Incubator ${i}`, kind: "accelerator", email: undefined, applyUrl: "https://apply.example", stages: [] as string[], thesis: "AI", recent: [{ year: 2026 }] }));

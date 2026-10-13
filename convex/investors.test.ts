@@ -18,3 +18,15 @@ test("re-importing updates investors in place, so a founder's matches still poin
   expect(a?.thesis).toBe("AI for SMBs"); // same id, new facts
   expect(await t.run((ctx) => ctx.db.query("investors").take(10))).toHaveLength(3); // b kept, never deleted
 });
+
+test("retiring hides an investor from matching, keeps it for existing lists, and a re-export brings it back", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(internal.investors.upsertMany, { rows: [row("a", { email: "old@fund.example", applyDeadline: "2026-01-01" })] });
+  expect(await t.mutation(internal.investors.retireMany, { seedIds: ["a", "zz"] })).toEqual({ retired: 1, missing: 1 });
+  const get = () => t.run(async (ctx) => (await ctx.db.query("investors").withIndex("by_seedId", (q) => q.eq("seedId", "a")).unique())!);
+  expect((await get()).retired).toBe(true);
+  // a cleared field really goes: the new row has no applyDeadline
+  await t.mutation(internal.investors.upsertMany, { rows: [row("a")] });
+  const a = await get();
+  expect([a.retired, a.applyDeadline]).toEqual([undefined, undefined]);
+});

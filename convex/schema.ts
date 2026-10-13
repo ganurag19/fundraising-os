@@ -49,6 +49,7 @@ export default defineSchema({
     sourceUrls: v.array(v.string()),
     sourceDate: v.optional(v.string()),
     lastChecked: v.optional(v.string()),
+    retired: v.optional(v.boolean()), // dropped from the research (stopped investing, failed checks): kept for existing lists, never matched again
   }).index("by_seedId", ["seedId"]),
 
   // One founder per browser until sign-in. `token` is a long random string kept in her browser.

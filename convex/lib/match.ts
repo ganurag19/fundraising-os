@@ -11,6 +11,7 @@ export type MatchInvestor = {
   firm?: string; displayName?: string; kind?: string; email?: string; applyUrl?: string;
   sectors: string[]; stages: string[]; chequeMinLakh?: number; chequeMaxLakh?: number;
   thesis?: string; portfolio?: string[]; recent: { year?: number; sector?: string }[]; active?: boolean; lastChecked?: string;
+  retired?: boolean;
 };
 
 /** Deal evidence for her sectors: how many of the investor's tagged recent deals (last 3 years) are in her space. */
@@ -54,6 +55,7 @@ export function scoreParts(inv: MatchInvestor, f: FounderAsk, currentYear: numbe
   const ev = sectorEvidence(inv, f, currentYear);
   if (!exactSector && !anySector && ev.inHers === 0) return null;
   if (!inv.email && !inv.applyUrl) return null; // no way to reach them
+  if (inv.retired) return null; // dropped from the research
 
   const stage = STAGE_KEYS[f.stage];
   const programme = inv.kind ? PROGRAMME_STAGES[inv.kind] : undefined;
