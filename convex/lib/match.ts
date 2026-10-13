@@ -128,14 +128,15 @@ export function rankMatches<T extends MatchInvestor>(investors: T[], f: FounderA
 }
 
 export const APPLY_ONLY_CAP = 5;
+const isProgramme = (i: MatchInvestor) => !!i.kind && i.kind in PROGRAMME_STAGES;
 
 /** Her list: the 3 best investors with a hook first (the top picks), then the next best, up to `n`. */
 export function topMatches<T extends MatchInvestor>(investors: T[], f: FounderAsk, currentYear: number, n: number): { inv: T; score: number }[] {
   const ranked = rankMatches(investors, f, currentYear);
-  // Top picks get a written email, so they need an email address (apply-only investors never are).
-  const picks = ranked.filter((x) => hasHook(x.inv) && !!x.inv.email).slice(0, 3);
-  // Apply-only rows (mostly incubators and grants) fill at most APPLY_ONLY_CAP of her list, so funds aren't crowded out.
-  let applyOnly = 0;
-  const rest = ranked.filter((x) => !picks.includes(x)).filter((x) => x.inv.email || ++applyOnly <= APPLY_ONLY_CAP);
+  // Top picks are investors she writes to: they need an email address, and programmes are never top picks.
+  const picks = ranked.filter((x) => hasHook(x.inv) && !!x.inv.email && !isProgramme(x.inv)).slice(0, 3);
+  // Programmes and apply-only rows together fill at most APPLY_ONLY_CAP of her list, so funds aren't crowded out.
+  let capped = 0;
+  const rest = ranked.filter((x) => !picks.includes(x)).filter((x) => (x.inv.email && !isProgramme(x.inv)) || ++capped <= APPLY_ONLY_CAP);
   return [...picks, ...rest].slice(0, n);
 }

@@ -97,6 +97,13 @@ describe("deal evidence and apply links", () => {
     expect(list).toHaveLength(20);
     expect(list.filter((x) => !x.inv.email)).toHaveLength(5);
   });
+  test("incubators with an email still count toward the 5 and are never top picks", () => {
+    const incubators = Array.from({ length: 10 }, (_, i) => ({ ...base, firm: `Made-up Incubator ${i}`, kind: "incubator", stages: [] as string[], thesis: "AI", portfolio: ["Made-up Co"], recent: [{ year: 2026 }] }));
+    const funds = Array.from({ length: 30 }, (_, i) => ({ ...base, stages: ["pre_seed"], firm: `Made-up Fund ${i}`, portfolio: ["Made-up Co"] }));
+    const list = topMatches([...incubators, ...funds], { ...seedAi, stage: "Pre-seed" }, 2026, 20);
+    expect(list.slice(0, 3).every((x) => x.inv.kind !== "incubator")).toBe(true);
+    expect(list.filter((x) => x.inv.kind === "incubator")).toHaveLength(5);
+  });
   test("apply-only investors are never top picks", () => {
     const applyOnly = { ...base, firm: "Form Fund", email: undefined, applyUrl: "https://form.example", thesis: "AI for SMBs", recent: [{ year: 2026 }] };
     const emailable = { ...base, firm: "Mail Fund", portfolio: ["Made-up Co"] };
