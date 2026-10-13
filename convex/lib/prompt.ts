@@ -67,7 +67,8 @@ export const SUGGEST_SYSTEM = `You read the text of an Indian startup's website 
 Return:
 - oneLiner: one sentence, under 25 words, in this shape: "<Company> helps <who> <achieve what> by <how>." Plain words a busy investor gets in one read. Use only what the site says. No buzzwords ("agentic stack", "AI-powered platform", "revolutionise"); say what it actually does. If the site gives a number (customers, savings), you may keep one.
 - founderLine: one sentence in first person about the founder named FOUNDER_NAME, only if the site says something about their background (for example "I'm Asha; I spent eight years pricing flood risk at an insurer."). Otherwise return an empty string. Never guess a background.
-- found: true if the site text was enough to write the one-liner, false if it was empty, a parking page or unrelated.`;
+- found: true if the site text was enough to write the one-liner, false if it was empty, a parking page or unrelated.
+- companyName: the startup's name as the site writes it (e.g. "Kiln Labs"), without "Pvt Ltd" or a tagline. If COMPANY is given, return it unchanged.`;
 
 
 export const POLISH_SYSTEM = `You help an Indian first-time founder say who she is, in the lines that go into every investor email. You get her raw notes as JSON. She will review and edit what you write.

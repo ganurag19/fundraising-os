@@ -9,10 +9,12 @@ import { normaliseLinkedin, normaliseUrl } from "../../convex/lib/links";
 const SECTORS: [string, boolean][] = ["AI", "Climate & Energy", "Deeptech", "Fintech", "B2B SaaS", "Health", "Consumer brands", "Edtech", "Agritech", "Media & adtech", "Web3", "Impact"].map((n) => [n, true]);
 const STAGES = ["Idea", "Pre-seed", "Seed", "Pre-Series A", "Series A"];
 const ASKS = ["₹25–50L", "₹50L–1Cr", "₹1–3 Cr", "₹3–5 Cr", "₹5–10 Cr"];
-const LEFT = ["~2 min left", "~2 min left", "~2 min left", "~1 min left", "~1 min left", "Almost there", "Last step"];
-const TOTAL = 7;
+const LEFT = ["~2 min left", "~2 min left", "~1 min left", "~1 min left", "Almost there", "Last step"];
+const TOTAL = 6;
 
-type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+// "ledgerly.in" or "https://…" is a website; "Ledgerly" is a name.
+const looksLikeSite = (s: string) => /\.[a-z]{2,}(\/|$)/i.test(s.trim()) && !!normaliseUrl(s);
 
 export default function Start() {
   const token = useMemo(() => visitorToken(), []);
@@ -21,11 +23,14 @@ export default function Start() {
   const start = useMutation(api.founders.start);
   const saveProfile = useMutation(api.founders.saveProfile);
   const write = useAction(api.write.writeFirstEmails);
-  const fromWebsite = useAction(api.suggest.fromWebsite);
+  const peekWebsite = useAction(api.suggest.peekWebsite);
+  const stats = useQuery(api.founders.publicStats, {});
   const polish = useAction(api.suggest.polish);
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>(0);
+  const [first, setFirst] = useState(""); // step 1: her website, or her startup's name
+  const [confirming, setConfirming] = useState(false); // we read her site; she confirms the name
   const [f, setF] = useState({ company: "", name: "", sectors: [] as string[], stage: "", ask: "" });
   const [p, setP] = useState({ website: "", linkedin: "", oneLiner: "", founderLine: "", vision: "", revenue: "", customers: "", traction: "" });
   const [suggested, setSuggested] = useState<"" | "yes" | "no">("");
@@ -35,8 +40,8 @@ export default function Start() {
   const [seconds, setSeconds] = useState(0);
 
   // Coming back: her emails are already written.
-  useEffect(() => { if (me?.emailsStatus === "ready" && step < 7) navigate("/emails"); }, [me, step, navigate]);
-  useEffect(() => { if (step !== 7) return; const t = setInterval(() => setSeconds((s) => s + 1), 1000); return () => clearInterval(t); }, [step]);
+  useEffect(() => { if (me?.emailsStatus === "ready" && step < 6) navigate("/emails"); }, [me, step, navigate]);
+  useEffect(() => { if (step !== 6) return; const t = setInterval(() => setSeconds((s) => s + 1), 1000); return () => clearInterval(t); }, [step]);
 
   if (me === undefined) return <Shell><div className="spinner" /></Shell>;
   if (!me && !code) {
@@ -60,21 +65,24 @@ export default function Start() {
     setBusy(false);
     if (r.ok) next(); else setError(r.error);
   }
-  async function submitLinks() {
+  // Step 1: a website gets read (name and one-liner prefilled for her to confirm); anything else is her startup's name.
+  async function submitFirst() {
     setError("");
-    if (p.website.trim() && !normaliseUrl(p.website)) { setError("That website doesn't look right. Try something like ledgerly.in."); return; }
-    if (p.linkedin.trim() && !normaliseLinkedin(p.linkedin)) { setError("Use your LinkedIn profile link, like linkedin.com/in/your-name."); return; }
-    if (!p.website.trim()) { setSuggested("no"); next(); return; }
+    if (confirming) { if (f.company.trim()) next(); return; }
+    if (!looksLikeSite(first)) { setF((o) => ({ ...o, company: first.trim() })); setSuggested("no"); next(); return; }
     setBusy(true);
-    const r = await fromWebsite({ token, website: p.website }).catch(() => ({ ok: false as const, error: "We couldn't read your website. Write your one-liner below." }));
+    const r = await peekWebsite({ token, website: first }).catch(() => ({ ok: false as const, error: "We couldn't read that website. Type your startup's name below." }));
     setBusy(false);
-    if (r.ok) { setP((o) => ({ ...o, oneLiner: o.oneLiner || r.oneLiner, founderLine: o.founderLine || r.founderLine })); setSuggested("yes"); }
+    setP((o) => ({ ...o, website: first.trim() }));
+    if (r.ok) { setF((o) => ({ ...o, company: r.companyName })); setP((o) => ({ ...o, website: first.trim(), oneLiner: o.oneLiner || r.oneLiner })); setSuggested("yes"); }
     else { setSuggested("no"); setNote(r.error); }
-    next();
+    setConfirming(true);
   }
   // Her raw notes → "How you'll come across". If the AI is busy, she edits her own words instead.
   async function submitNotes() {
-    setBusy(true); setError("");
+    setError("");
+    if (p.linkedin.trim() && !normaliseLinkedin(p.linkedin)) { setError("Use your LinkedIn profile link, like linkedin.com/in/your-name."); return; }
+    setBusy(true);
     const r = await polish({ token, oneLiner: p.oneLiner, founderLine: p.founderLine, vision: p.vision, revenue: p.revenue, customers: p.customers }).catch(() => ({ ok: false as const, error: "" }));
     setBusy(false);
     if (r.ok) setP((o) => ({ ...o, founderLine: r.founderLine || o.founderLine, oneLiner: r.oneLiner || o.oneLiner, traction: r.traction }));
@@ -85,10 +93,10 @@ export default function Start() {
     setBusy(true); setError("");
     const r = await saveProfile({ token, ...p }).catch(() => ({ ok: false as const, error: "Couldn't save that. Check your connection and try again." }));
     if (!r.ok) { setBusy(false); setError(r.error); return; }
-    setStep(7); setSeconds(0);
+    setStep(6); setSeconds(0);
     const w = await write({ token }).catch(() => ({ ok: false as const, error: "Busy right now. Try again in a few minutes." }));
     setBusy(false);
-    if (w.ok) setStep(8); else { setStep(6); setError(w.error); }
+    if (w.ok) setStep(7); else { setStep(5); setError(w.error); }
   }
 
   const progress = <div className="progress">{Array.from({ length: TOTAL }, (_, i) => i).map((i) => <i key={i} className={i <= step ? "on" : ""} />)}</div>;
@@ -106,9 +114,13 @@ export default function Start() {
 
   return (
     <Shell>
-      {step === 0 && <div className="step rise">{progress}{count(1)}<h1>What's your startup called?</h1><p className="help">Or your idea's working name. You can change it later.</p>
-        <input className="field" autoFocus placeholder="e.g. Ledgerly" maxLength={80} value={f.company} onChange={(e) => setF((o) => ({ ...o, company: e.target.value }))} onKeyDown={onEnter(!!f.company.trim())} />
-        {actions(!!f.company.trim(), next, "Continue →", false)}</div>}
+      {step === 0 && <div className="step rise">{progress}{count(1)}<h1>Your website, <span className="it">or your startup's name.</span></h1>
+        <p className="help">{confirming ? (suggested === "yes" ? "We read your website. Is this your startup's name?" : note || "What's your startup called?") : "Paste your website and we'll fill in the rest. No website yet? Type the name."}</p>
+        {!confirming
+          ? <input className="field" autoFocus inputMode="url" autoCapitalize="none" placeholder="e.g. ledgerly.in or Ledgerly" maxLength={200} value={first} onChange={(e) => setFirst(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && first.trim()) void submitFirst(); }} />
+          : <div className="profile-form"><label>Startup name<input className="field" autoFocus maxLength={80} value={f.company} onChange={(e) => setF((o) => ({ ...o, company: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter" && f.company.trim()) next(); }} /></label>
+              <button className="why-link" style={{ alignSelf: "flex-start" }} onClick={() => { setConfirming(false); setSuggested(""); setNote(""); }}>Use a different website</button></div>}
+        {actions(confirming ? !!f.company.trim() : !!first.trim(), submitFirst, confirming ? "Looks right →" : "Continue →", false, "Reading your website…")}</div>}
 
       {step === 1 && <div className="step rise">{progress}{count(2)}<h1>What's your name?</h1><p className="help">We sign every email with it.</p>
         <input className="field" autoFocus placeholder="Your full name" autoComplete="name" maxLength={80} value={f.name} onChange={(e) => setF((o) => ({ ...o, name: e.target.value }))} onKeyDown={onEnter(!!f.name.trim())} />
@@ -124,14 +136,7 @@ export default function Start() {
         <p className="muted" style={{ fontSize: 13, marginTop: 18 }}>For Indian startups. Used only to find investors and write your emails. Nothing is sent without you. By continuing you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</p>
         {actions(!!f.stage && !!f.ask, submitRound)}</div>}
 
-      {step === 4 && <div className="step rise">{progress}{count(5)}<h1>Where can investors <span className="it">find you?</span></h1><p className="help">We read your website once to draft your one-liner. Your LinkedIn goes in your signature.</p>
-        <div className="profile-form">
-          <label>Website<input className="field" autoFocus inputMode="url" autoCapitalize="none" placeholder="e.g. ledgerly.in" maxLength={200} value={p.website} onChange={(e) => setP((o) => ({ ...o, website: e.target.value }))} /></label>
-          <label>Your LinkedIn (optional)<input className="field" inputMode="url" autoCapitalize="none" placeholder="linkedin.com/in/your-name" maxLength={200} value={p.linkedin} onChange={(e) => setP((o) => ({ ...o, linkedin: e.target.value }))} /></label>
-        </div>
-        {actions(true, submitLinks, p.website.trim() ? "Continue →" : "No website yet →", true, "Reading your website…")}</div>}
-
-      {step === 5 && <div className="step rise">{progress}{count(6)}<h1>A few words <span className="it">about you.</span></h1>
+      {step === 4 && <div className="step rise">{progress}{count(5)}<h1>A few words <span className="it">about you.</span></h1>
         <p className="help">{suggested === "yes" ? "Your one-liner is drafted from your website. Rough notes are fine; we'll polish them next." : note || "Rough notes are fine. We'll polish them next."}</p>
         <div className="profile-form">
           <label>What {company} does<textarea className="field" placeholder={`${company} helps [who] [achieve what] by [how].`} maxLength={200} value={p.oneLiner} onChange={(e) => setP((o) => ({ ...o, oneLiner: e.target.value }))} /></label>
@@ -139,10 +144,11 @@ export default function Start() {
           <label>Your vision, in a few words (optional)<input className="field" placeholder="e.g. make every Indian city climate-ready" maxLength={120} value={p.vision} onChange={(e) => setP((o) => ({ ...o, vision: e.target.value }))} /></label>
           <label>Revenue (optional)<input className="field" placeholder="e.g. ₹3.2L a month, growing 22% a month" maxLength={80} value={p.revenue} onChange={(e) => setP((o) => ({ ...o, revenue: e.target.value }))} /></label>
           <label>Customers (optional)<input className="field" placeholder="e.g. 8 CA firms, 2 paying" maxLength={80} value={p.customers} onChange={(e) => setP((o) => ({ ...o, customers: e.target.value }))} /></label>
+          <label>Your LinkedIn (optional, goes in your signature)<input className="field" inputMode="url" autoCapitalize="none" placeholder="linkedin.com/in/your-name" maxLength={200} value={p.linkedin} onChange={(e) => setP((o) => ({ ...o, linkedin: e.target.value }))} /></label>
         </div>
         {actions(!!(p.oneLiner.trim() && p.founderLine.trim()), submitNotes, "Polish my lines →", true, "Polishing…")}</div>}
 
-      {step === 6 && <div className="step rise">{progress}{count(7)}<h1>How you'll <span className="it">come across.</span></h1>
+      {step === 5 && <div className="step rise">{progress}{count(6)}<h1>How you'll <span className="it">come across.</span></h1>
         <p className="help">Every email uses these facts, phrased to fit each investor. Make them yours.</p>
         <div className="profile-form">
           <label>You<textarea className="field tall" maxLength={220} value={p.founderLine} onChange={(e) => setP((o) => ({ ...o, founderLine: e.target.value }))} /></label>
@@ -152,7 +158,7 @@ export default function Start() {
         </div>
         {actions(!!(p.oneLiner.trim() && p.founderLine.trim()), submitProfile, "Find my investors →")}</div>}
 
-      {step === 7 && <div className="step center rise"><div className="spinner" /><h1 style={{ fontSize: 24 }}>Checking 433 investors for {company}…</h1>
+      {step === 6 && <div className="step center rise"><div className="spinner" /><h1 style={{ fontSize: 24 }}>Checking {stats?.total ?? "all our"} investors for {company}…</h1>
         <ul className="rat" style={{ textAlign: "left", maxWidth: 380, margin: "16px auto 0", listStyle: "none", padding: 0 }}>
           <li className="fg2">✓ What they invest in, and at what stage</li>
           <li className={seconds > 1 ? "fg2" : ""}>{seconds > 1 ? "✓" : "…"} Whether their cheque fits your round</li>
@@ -161,7 +167,7 @@ export default function Start() {
         </ul>
         {seconds >= 15 && <p className="help" role="status" style={{ marginTop: 18 }}>{seconds < 45 ? "Taking a little longer than usual. Still writing, hang on." : "This is slow right now. Keep this page open; if nothing changes in a minute, go back and try again."}</p>}</div>}
 
-      {step === 8 && <div className="step center rise"><span className="kicker gold">Written in {seconds < 60 ? `${Math.max(seconds, 1)} seconds` : `${Math.round(seconds / 60)} min`}</span>
+      {step === 7 && <div className="step center rise"><span className="kicker gold">Written in {seconds < 60 ? `${Math.max(seconds, 1)} seconds` : `${Math.round(seconds / 60)} min`}</span>
         <h1 style={{ marginTop: 12 }}>Your first 3 emails <span className="it">are ready.</span></h1>
         <p className="fg2">Each one opens on something that investor actually did.</p>
         <button className="btn white" style={{ borderRadius: 14, padding: 14, marginTop: 18 }} onClick={() => navigate("/emails")}>Read my emails →</button></div>}

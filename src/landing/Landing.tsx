@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import LiveDemo from "./LiveDemo";
 import { LogoMark, Wordmark } from "../components/Brand";
 import InviteSheet from "./InviteSheet";
 import type { SheetMode } from "./InviteSheet";
@@ -12,6 +13,17 @@ function CTA({ big, center, onOpen }: { big?: boolean; center?: boolean; onOpen:
       <button className="btn ghost" onClick={() => onOpen("request")}>Request an invite</button>
     </div>
   );
+}
+
+/** Phones: a "Get my 3 emails" bar once she scrolls past the hero. */
+function StickyCta({ onOpen }: { onOpen: () => void }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShow(window.scrollY > 520);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return <div className={`sticky-cta${show ? " show" : ""}`} aria-hidden={!show}><button className="btn primary" tabIndex={show ? 0 : -1} onClick={onOpen}>Get my 3 emails →</button></div>;
 }
 
 /** Live counts from the investor table, so the numbers are always true. */
@@ -105,7 +117,7 @@ export default function Landing() {
           <>
             <section className="hero hero-min">
               <span className="kicker">FirstCheq · for first-time founders in India</span>
-              <h1 className="h-xl rise">Your journey to your first cheque <span className="it">starts here.</span></h1>
+              <h1 className="h-xl rise">The journey to your first cheque <span className="it">starts here.</span></h1>
               <p className="lede rise">2 minutes. 3 investor emails, personalised and ready to send.</p>
               <CTA onOpen={setSheet} center />
               <div className="trustline center-row"><span>Free to start</span><span>Nothing sent without you</span></div>
@@ -113,9 +125,25 @@ export default function Landing() {
 
             <ProofBar />
 
+            <section className="section">
+              <div className="s-head center"><span className="kicker">See it work</span><h2 className="h-l">From your website <span className="it">to a sent email.</span></h2></div>
+              <LiveDemo />
+            </section>
+
             <section className="difference">
               <span className="kicker">The difference</span>
               <h2>The best-prepared founders don't wing their raise. <span className="it">Neither should you.</span></h2>
+            </section>
+
+            <section className="section">
+              <div className="s-head center"><span className="kicker">This is for you if</span><h2 className="h-l">You've never <span className="it">raised before.</span></h2></div>
+              <div className="board-lb">
+                {[["You don't know a single investor.", "We show you the ones who back startups like yours."],
+                  ["You've sent 30 emails and heard nothing.", "Each email opens on a deal that investor actually did."],
+                  ["You're doing this at night, after work.", "Five minutes, then one clear next step a day."]].map(([q, a]) => (
+                  <div className="panel foryou" key={q}><q>{q}</q><p>{a}</p></div>
+                ))}
+              </div>
             </section>
 
             <section className="section">
@@ -138,6 +166,19 @@ export default function Landing() {
                 </ul>
               </div>
               <p className="muted small center" style={{ marginTop: 10 }}>Example founder and investor, made up for this page.</p>
+            </section>
+
+            <section className="section">
+              <div className="s-head center"><span className="kicker">Why not just…</span><h2 className="h-l">Do it yourself, <span className="it">or hire someone?</span></h2></div>
+              <div className="scrollx"><table className="tbl compare">
+                <thead><tr><th></th><th>On your own</th><th>An agency</th><th className="us">FirstCheq</th></tr></thead>
+                <tbody>
+                  <tr><td>Finding who fits</td><td>Weeks of spreadsheets</td><td>Done for you</td><td className="us">2 minutes</td></tr>
+                  <tr><td>Each email</td><td>Generic, or hours each</td><td>Written for you</td><td className="us">Written to that investor</td></tr>
+                  <tr><td>Follow-ups</td><td>Easy to forget</td><td>Usually</td><td className="us">Written for you, on time</td></tr>
+                  <tr><td>Cost</td><td>Your evenings</td><td>₹2–5 lakh + a success fee</td><td className="us">Free to start</td></tr>
+                </tbody>
+              </table></div>
             </section>
 
             <section className="section" id="pricing">
@@ -187,6 +228,7 @@ export default function Landing() {
 
       {sheet && <InviteSheet mode={sheet} onMode={setSheet} onClose={() => setSheet(null)} />}
       {join && <JoinSheet plan={join} onClose={() => setJoin(null)} />}
+      {aud === "founder" && <StickyCta onOpen={() => setSheet("code")} />}
     </>
   );
 }

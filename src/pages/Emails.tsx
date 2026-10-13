@@ -43,6 +43,7 @@ export default function Emails() {
       <Pipeline rows={picks} token={token} onToast={setToast} account={null} />
       <div className="picks">{picks.map((r) => <PickCard key={r.rank} r={r} token={token} onToast={setToast} />)}</div>
       {me.matchCount > 3 && <Teaser me={me} onToast={setToast} />}
+      {me.matchCount > 3 && <UnlockNudge me={me} />}
       {toast && <div className="toast" role="status">{toast}</div>}
     </Page>
   );
@@ -87,6 +88,42 @@ function Teaser({ me, onToast }: { me: Me; onToast: (s: string) => void }) {
       <h3 className="soon-h">Coming to your dashboard</h3>
       <SoonCards onToast={onToast} />
     </section>
+  );
+}
+
+/** Once per visit: after ~25 seconds, or right after her first Open in Gmail / copy / I sent it. */
+function UnlockNudge({ me }: { me: Me }) {
+  const { signIn } = useAuthActions();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let seen = false;
+    try { seen = sessionStorage.getItem("fos_nudged") === "1"; } catch { /* private mode */ }
+    if (seen) return;
+    const show = () => { setOpen(true); try { sessionStorage.setItem("fos_nudged", "1"); } catch { /* ignore */ } cleanup(); };
+    const t = setTimeout(show, 25000);
+    const onClick = (e: MouseEvent) => { if ((e.target as HTMLElement).closest?.(".email-actions")) setTimeout(show, 1200); };
+    document.addEventListener("click", onClick);
+    const cleanup = () => { clearTimeout(t); document.removeEventListener("click", onClick); };
+    return cleanup;
+  }, []);
+  if (!open) return null;
+  const more = me.matchCount - 3;
+  return (
+    <div className="sheet-scrim" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
+      <div className="sheet nudge rise" role="dialog" aria-modal="true" aria-label="See all your investors">
+        <button className="xbtn" style={{ alignSelf: "flex-end" }} onClick={() => setOpen(false)} aria-label="Close">✕</button>
+        <span className="kicker">Your list is ready</span>
+        <h2><b className="gold">{more}</b> more investors <span className="it">fit {me.company}.</span></h2>
+        <div className="unlock-stats">
+          {me.activeCount > 0 && <div><b>{me.activeCount}</b><span>invested this year or last</span></div>}
+          {me.leadCount > 0 && <div><b>{me.leadCount}</b><span>lead rounds</span></div>}
+        </div>
+        <p className="fg2" style={{ margin: 0 }}>See who they are, and get an email for each. Free, with Google.</p>
+        <button className="btn white" disabled={busy} onClick={() => { setBusy(true); void signIn("google", { redirectTo: "/dashboard" }); }}>{busy ? "Opening Google…" : `Unlock all ${more}`}</button>
+        <button className="btn ghost sm" onClick={() => setOpen(false)}>Not now</button>
+      </div>
+    </div>
   );
 }
 

@@ -54,7 +54,41 @@ export const polish = action({
   },
 });
 
-const Suggestion = z.object({ oneLiner: z.string(), founderLine: z.string(), found: z.boolean() });
+const Suggestion = z.object({ oneLiner: z.string(), founderLine: z.string(), found: z.boolean(), companyName: z.string() });
+const TOKEN = /^[a-f0-9]{48}$/;
+
+/** Sign-up step 1, before she exists: "Your website, or your startup's name". Reads the site once and returns
+ *  her startup's name and a one-liner to confirm. Limited per visitor token. */
+export const peekWebsite = action({
+  args: { token: v.string(), website: v.string() },
+  returns: v.union(
+    v.object({ ok: v.literal(true), companyName: v.string(), oneLiner: v.string() }),
+    v.object({ ok: v.literal(false), error: v.string() }),
+  ),
+  handler: async (ctx, { token, website }): Promise<{ ok: true; companyName: string; oneLiner: string } | { ok: false; error: string }> => {
+    if (!TOKEN.test(token)) return { ok: false as const, error: "Please reload the page and try again." };
+    const url = normaliseUrl(website);
+    if (!url) return { ok: false as const, error: "That website doesn't look right. Try something like ledgerly.in." };
+    if (!(await limits.limit(ctx, "websiteReadsPerVisitor", { key: token })).ok) return { ok: false as const, error: "We've read enough sites for today. Type your startup's name instead." };
+    let text = await fetchPage(url);
+    if (text && text.length < 400) text += "\n" + ((await fetchPage(new URL(url).origin + "/about")) ?? "");
+    if (!text || text.length < 80) return { ok: false as const, error: "We couldn't read that website. Type your startup's name instead." };
+    if (!(await limits.limit(ctx, "aiCallsGlobal", { count: 1 })).ok) return { ok: false as const, error: "Busy right now. Type your startup's name instead." };
+    const input = `COMPANY: (unknown, read it from the site)\nFOUNDER_NAME: (unknown; return an empty founderLine)\nSITE: ${url}\n\nSITE TEXT:\n${text}`;
+    const started = Date.now();
+    try {
+      const res = await new Anthropic().messages.parse({ model: MODEL, max_tokens: 400, system: SUGGEST_SYSTEM, messages: [{ role: "user", content: input }], output_config: { format: zodOutputFormat(Suggestion) } });
+      const out = res.parsed_output;
+      await ctx.runMutation(internal.founders.logAiCall, { purpose: "peek_website", model: MODEL, input, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, ms: Date.now() - started, inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens });
+      if (!out || !out.found || !out.companyName.trim()) return { ok: false as const, error: "That website didn't say enough. Type your startup's name instead." };
+      return { ok: true as const, companyName: out.companyName.trim().slice(0, 80), oneLiner: out.oneLiner.trim().slice(0, 200) };
+    } catch (e) {
+      const msg = e instanceof Anthropic.APIError ? `API ${e.status}: ${e.message}` : e instanceof Error ? e.message : String(e);
+      await ctx.runMutation(internal.founders.logAiCall, { purpose: "peek_website", model: MODEL, input, output: "", ms: Date.now() - started, error: msg.slice(0, 500) });
+      return { ok: false as const, error: "Busy right now. Type your startup's name instead." };
+    }
+  },
+});
 
 /** The readable text of a page: title, description and body, without scripts or styles. */
 export function pageText(html: string): string {
@@ -116,7 +150,7 @@ export const fromWebsite = action({
       const out = res.parsed_output;
       await ctx.runMutation(internal.founders.logAiCall, { founderId: f._id, purpose: "suggest_profile", model: MODEL, input, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, ms: Date.now() - started, inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens });
       if (!out || !out.found) return { ok: false as const, error: "Your website didn't say enough for a one-liner. Write it below." };
-      return { ok: true as const, oneLiner: out.oneLiner.trim().slice(0, 200), founderLine: out.founderLine.trim().slice(0, 220) };
+      return { ok: true as const, oneLiner: out.oneLiner.trim().slice(0, 200), founderLine: out.founderLine.trim().slice(0, 220) }; // companyName unused here
     } catch (e) {
       const msg = e instanceof Anthropic.APIError ? `API ${e.status}: ${e.message}` : e instanceof Error ? e.message : String(e);
       await ctx.runMutation(internal.founders.logAiCall, { founderId: f._id, purpose: "suggest_profile", model: MODEL, input, output: "", ms: Date.now() - started, error: msg.slice(0, 500) });
