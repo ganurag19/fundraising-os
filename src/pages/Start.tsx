@@ -121,7 +121,7 @@ export default function Start() {
       {step === 3 && <div className="step rise">{progress}{count(4)}<h1>Tell us about your round.</h1><p className="help">So every investor we show can write your size of cheque.</p>
         <div className="pick-label">Stage</div><div className="pick">{STAGES.map((n) => <button key={n} aria-pressed={f.stage === n} onClick={() => setF((o) => ({ ...o, stage: n }))}>{n}</button>)}</div>
         <div className="pick-label">Raising</div><div className="pick">{ASKS.map((n) => <button key={n} aria-pressed={f.ask === n} onClick={() => setF((o) => ({ ...o, ask: n }))}>{n}</button>)}</div>
-        <p className="muted" style={{ fontSize: 13, marginTop: 18 }}>For Indian startups. Used only to find investors and write your emails. Nothing is sent without you.</p>
+        <p className="muted" style={{ fontSize: 13, marginTop: 18 }}>For Indian startups. Used only to find investors and write your emails. Nothing is sent without you. By continuing you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</p>
         {actions(!!f.stage && !!f.ask, submitRound)}</div>}
 
       {step === 4 && <div className="step rise">{progress}{count(5)}<h1>Where can investors <span className="it">find you?</span></h1><p className="help">We read your website once to draft your one-liner. Your LinkedIn goes in your signature.</p>

@@ -189,7 +189,7 @@ export default function Landing() {
         </section>
 
         <div className="cta-band"><h2 className="h-l" style={{ marginTop: 0 }}>Your first round starts with one email. <span className="it">Send it this week.</span></h2><CTA big onOpen={setSheet} /></div>
-        <footer><div className="foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Not affiliated with any fund · Example investors on this page are made up</span></div></footer>
+        <footer><div className="foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Not affiliated with any fund · Example investors on this page are made up · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span></div></footer>
       </div>
 
       {sheet && <InviteSheet mode={sheet} onMode={setSheet} onClose={() => setSheet(null)} />}

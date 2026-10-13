@@ -288,3 +288,11 @@ textarea.field.tall{min-height:128px;field-sizing:content}
 .profile-form label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--fg2)}
 .preview{border:1px dashed var(--blue-line);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--fg2);background:var(--blue-soft)}
 .err{color:var(--red);font-size:13px;margin:0}
+
+/* Privacy and Terms */
+.legal{max-width:720px}
+.legal h1{font-family:var(--display);font-size:clamp(30px,5vw,40px);letter-spacing:-.03em;margin:10px 0 4px}
+.legal h2{font-family:var(--display);font-size:19px;margin:28px 0 8px}
+.legal p,.legal li{color:var(--fg2);line-height:1.65}
+.legal ul{padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.legal a{color:var(--blue-ink)}
