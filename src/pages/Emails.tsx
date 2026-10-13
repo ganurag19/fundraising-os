@@ -7,6 +7,7 @@ import { Dial } from "../components/Art";
 import { PickCard, SoonCards } from "../components/Investor";
 import { cheque } from "../lib/investor";
 import type { Me } from "../components/Investor";
+import { LogoMark, Wordmark } from "../components/Brand";
 import { visitorToken } from "../lib/token";
 
 const SPACE: Record<string, string> = { AI: "AI", "Climate & Energy": "climate", Deeptech: "deeptech" };
@@ -91,7 +92,7 @@ function Teaser({ me, onToast }: { me: Me; onToast: (s: string) => void }) {
 export function Page({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <main className="app-wrap">
-      <div className="app-top"><Link className="logo" to="/"><span className="logo-mark">F</span>FirstCheq</Link>{right ?? <span className="tag gold">Beta</span>}</div>
+      <div className="app-top"><Link className="logo" to="/"><LogoMark /><Wordmark /></Link>{right ?? <span className="tag gold">Beta</span>}</div>
       {children}
     </main>
   );

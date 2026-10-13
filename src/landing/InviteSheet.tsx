@@ -79,7 +79,7 @@ export default function InviteSheet({ mode, onMode, onClose }: { mode: SheetMode
           <form onSubmit={submitCode} style={{ display: "contents" }}>
             <h2>Enter your <span className="it">invite code</span></h2>
             <p className="fg2" style={{ margin: 0 }}>From your incubator, community or a founder who's already in.</p>
-            <label>Invite code<input className="field" value={f.code} onChange={set("code")} placeholder="e.g. GROWTHX-S4" autoCapitalize="characters" required maxLength={40} style={{ textTransform: "uppercase", letterSpacing: ".06em" }} /></label>
+            <label>Invite code<input className="field" value={f.code} onChange={set("code")} placeholder="e.g. FIRSTCHEQ" autoCapitalize="characters" required maxLength={40} style={{ textTransform: "uppercase", letterSpacing: ".06em" }} /></label>
             {error && <p className="err" role="alert">{error}</p>}
             <div className="row"><button className="btn primary" disabled={busy} type="submit">{busy ? "Checking…" : "Continue"}</button></div>
             <button type="button" className="btn ghost sm" style={{ alignSelf: "center" }} onClick={() => { setError(""); onMode("request"); }}>No code? Request an invite</button>

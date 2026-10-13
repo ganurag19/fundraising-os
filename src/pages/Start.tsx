@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { LogoMark, Wordmark } from "../components/Brand";
 import { savedInviteCode, visitorToken } from "../lib/token";
 import { normaliseLinkedin, normaliseUrl } from "../../convex/lib/links";
 
@@ -169,7 +170,7 @@ export default function Start() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="flow">
-      <div className="flow-top"><Link className="logo" to="/"><span className="logo-mark">F</span>FirstCheq</Link><Link className="btn ghost sm" to="/">Exit</Link></div>
+      <div className="flow-top"><Link className="logo" to="/"><LogoMark /><Wordmark /></Link><Link className="btn ghost sm" to="/">Exit</Link></div>
       <div className="flow-main">{children}</div>
     </main>
   );

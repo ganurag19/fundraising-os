@@ -8,13 +8,15 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "deploy": "npx @convex-dev/static-hosting deploy"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
     "@auth/core": "^0.41.3",
     "@convex-dev/auth": "^0.0.96",
     "@convex-dev/rate-limiter": "^0.4.2",
+    "@convex-dev/static-hosting": "^0.2.1",
     "convex": "^1.46.0",
     "jose": "^6.2.12",
     "react": "^19.2.8",
