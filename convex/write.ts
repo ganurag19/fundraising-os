@@ -139,6 +139,7 @@ export const writeMore = action({
     const row: { founder: Doc<"founders">; investor: Doc<"investors">; hasDraft: boolean } | null = await ctx.runQuery(internal.founders.rowForDrafting, { token, rank, userId });
     if (!row) return { ok: false as const, error: "We couldn't find that investor on your list." };
     if (row.hasDraft) return { ok: true as const };
+    if (!row.investor.email) return { ok: false as const, error: "This one takes applications through a form. Tap Apply instead." };
     const mine = await limits.limit(ctx, "extraEmailsPerFounder", { key: row.founder._id });
     if (!mine.ok) return { ok: false as const, error: "That's today's emails. Come back tomorrow for more." };
     const calls = await limits.limit(ctx, "aiCallsGlobal", { count: 1 });

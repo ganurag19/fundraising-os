@@ -142,6 +142,8 @@ const rowV = v.object({
   reason: v.union(v.string(), v.null()), // one line on why they fit
   parts: v.array(v.object({ key: v.string(), label: v.string(), got: v.number(), max: v.number() })), // the score, part by part
   leadsRounds: v.boolean(), lastDealYear: v.union(v.number(), v.null()), firstCheques: v.boolean(),
+  // Programmes and form-only funds: an application link instead of an email
+  applyUrl: v.union(v.string(), v.null()), applyDeadline: v.union(v.string(), v.null()), hasEmail: v.boolean(),
   status: v.union(v.literal("new"), v.literal("sent"), v.literal("replied"), v.literal("meeting"), v.literal("passed")),
   followups: v.array(v.object({ id: v.id("followups"), n: v.number(), state: v.string(), dueAt: v.number(), subject: v.union(v.string(), v.null()), body: v.union(v.string(), v.null()) })),
 });
@@ -174,9 +176,10 @@ export const me = query({
         rank: m.rank, score: m.score, kind: inv.kind, city: inv.city ?? null,
         chequeMinLakh: inv.chequeMinLakh ?? null, chequeMaxLakh: inv.chequeMaxLakh ?? null, sentAt: m.sentAt ?? null,
         // Beyond her top 3, an email address is only revealed once she asks for that investor's email ("Write email", capped daily).
-        displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: m.rank < 3 || d ? inv.email : null,
+        displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: m.rank < 3 || d ? inv.email ?? null : null,
         website: open ? inv.website ?? null : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open ? inv.sourceUrls : [],
         reason: d?.reason ?? m.reason ?? null,
+        applyUrl: open ? inv.applyUrl ?? null : null, applyDeadline: inv.applyDeadline ?? null, hasEmail: !!inv.email,
         parts: scoreParts(inv, f, new Date(m._creationTime).getFullYear()) ?? [], // the year she was matched (queries don't read the clock)
         leadsRounds: !!inv.leadsRounds, firstCheques: inv.stages.includes("idea") || inv.stages.includes("pre_seed"), lastDealYear: inv.recent.reduce<number | null>((y, r) => (r.year && (!y || r.year > y) ? r.year : y), null),
         status: m.status ?? ("new" as const),

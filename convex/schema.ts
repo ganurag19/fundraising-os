@@ -30,7 +30,10 @@ export default defineSchema({
     person: v.optional(v.string()),
     firm: v.optional(v.string()),
     title: v.optional(v.string()),
-    email: v.string(),
+    email: v.optional(v.string()), // every row has an email or an applyUrl (checked in scripts/build_import.py)
+    applyUrl: v.optional(v.string()), // accelerators, grants, and funds that only take decks through a form
+    applyDeadline: v.optional(v.string()), // YYYY-MM-DD
+    applyType: v.optional(v.union(v.literal("rolling"), v.literal("cohort"), v.literal("call"), v.literal("form"))),
     city: v.optional(v.string()),
     website: v.optional(v.string()),
     sectors: v.array(v.string()),
@@ -40,7 +43,7 @@ export default defineSchema({
     leadsRounds: v.optional(v.boolean()),
     thesis: v.optional(v.string()),
     portfolio: v.array(v.string()),
-    recent: v.array(v.object({ company: v.string(), year: v.optional(v.number()), round: v.optional(v.string()) })),
+    recent: v.array(v.object({ company: v.string(), year: v.optional(v.number()), round: v.optional(v.string()), sector: v.optional(v.string()) })),
     active: v.optional(v.boolean()),
     pitchRoute: v.optional(v.string()),
     sourceUrls: v.array(v.string()),

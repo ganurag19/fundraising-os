@@ -1,9 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { chequeFits, scoreInvestor, topMatches } from "./match";
+import { chequeFits, scoreInvestor, scoreParts, topMatches } from "./match";
 import { checkDraft, checkFollowup, hookNamesADeal, unsourcedFacts } from "./checks";
 
 // Made-up investors only.
-const base = { sectors: ["ai"], stages: ["seed"], recent: [] as { year?: number }[] };
+const base = { sectors: ["ai"], stages: ["seed"], recent: [] as { year?: number; sector?: string }[], email: "hi@fund.example" };
 const seedAi = { sectors: ["AI"], stage: "Seed", ask: "₹1–3 Cr" };
 
 describe("cheque fit", () => {
@@ -57,6 +57,44 @@ describe("spread and top picks", () => {
     const withHook = { ...base, firm: "Hook Fund", portfolio: ["Made-up Co"] };
     const top = topMatches([noHook, withHook], seedAi, 2026, 20);
     expect(top.map((x) => x.inv.firm)).toEqual(["Hook Fund", "Plain Fund"]);
+  });
+});
+
+describe("deal evidence and apply links", () => {
+  const climate = { sectors: ["Climate & Energy"], stage: "Seed", ask: "₹1–3 Cr" };
+  const deals = (n: number, sector: string) => Array.from({ length: n }, () => ({ year: 2026, sector }));
+  const sectorPart = (inv: Parameters<typeof scoreParts>[0]) => scoreParts(inv, climate, 2026)!.find((p) => p.key === "sector")!;
+  test("an agnostic fund with 2 climate deals gets full marks, and beats one with none", () => {
+    const withDeals = { ...base, sectors: ["sector_agnostic"], recent: deals(2, "climate") };
+    const without = { ...base, sectors: ["sector_agnostic"] };
+    expect(sectorPart(withDeals).got).toBe(30);
+    expect(sectorPart(withDeals).label).toBe("Invests in your space · 2 of 2 recent deals are climate");
+    expect(scoreInvestor(withDeals, climate, 2026)!).toBeGreaterThan(scoreInvestor(without, climate, 2026)!);
+  });
+  test("one deal lifts to at least 24; a deal with no sector changes nothing", () => {
+    expect(sectorPart({ ...base, sectors: ["sector_agnostic"], recent: deals(1, "climate") }).got).toBe(24);
+    expect(sectorPart({ ...base, sectors: ["sector_agnostic"], recent: [{ year: 2026 }] }).got).toBe(12);
+  });
+  test("a listed sector with none of 5+ tagged deals drops to 24", () => {
+    expect(sectorPart({ ...base, sectors: ["climate"], recent: deals(5, "fintech") }).got).toBe(24);
+    expect(sectorPart({ ...base, sectors: ["climate"], recent: deals(4, "fintech") }).got).toBe(30);
+  });
+  test("a fund outside her listed sectors still shows if its deals are in her space", () => {
+    expect(scoreInvestor({ ...base, sectors: ["fintech"], recent: deals(2, "climate") }, climate, 2026)).not.toBeNull();
+  });
+  test("accelerators only at idea or pre-seed, grants up to seed; unreachable rows never show", () => {
+    const acc = { ...base, kind: "accelerator", email: undefined, applyUrl: "https://apply.example", stages: [] as string[] };
+    expect(scoreInvestor(acc, { ...seedAi, stage: "Pre-seed" }, 2026)).not.toBeNull();
+    expect(scoreInvestor(acc, seedAi, 2026)).toBeNull();
+    expect(scoreInvestor({ ...acc, kind: "grant" }, seedAi, 2026)).not.toBeNull();
+    expect(scoreInvestor({ ...base, email: undefined }, seedAi, 2026)).toBeNull();
+  });
+  test("apply-only investors are never top picks", () => {
+    const applyOnly = { ...base, firm: "Form Fund", email: undefined, applyUrl: "https://form.example", thesis: "AI for SMBs", recent: [{ year: 2026 }] };
+    const emailable = { ...base, firm: "Mail Fund", portfolio: ["Made-up Co"] };
+    const top = topMatches([applyOnly, emailable], seedAi, 2026, 20);
+    expect(top[0].inv.firm).toBe("Mail Fund");
+    expect(top.map((x) => x.inv.firm)).toContain("Form Fund");
   });
 });
 

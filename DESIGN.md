@@ -45,6 +45,9 @@ Use these words, never the ones on the right.
 | Founders who want to talk to investors | Startups raising, deals, listings |
 | Ask for a conversation | Request deck & intro, invest |
 | I sent it | Mark as sent |
+| Apply (opens the programme's or fund's own form) | Submit application |
+| I applied | Mark as applied |
+| Closes 12 Nov | Deadline, due date |
 
 Buttons say what happens next ("Open email", "Send follow-up"), never "Submit" or "Get started". Errors say what happened and offer two ways forward.
 

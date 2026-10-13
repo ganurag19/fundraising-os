@@ -233,7 +233,7 @@ function Today({ me, token, onToast, go }: { me: Me; token: string; onToast: (s:
   const [now] = useState(() => Date.now());
   const followups = me.rows.filter((r) => r.status === "sent" && r.followups.some((f) => f.state === "ready"));
   const picks = me.rows.filter((r) => r.rank < 3 && r.status === "new");
-  const nextBest = me.rows.find((r) => r.rank >= 3 && r.status === "new");
+  const nextBest = me.rows.find((r) => r.rank >= 3 && r.status === "new" && r.hasEmail);
   const nextDue = me.rows.flatMap((r) => r.followups.filter((f) => f.state === "scheduled" && f.dueAt > now).map((f) => f.dueAt)).sort((a, b) => a - b)[0];
   const sent = me.rows.filter((r) => r.status !== "new").length;
   const replied = me.rows.filter((r) => r.status === "replied" || r.status === "meeting").length;
@@ -309,6 +309,7 @@ function Investors({ me, token, onToast }: { me: Me; token: string; onToast: (s:
     ["all", "All", () => true],
     ["funds", "Funds", (r) => r.kind === "vc" || r.kind === "corporate_vc"],
     ["angels", "Angels", (r) => r.kind === "angel" || r.kind === "angel_network"],
+    ["programmes", "Programmes", (r) => r.kind === "accelerator" || r.kind === "grant"],
     ["leads", "Leads rounds", (r) => r.leadsRounds],
     ["recent", "Invested lately", (r) => (r.lastDealYear ?? 0) >= year - 1],
   ];

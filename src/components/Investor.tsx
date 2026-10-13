@@ -207,7 +207,7 @@ export function Pipeline({ rows, token, onToast, account }: { rows: Row[]; token
         <h2 className="dash-h">Waiting on them</h2>
         <div className="rows">{waiting.map((r) => { const n = next(r); return (
           <div className="row-card" key={r.rank}>
-            <div className="row-main"><Head r={r} /><span className="due">{n ? `Follow-up ${n.n} on ${day(n.dueAt)}` : `Sent ${since(r.sentAt)}`}</span><StatusMenu r={r} token={token} onToast={onToast} /></div>
+            <div className="row-main"><Head r={r} /><span className="due">{!r.hasEmail ? `Applied ${since(r.sentAt)}` : n ? `Follow-up ${n.n} on ${day(n.dueAt)}` : `Sent ${since(r.sentAt)}`}</span><StatusMenu r={r} token={token} onToast={onToast} /></div>
           </div>
         ); })}</div>
       </>}
@@ -270,17 +270,29 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
     setBusy(false);
     if (res.ok) setOpen(true); else onToast(res.error);
   };
-  const tag = STATUS_TAG[r.status];
+  const applyOnly = !r.hasEmail && !!r.applyUrl;
+  const setStatus = useMutation(api.pipeline.setStatus);
+  const tag = applyOnly && r.status === "sent" ? "Applied" : STATUS_TAG[r.status];
+  const closes = r.applyDeadline ? new Date(r.applyDeadline + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : null;
   return (
     <div className={`row-card${r.rank < 3 ? " top" : ""}`} id={`inv-${r.rank}`}>
       <div className="row-main">
         <button className="dial-btn" onClick={() => setWhy((w) => !w)} aria-expanded={why} aria-label={`Match score ${r.score}. Show how it's worked out`}><Dial score={r.score} size={40} /></button>
         <Head r={r} rank={r.rank < 3} badges />
         <span className="muted small cheque">{cheque(r)}</span>
-        {tag ? <span className={`tag status-${r.status}`}>{tag}</span> : r.draft
+        {tag ? <span className={`tag status-${r.status}`}>{tag}</span> : applyOnly
+          ? <a className="btn primary sm" href={r.applyUrl!} target="_blank" rel="noreferrer">Apply</a>
+          : r.draft
           ? <button className="btn ghost sm" onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Email"}</button>
           : <button className="btn primary sm" disabled={busy} onClick={write}>{busy ? "Writing…" : "Write email"}</button>}
       </div>
+      {applyOnly && r.status === "new" && (
+        <div className="apply-row">
+          {closes && <span className="due">Closes {closes}</span>}
+          <span className="muted small">Applications go through their form.</span>
+          <button className="btn ghost sm" onClick={() => { void setStatus({ token, rank: r.rank, status: "sent" }); onToast("Noted. It's in your pipeline under Waiting on them."); }}>I applied</button>
+        </div>
+      )}
       {r.reason && <p className="row-reason">{r.reason} <button className="why-link" onClick={() => setWhy((w) => !w)}>{why ? "Hide score" : "Score breakdown"}</button></p>}
       {why && <ScoreBreakdown r={r} />}
       {open && r.draft && (

@@ -47,8 +47,10 @@ export const setStatus = mutation({
     if (status === "sent") {
       const sentAt = m.sentAt ?? now;
       await ctx.db.patch("matches", m._id, { status, statusAt: now, sentAt });
-      await schedule(ctx, f._id, m._id, 1, sentAt);
-      await ctx.db.insert("steps", { step: "sent" });
+      // "I applied" to a programme or form: Waiting on them, with no follow-ups (there's no inbox to nudge).
+      const inv = await ctx.db.get("investors", m.investorId);
+      if (inv?.email) await schedule(ctx, f._id, m._id, 1, sentAt);
+      await ctx.db.insert("steps", { step: inv?.email ? "sent" : "applied" });
       return null;
     }
     // replied, meeting or passed: the conversation moved on, so no more nudges

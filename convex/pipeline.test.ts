@@ -106,4 +106,16 @@ describe("pipeline", () => {
     const stored = await t.run(async (ctx) => (await ctx.db.query("drafts").first())!);
     expect([stored.subject, stored.editedSubject]).toEqual(["Original subject", "My subject"]);
   });
+
+  test("'I applied' to an apply-only programme waits on them, with no follow-ups", async () => {
+    const { t, founderId, followups } = await setup();
+    await t.run(async (ctx) => {
+      const investorId = await ctx.db.insert("investors", { seedId: "acc1", kind: "accelerator", displayName: "Made-up Accelerator", applyUrl: "https://apply.example", sectors: ["ai"], stages: ["pre_seed"], portfolio: [], recent: [], sourceUrls: [] });
+      await ctx.db.insert("matches", { founderId, investorId, rank: 5, score: 70 });
+    });
+    await t.mutation(api.pipeline.setStatus, { token, rank: 5, status: "sent" });
+    const row = (await t.query(api.founders.me, { token }))!.rows.find((r) => r.rank === 5)!;
+    expect([row.status, row.hasEmail]).toEqual(["sent", false]);
+    expect(await followups()).toEqual([]);
+  });
 });
