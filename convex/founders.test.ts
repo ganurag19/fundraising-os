@@ -112,4 +112,45 @@ describe("founder sign-up", () => {
     const me = (await t.query(api.founders.me, { token: tokenA }))!;
     expect([me.company, me.name, me.profile.traction]).toEqual(["Ledgerly Labs", "Nisha K", "8 CA firms on pilot"]);
   });
+
+  test("founding list saves interest once per email and plan, and checks the email", async () => {
+    const t = await setup();
+    expect((await t.mutation(api.founders.joinList, { email: "nope", name: "Nisha", plan: "round_pass" })).ok).toBe(false);
+    expect(await t.mutation(api.founders.joinList, { email: "Nisha@Ledgerly.example ", name: "Nisha", plan: "round_pass" })).toEqual({ ok: true });
+    await t.mutation(api.founders.joinList, { email: "nisha@ledgerly.example", name: "Nisha", plan: "round_pass" });
+    await t.mutation(api.founders.joinList, { email: "nisha@ledgerly.example", name: "Nisha", plan: "custom" });
+    expect(await t.run((ctx) => ctx.db.query("passInterest").take(10))).toHaveLength(2);
+  });
+
+  test("Round Pass shows up to 100 investors; free shows 20", async () => {
+    const t = await setup();
+    await t.mutation(api.founders.start, { ...nisha, token: tokenA });
+    const userId = await t.run(async (ctx) => {
+      const f = (await ctx.db.query("founders").first())!;
+      for (let rank = 0; rank < 30; rank++) {
+        const investorId = await ctx.db.insert("investors", { seedId: `p${rank}`, kind: "vc", displayName: `Made-up Fund ${rank}`, email: `f${rank}@fund.example`, sectors: ["ai"], stages: ["seed"], portfolio: [], recent: [], sourceUrls: [] });
+        await ctx.db.insert("matches", { founderId: f._id, investorId, rank, score: 90 });
+      }
+      const u = await ctx.db.insert("users", { email: "nisha@ledgerly.example" });
+      await ctx.db.patch("founders", f._id, { userId: u });
+      return u;
+    });
+    const me = () => t.withIdentity({ subject: `${userId}|s1` }).query(api.founders.me, { token: tokenA });
+    expect((await me())!.rows).toHaveLength(20);
+    expect(await t.mutation(internal.founders.grantPass, { email: "nisha@ledgerly.example", days: 120 })).toBeNull();
+    expect((await me())!.rows).toHaveLength(30);
+    expect((await me())!.plan).toBe("round_pass");
+  });
+
+  test("landing counts are by kind and skip retired investors", async () => {
+    const t = await setup();
+    await t.run(async (ctx) => {
+      const base = { email: "x@fund.example", sectors: ["ai"], stages: ["seed"], portfolio: [], recent: [], sourceUrls: [] };
+      await ctx.db.insert("investors", { ...base, seedId: "1", kind: "vc", displayName: "A" });
+      await ctx.db.insert("investors", { ...base, seedId: "2", kind: "incubator", displayName: "B" });
+      await ctx.db.insert("investors", { ...base, seedId: "3", kind: "vc", displayName: "C", retired: true });
+    });
+    const s = await t.query(api.founders.publicStats, {});
+    expect([s.total, s.vc, s.incubator]).toEqual([2, 1, 1]);
+  });
 });

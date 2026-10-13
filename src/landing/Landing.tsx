@@ -1,16 +1,63 @@
 import { useState } from "react";
-import { Badges, Dial, Face, Logo } from "../components/Art";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { LogoMark, Wordmark } from "../components/Brand";
-import { DEMO, PAINS, TRY } from "./demoData";
-import type { DemoInvestor } from "./demoData";
 import InviteSheet from "./InviteSheet";
 import type { SheetMode } from "./InviteSheet";
 
-function CTA({ big, onOpen }: { big?: boolean; onOpen: (m: SheetMode) => void }) {
+function CTA({ big, center, onOpen }: { big?: boolean; center?: boolean; onOpen: (m: SheetMode) => void }) {
   return (
-    <div className="cta-row" style={big ? { justifyContent: "center" } : undefined}>
-      <button className={big ? "btn white" : "btn primary"} onClick={() => onOpen("request")}>Request an invite →</button>
-      <button className="btn ghost" onClick={() => onOpen("code")}>I have a code</button>
+    <div className="cta-row" style={big || center ? { justifyContent: "center" } : undefined}>
+      <button className={big ? "btn white" : "btn primary"} onClick={() => onOpen("code")}>Get my 3 emails →</button>
+      <button className="btn ghost" onClick={() => onOpen("request")}>Request an invite</button>
+    </div>
+  );
+}
+
+/** Live counts from the investor table, so the numbers are always true. */
+function ProofBar() {
+  const s = useQuery(api.founders.publicStats, {});
+  const items: [number | undefined, string][] = [
+    [s?.total, "investors researched"], [s?.vc, "VC funds"], [s?.angel, "angels"], [s?.angelNetwork, "angel networks"],
+    [s && s.accelerator + s.incubator, s && s.incubator ? "accelerators and incubators" : "accelerators"], [s?.grant, "grant schemes"],
+  ];
+  return (
+    <section className="proof-bar" aria-label="What we've researched">
+      {items.filter(([n]) => n === undefined || n > 0).map(([n, label]) => <div key={label}><b>{n ?? "·"}</b><span>{label}</span></div>)}
+      <p className="muted small">Every fact with its source</p>
+    </section>
+  );
+}
+
+/** Founding list (Round Pass) or a call (Custom). Saves interest; no payment. */
+function JoinSheet({ plan, onClose }: { plan: "round_pass" | "custom"; onClose: () => void }) {
+  const joinList = useMutation(api.founders.joinList);
+  const [f, setF] = useState({ name: "", email: "", note: "" });
+  const [state, setState] = useState<"" | "busy" | "done">("");
+  const [error, setError] = useState("");
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); setState("busy"); setError("");
+    const r = await joinList({ plan, ...f }).catch(() => ({ ok: false as const, error: "Couldn't save that. Check your connection." }));
+    if (r.ok) setState("done"); else { setState(""); setError(r.error); }
+  };
+  return (
+    <div className="sheet-scrim" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="sheet rise" role="dialog" aria-modal="true" aria-label={plan === "round_pass" ? "Join the founding list" : "Book a call"}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span className="tag gold">{plan === "round_pass" ? "Round Pass · ₹9,999 founding price" : "Custom"}</span><button className="xbtn" onClick={onClose} aria-label="Close">✕</button></div>
+        {state === "done" ? (
+          <><h2>You're on the list.</h2><p className="fg2" style={{ margin: 0 }}>{plan === "round_pass" ? "We'll email you when Round Pass opens, at the founding price." : "We'll email you within a day to set up a call."}</p><div className="row"><button className="btn primary" onClick={onClose}>Done</button></div></>
+        ) : (
+          <form onSubmit={submit} style={{ display: "contents" }}>
+            <h2>{plan === "round_pass" ? <>Join the <span className="it">founding list</span></> : <>Book a <span className="it">call</span></>}</h2>
+            <label>Your name<input className="field" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required maxLength={100} autoComplete="name" /></label>
+            <label>Email<input className="field" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} required maxLength={200} autoComplete="email" /></label>
+            {plan === "custom" && <label>What do you need help with? (optional)<textarea className="field" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} maxLength={500} /></label>}
+            {error && <p className="err" role="alert">{error}</p>}
+            <div className="row"><button className="btn primary" disabled={state === "busy"} type="submit">{state === "busy" ? "Saving…" : plan === "round_pass" ? "Join the list" : "Request a call"}</button></div>
+            <p className="muted small" style={{ margin: 0 }}>No payment now. We only use this to contact you.</p>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
@@ -28,12 +75,10 @@ We're raising ₹3 Cr at seed. Could I send the deck, or take 20 minutes next we
 Arjun Rao
 Founder, Kiln Labs`;
 
-const Mark = ({ i, size = 38 }: { i: DemoInvestor; size?: number }) => (i.angel ? <Face name={i.person} size={size} /> : <Logo name={i.name} size={size} />);
-
 export default function Landing() {
   const [aud, setAud] = useState<"founder" | "investor">("founder");
   const [sheet, setSheet] = useState<SheetMode | null>(null);
-  const [sector, setSector] = useState<"AI" | "Climate" | "Deeptech">("AI");
+  const [join, setJoin] = useState<"round_pass" | "custom" | null>(null);
   const open = (m: SheetMode) => () => setSheet(m);
 
   return (
@@ -58,95 +103,90 @@ export default function Landing() {
           </div>
         ) : (
           <>
-            <div className="hero">
-              <div className="hero-grid">
-                <div>
-                  <span className="kicker tagline">Your journey to your first cheque starts here.</span>
-                  <h1 className="h-xl rise">First round? Send your first investor email <span className="it">in 10 minutes.</span></h1>
-                  <p className="lede rise">Tell us about your startup in 2 minutes. See the Indian investors who back startups like yours, and send each one an email that opens on a deal they did, from your own Gmail.</p>
-                  <CTA onOpen={setSheet} />
-                  <div className="trustline"><span>Invite-only beta</span><span>Nothing sent without you</span><span>Free while in beta</span></div>
-                </div>
-                <div className="try rise" aria-label="Three steps">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 8 }}><span className="kicker">3 steps · about 10 minutes</span><span className="tag gold">Try step 2 now</span></div>
-                  <div className="steps3">
-                    {[["Tell us about your startup", "Name, sector, stage, how much you're raising", "2 MIN"], ["See who fits, and why", "Investors who back startups like yours, ranked", "3 MIN"], ["Send your first email", "We wrote it. You edit and send from Gmail.", "5 MIN"]].map(([b, s, t], k) => (
-                      <div className="s3" key={b}><span className="n">{k + 1}</span><div><b>{b}</b><span>{s}</span></div><span className="t">{t}</span></div>
-                    ))}
-                  </div>
-                  <div className="pick" style={{ marginTop: 14 }}>
-                    {(["AI", "Climate", "Deeptech"] as const).map((s) => <button key={s} aria-pressed={sector === s} onClick={() => setSector(s)}>{s}</button>)}
-                    <button disabled>Fintech · soon</button>
-                  </div>
-                  {TRY[sector].map((idx, k) => { const i = DEMO[idx]; return (
-                    <div className="mini-inv" key={i.name}><Mark i={i} /><div className="meta"><b>{i.name}</b><span>{i.why}</span><Badges keys={i.badges.filter((b) => b === "lead" || b === "first")} max={2} /></div><Dial score={i.score - k * 3} size={46} /></div>
-                  ); })}
-                  <p className="muted" style={{ fontSize: 12, margin: "10px 0 0" }}>Example investors. Yours are matched to your startup after you join.</p>
-                </div>
-              </div>
-            </div>
+            <section className="hero hero-min">
+              <span className="kicker">FirstCheq · for first-time founders in India</span>
+              <h1 className="h-xl rise">Your journey to your first cheque <span className="it">starts here.</span></h1>
+              <p className="lede rise">2 minutes. 3 investor emails, personalised and ready to send.</p>
+              <CTA onOpen={setSheet} center />
+              <div className="trustline center-row"><span>Free to start</span><span>Nothing sent without you</span></div>
+            </section>
 
-            <section className="section">
-              <div className="s-head"><span className="kicker">Sound familiar?</span><h2 className="h-l">Your first raise, <span className="it">without the guesswork.</span></h2></div>
-              <div className="pains">{PAINS.map(([q, b, d]) => <div className="pain" key={q}><q>{q}</q><div className="fix"><b>{b}</b> {d}</div></div>)}</div>
+            <ProofBar />
+
+            <section className="difference">
+              <span className="kicker">The difference</span>
+              <h2>The best-prepared founders don't wing their raise. <span className="it">Neither should you.</span></h2>
             </section>
 
             <section className="section">
-              <div className="s-head"><span className="kicker">What you get today</span><h2 className="h-l">Three things, <span className="it">done for you.</span></h2></div>
+              <div className="s-head center"><span className="kicker">How it works</span><h2 className="h-l">Three steps. <span className="it">Five minutes.</span></h2></div>
               <div className="board-lb">
-                <div className="panel"><span className="num-badge">1</span><h3>Investors who fit</h3><p>Funds, angels and networks in India that back your sector, stage and round size. Each with a match score and one line on why.</p></div>
-                <div className="panel"><span className="num-badge">2</span><h3>An email to each</h3><p>It opens on a deal that investor actually did, then your story in your words. Edit it, then send from your own Gmail.</p></div>
-                <div className="panel"><span className="num-badge">3</span><h3>Follow-ups, written</h3><p>A short nudge on day 3 and a week later. It stops the moment they reply.</p></div>
+                {[["1", "Tell us about your startup", "2 MIN"], ["2", "See the investors who fit, and why", "1 MIN"], ["3", "Send from your own Gmail", "2 MIN"]].map(([n, t, m]) => (
+                  <div className="panel step-box" key={n}><span className="num-badge">{n}</span><h3>{t}</h3><span className="mono-time">{m}</span></div>
+                ))}
               </div>
             </section>
 
             <section className="section">
-              <div className="s-head"><span className="kicker">What it writes</span><h2 className="h-l">Not a template. <span className="it">Written to them.</span></h2></div>
+              <div className="s-head center"><span className="kicker">What it writes</span><h2 className="h-l">Not a template. <span className="it">Written to them.</span></h2></div>
               <div className="example-mail">
                 <div className="email"><div className="to">To meera@verdantarc.example</div><div className="subj">After GridLeaf, kilns are next</div>{EXAMPLE_EMAIL}</div>
                 <ul className="mail-notes">
-                  <li><b>Opens on their deal.</b> GridLeaf is in their record, with the source.</li>
-                  <li><b>Your story, your numbers.</b> From the two lines you give us.</li>
-                  <li><b>One small ask.</b> Under 100 words, ready to send.</li>
+                  <li><b>Opens on their deal.</b> From their record, with the source.</li>
+                  <li><b>Your story, your numbers.</b> Fresh words for every investor.</li>
+                  <li><b>One small ask.</b> Ready to send.</li>
                 </ul>
               </div>
-              <p className="muted small" style={{ marginTop: 10 }}>Example founder and investor, made up for this page.</p>
+              <p className="muted small center" style={{ marginTop: 10 }}>Example founder and investor, made up for this page.</p>
+            </section>
+
+            <section className="section" id="pricing">
+              <div className="s-head center"><span className="kicker">Pricing</span><h2 className="h-l">Start free. <span className="it">Go further when you raise.</span></h2></div>
+              <div className="plans">
+                <div className="plan">
+                  <span className="plan-name">Free</span>
+                  <div className="price">₹0</div>
+                  <ul><li>Your 3 best-fit investors</li><li>3 emails, ready to send</li><li>Score and the reason for each</li></ul>
+                  <button className="btn ghost" onClick={open("code")}>Get my 3 emails</button>
+                </div>
+                <div className="plan featured">
+                  <span className="plan-name">Round Pass <span className="tag gold">Founding price</span></span>
+                  <div className="price">₹9,999 <s>₹14,999</s></div>
+                  <span className="muted small">120 days · first 50 founders</span>
+                  <ul><li>Up to 100 investors, each with an email</li><li>Follow-ups written for you</li><li>Pipeline for your whole raise</li></ul>
+                  <span className="addons">Add-ons: deck review ₹4,999 · investor Q&A prep ₹2,999</span>
+                  <button className="btn primary" onClick={() => setJoin("round_pass")}>Join the founding list</button>
+                  <span className="muted small">Opening soon. No payment now.</span>
+                </div>
+                <div className="plan">
+                  <span className="plan-name">Custom</span>
+                  <div className="price">Let's talk</div>
+                  <ul><li>We work through your raise with you</li><li>List, emails, deck and meeting prep</li><li>You send every email</li></ul>
+                  <button className="btn ghost" onClick={() => setJoin("custom")}>Book a call</button>
+                </div>
+              </div>
+            </section>
+
+            <section className="section">
+              <div className="s-head center"><span className="kicker">FAQ</span><h2 className="h-l">Questions, answered</h2></div>
+              <div className="faq">
+                {[["Is this for me?", "Yes, if it's your first round: pre-seed or seed, ₹25L to ₹10 Cr, in India."],
+                  ["Where does the investor data come from?", "Their own websites and published deal news. Every fact shows its source."],
+                  ["Do you send emails for me?", "Never. You send every email from your own Gmail."],
+                  ["What does it cost?", "Your first 3 emails are free. Round Pass opens soon at a founding price."]].map(([q, ans]) => (
+                  <details key={q}><summary>{q}</summary><p>{ans}</p></details>
+                ))}
+              </div>
             </section>
           </>
         )}
 
-        <section className="section">
-          <div className="s-head"><span className="kicker">Built for India</span><h2 className="h-l">Your raise, <span className="it">your rules.</span></h2></div>
-          <div className="board-lb">
-            <div className="panel"><h3>Nothing sent without you</h3><p>Every email leaves from your own Gmail, only when you press send.</p></div>
-            <div className="panel"><h3>Not a listing</h3><p>We help you research and write. Your company is never listed publicly, and we take no part in your deal.</p></div>
-            <div className="panel"><h3>Your data, your call</h3><p>Built for India's DPDP Act. See or delete your data any time.</p></div>
-          </div>
-        </section>
-
-        <section className="section">
-          <div className="s-head"><span className="kicker">Coming next</span><h2 className="h-l">More help, <span className="it">step by step.</span></h2></div>
-          <div className="soon-chips">{["Investor Q&A prep", "Competitor analysis", "Pitch deck review", "Data room", "Founder ratings of investors"].map((t) => <span key={t}>{t}<b>SOON</b></span>)}</div>
-        </section>
-
-        <section className="section">
-          <div className="s-head"><span className="kicker">FAQ</span><h2 className="h-l">Questions, answered</h2></div>
-          <div className="faq">
-            {[["I've never raised before. Is this for me?", "Yes. It's built for first rounds in India: pre-seed and seed, ₹25L to ₹10 Cr."],
-              ["Where does the investor information come from?", "Investors' own websites and published news about their deals. Every fact shows its source."],
-              ["Do you send emails for me?", "No. You send from your own Gmail. We never send anything for you."],
-              ["Why invite-only?", "So every founder gets a good list while we're small. We start with AI, Climate and Deeptech."],
-              ["What does it cost?", "Free during the beta."]].map(([q, a]) => (
-              <details key={q}><summary>{q}</summary><p>{a}</p></details>
-            ))}
-          </div>
-        </section>
-
-        <div className="cta-band"><h2 className="h-l" style={{ marginTop: 0 }}>Your first cheque starts with one email. <span className="it">Send it today.</span></h2><CTA big onOpen={setSheet} /></div>
+        <div className="cta-band"><h2 className="h-l" style={{ marginTop: 0 }}>Your first cheque starts with <span className="it">one email.</span></h2><CTA big onOpen={setSheet} center /></div>
         <footer><div className="foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Not affiliated with any fund · Example investors on this page are made up · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span></div></footer>
       </div>
 
       {sheet && <InviteSheet mode={sheet} onMode={setSheet} onClose={() => setSheet(null)} />}
+      {join && <JoinSheet plan={join} onClose={() => setJoin(null)} />}
     </>
   );
 }

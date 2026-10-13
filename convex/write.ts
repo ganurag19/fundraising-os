@@ -67,7 +67,7 @@ export const writeFirstEmails = action({
     const matchCount = ranked.length;
     const activeCount = ranked.filter((x) => x.inv.recent.some((r) => (r.year ?? 0) >= year - 1)).length;
     const leadCount = ranked.filter((x) => x.inv.leadsRounds).length;
-    const list: { inv: Doc<"investors">; score: number }[] = topMatches(data.investors, f, year, 20);
+    const list: { inv: Doc<"investors">; score: number }[] = topMatches(data.investors, f, year, 100); // free sees 20, Round Pass 100
     const top = list.slice(0, 3);
     if (!top.length) {
       await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: "failed" });
@@ -105,11 +105,16 @@ export const explainRest = action({
 const ReasonsOut = z.object({ reasons: z.array(z.object({ i: z.number(), reason: z.string() })) });
 
 async function writeReasons(ctx: ActionCtx, client: Anthropic, founderId: Id<"founders">, founder: FounderBrief): Promise<void> {
-  const rows: { rank: number; investor: Doc<"investors"> }[] = await ctx.runQuery(internal.founders.forReasons, { founderId });
+  const all: { rank: number; investor: Doc<"investors"> }[] = await ctx.runQuery(internal.founders.forReasons, { founderId });
+  // at most 20 records per call (AGENTS.md section 4); Round Pass lists need several calls
+  for (let i = 0; i < all.length; i += 20) await writeReasonBatch(ctx, client, founderId, founder, all.slice(i, i + 20));
+}
+
+async function writeReasonBatch(ctx: ActionCtx, client: Anthropic, founderId: Id<"founders">, founder: FounderBrief, rows: { rank: number; investor: Doc<"investors"> }[]): Promise<void> {
   if (!rows.length) return;
   const input = JSON.stringify({
     FOUNDER: { company: founder.company, oneLiner: founder.oneLiner, sectors: founder.sectors, stage: founder.stage, raising: founder.raising },
-    INVESTORS: rows.slice(0, 20).map((r, i) => ({ i, ...investorFacts(r.investor) })), // at most 20 records per call (AGENTS.md section 4)
+    INVESTORS: rows.map((r, i) => ({ i, ...investorFacts(r.investor) })),
   });
   const started = Date.now();
   try {
@@ -140,7 +145,7 @@ export const writeMore = action({
     if (!row) return { ok: false as const, error: "We couldn't find that investor on your list." };
     if (row.hasDraft) return { ok: true as const };
     if (!row.investor.email) return { ok: false as const, error: "This one takes applications through a form. Tap Apply instead." };
-    const mine = await limits.limit(ctx, "extraEmailsPerFounder", { key: row.founder._id });
+    const mine = await limits.limit(ctx, row.founder.plan === "round_pass" ? "extraEmailsPass" : "extraEmailsPerFounder", { key: row.founder._id });
     if (!mine.ok) return { ok: false as const, error: "That's today's emails. Come back tomorrow for more." };
     const calls = await limits.limit(ctx, "aiCallsGlobal", { count: 1 });
     if (!calls.ok) return { ok: false as const, error: BUSY };

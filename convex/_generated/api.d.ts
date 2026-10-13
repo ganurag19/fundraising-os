@@ -13,6 +13,7 @@ import type * as crons from "../crons.js";
 import type * as followups from "../followups.js";
 import type * as founders from "../founders.js";
 import type * as http from "../http.js";
+import type * as investors from "../investors.js";
 import type * as invites from "../invites.js";
 import type * as lib_checks from "../lib/checks.js";
 import type * as lib_links from "../lib/links.js";
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   followups: typeof followups;
   founders: typeof founders;
   http: typeof http;
+  investors: typeof investors;
   invites: typeof invites;
   "lib/checks": typeof lib_checks;
   "lib/links": typeof lib_links;

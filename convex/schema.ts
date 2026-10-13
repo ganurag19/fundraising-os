@@ -80,8 +80,10 @@ export default defineSchema({
     activeCount: v.optional(v.number()), // of those, how many backed a deal this year or last
     leadCount: v.optional(v.number()), // of those, how many lead rounds
     userId: v.optional(v.id("users")), // set when she signs in on the reveal screen
+    plan: v.optional(v.literal("round_pass")), // granted by hand for founding-list pre-sales until payments exist
+    planUntil: v.optional(v.number()),
     domainMatch: v.optional(v.boolean()), // internal only: sign-in email domain matches her website
-  }).index("by_token", ["token"]),
+  }).index("by_token", ["token"]).index("by_userId", ["userId"]),
 
   // A founder's ranked investors: up to 20. Ranks 0–2 are her top picks.
   matches: defineTable({
@@ -139,6 +141,14 @@ export default defineSchema({
     outputTokens: v.optional(v.number()),
     error: v.optional(v.string()),
   }),
+
+  // "Join the founding list" for Round Pass, and "Book a call" for Custom, from the landing page. No payment.
+  passInterest: defineTable({
+    email: v.string(),
+    name: v.string(),
+    plan: v.union(v.literal("round_pass"), v.literal("custom")),
+    note: v.optional(v.string()),
+  }).index("by_email_and_plan", ["email", "plan"]),
 
   // Funnel: step name and time only. No names, emails or company details.
   steps: defineTable({ step: v.string() }),

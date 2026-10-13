@@ -24,7 +24,7 @@ export function sectorEvidence(inv: MatchInvestor, f: FounderAsk, currentYear: n
 }
 
 // Programmes only make sense early: accelerators at idea or pre-seed, grants up to seed.
-const PROGRAMME_STAGES: Record<string, string[]> = { accelerator: ["idea", "pre_seed"], grant: ["idea", "pre_seed", "seed"] };
+const PROGRAMME_STAGES: Record<string, string[]> = { accelerator: ["idea", "pre_seed"], incubator: ["idea", "pre_seed"], grant: ["idea", "pre_seed", "seed"] };
 export type FounderAsk = { sectors: string[]; stage: string; ask: string };
 
 /** Cheque fit: largest cheque at least 2% of her round, smallest no more than her whole round. Unknown → null. */

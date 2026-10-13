@@ -157,6 +157,7 @@ export const me = query({
       company: v.string(), name: v.string(), stage: v.string(), ask: v.string(), sectors: v.array(v.string()),
       website: v.union(v.string(), v.null()), hasProfile: v.boolean(), emailsStatus: v.string(),
       profile: v.object({ linkedin: v.string(), oneLiner: v.string(), founderLine: v.string(), traction: v.string() }),
+      plan: v.union(v.literal("round_pass"), v.null()),
       gmail: v.union(v.string(), v.null()), // her sign-in email, so "Open in Gmail" picks the right account
       unlocked: v.boolean(), matchCount: v.number(), activeCount: v.number(), leadCount: v.number(), rows: v.array(rowV),
     }),
@@ -165,7 +166,8 @@ export const me = query({
     const f = await founderByToken(ctx, token);
     if (!f) return null;
     const unlocked = await isUnlocked(ctx, f);
-    const matches = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(20);
+    // Free: her best 20. Round Pass: up to 100 (we always keep 100 ranked).
+    const matches = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(f.plan === "round_pass" ? 100 : 20);
     const rows = [];
     for (const m of matches) {
       const inv = await ctx.db.get("investors", m.investorId);
@@ -194,6 +196,7 @@ export const me = query({
       profile: { linkedin: f.linkedin ?? "", oneLiner: f.oneLiner ?? "", founderLine: f.founderLine ?? "", traction: f.traction ?? "" },
       hasProfile: !!(f.oneLiner || f.forWho) && !!f.founderLine, emailsStatus: f.emailsStatus,
       gmail: unlocked && f.userId ? (await ctx.db.get("users", f.userId))?.email ?? null : null,
+      plan: f.plan ?? null,
       unlocked, matchCount: f.matchCount ?? rows.length, activeCount: f.activeCount ?? 0, leadCount: f.leadCount ?? 0, rows,
     };
   },
@@ -231,7 +234,7 @@ export const forDrafting = internalQuery({
     if (!f) return null;
     const investors = await ctx.db.query("investors").take(2000);
     // Re-running matching rewrites her list; never do that once her pipeline has started.
-    const mine = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(50);
+    const mine = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(150);
     return { founder: f, investors, hasSent: mine.some((m) => !!m.sentAt) };
   },
 });
@@ -250,9 +253,9 @@ export const saveMatches = internalMutation({
   returns: v.null(),
   handler: async (ctx, { founderId, matchCount, activeCount, leadCount, picks }) => {
     await ctx.db.patch("founders", founderId, { matchCount, activeCount, leadCount });
-    const old = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId)).take(50);
+    const old = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId)).take(150);
     for (const m of old) await ctx.db.delete("matches", m._id);
-    const oldDrafts = await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", founderId)).take(50);
+    const oldDrafts = await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", founderId)).take(150);
     for (const d of oldDrafts) await ctx.db.delete("drafts", d._id);
     for (const [rank, p] of picks.entries()) await ctx.db.insert("matches", { founderId, investorId: p.investorId, rank, score: p.score });
     return null;
@@ -276,7 +279,9 @@ export const forReasons = internalQuery({
   args: { founderId: v.id("founders") },
   returns: v.any(),
   handler: async (ctx, { founderId }) => {
-    const matches = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId).gte("rank", 3)).take(20);
+    const f = await ctx.db.get("founders", founderId);
+    const visible = f?.plan === "round_pass" ? 100 : 20;
+    const matches = (await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId).gte("rank", 3)).take(visible)).filter((m) => m.rank < visible);
     const out = [];
     for (const m of matches) if (!m.reason) { const inv = await ctx.db.get("investors", m.investorId); if (inv) out.push({ rank: m.rank, investor: inv }); }
     return out;
@@ -298,5 +303,48 @@ export const logAiCall = internalMutation({
   handler: async (ctx, a) => {
     await ctx.db.insert("aiCalls", a);
     return null;
+  },
+});
+
+/** Founding-list pre-sale, by hand until payments exist: npx convex run [--prod] founders:grantPass '{"email":"her sign-in email","days":120}' */
+export const grantPass = internalMutation({
+  args: { email: v.string(), days: v.number() },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, { email, days }) => {
+    const user = await ctx.db.query("users").withIndex("email", (q) => q.eq("email", email.trim().toLowerCase())).first();
+    if (!user) return "No signed-in founder with that email.";
+    const f = await ctx.db.query("founders").withIndex("by_userId", (q) => q.eq("userId", user._id)).first();
+    if (!f) return "That account has no founder list yet.";
+    await ctx.db.patch("founders", f._id, { plan: "round_pass", planUntil: Date.now() + days * 24 * 60 * 60 * 1000 });
+    return null;
+  },
+});
+
+/** Landing page proof bar: live counts by kind (retired investors excluded). Counts only, no names. */
+export const publicStats = query({
+  args: {},
+  returns: v.object({ total: v.number(), vc: v.number(), angel: v.number(), angelNetwork: v.number(), accelerator: v.number(), incubator: v.number(), grant: v.number() }),
+  handler: async (ctx) => {
+    const all = await ctx.db.query("investors").take(5000);
+    const live = all.filter((i) => !i.retired);
+    const n = (...kinds: string[]) => live.filter((i) => kinds.includes(i.kind)).length;
+    return { total: live.length, vc: n("vc", "corporate_vc"), angel: n("angel"), angelNetwork: n("angel_network"), accelerator: n("accelerator"), incubator: n("incubator"), grant: n("grant") };
+  },
+});
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** "Join the founding list" (Round Pass) and "Book a call" (Custom). Saves interest; takes no payment. */
+export const joinList = mutation({
+  args: { email: v.string(), name: v.string(), plan: v.union(v.literal("round_pass"), v.literal("custom")), note: v.optional(v.string()) },
+  returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
+  handler: async (ctx, a) => {
+    const email = a.email.trim().toLowerCase(), name = short(a.name, 100);
+    if (!EMAIL.test(email) || email.length > 200) return { ok: false as const, error: "Please enter a valid email." };
+    if (!name) return { ok: false as const, error: "Please enter your name." };
+    if (!(await limits.limit(ctx, "interestGlobal")).ok) return { ok: false as const, error: "Lots of requests right now. Try again in a few minutes." };
+    const existing = await ctx.db.query("passInterest").withIndex("by_email_and_plan", (q) => q.eq("email", email).eq("plan", a.plan)).first();
+    if (!existing) await ctx.db.insert("passInterest", { email, name, plan: a.plan, note: short(a.note, 500) || undefined });
+    return { ok: true as const };
   },
 });
