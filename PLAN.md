@@ -83,7 +83,7 @@ Investor side (confirm profile, founders for you, team members) · founder ratin
 - **Next version of LinkedIn notes:** one click to send on LinkedIn, like Open in Gmail (LinkedIn has no prefilled-note link, so this needs a browser extension or LinkedIn's API; still never sent without her press), plus a follow-up DM once they accept. Now: profile link (or search) + the note to copy.
 - More comparison pages (vs ChatGPT, vs buying an investor list) and one page per sector ("Investors for Indian climate startups"), counts and made-up examples only, never real investor names. First one live: /compare/fundraising-consultant.
 - A real testimonial on the landing page, once a founder agrees (never a made-up one).
-- hello@ and anurag@ inboxes for firstcheq.ai (free: ImprovMX forwarding to Gmail + Gmail "Send mail as" through Resend SMTP; or Google Workspace). **Do before ads or a wider launch**: Privacy, Terms and the grievance contact point to hello@firstcheq.ai, which receives nothing until then.
+- ~~hello@ and anurag@ inboxes~~ **Done 14 Oct**: ImprovMX forwarding to Gmail (MX mx1/mx2.improvmx.com, root SPF include:spf.improvmx.com); Resend records untouched. Optional: Gmail "Send mail as" through smtp.resend.com.
 - Skip an investor she already knows; "rewrite with this note"; "passed" suggests 3 next names; odd ask-size warning
 - Import her Sheet; export to a Sheet
 - Weekly digest; WhatsApp reminders

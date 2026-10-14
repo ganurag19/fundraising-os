@@ -91,3 +91,4 @@ Anurag may reorder.
 - 2026-10-14 · Claude Code (data) · Weekly routine run 1: 25 oldest re-researched (new 2025-26 deals for most), all links checked, 3 retired (Capixal dead domain, Ascent Capital PE, Elev8 growth-only). Export 571 investors, 436 with thesis, 443 with LinkedIn. Upsert waiting on Anurag.
 - 2026-10-14 · Claude Code (data) · Weekly run 1 upserted to dev and prod: 571 updated, 3 retired (14 not found). Next run Monday (reminder).
 - 2026-10-14 · Claude Code · Before the network share: AI cap 40 → 200 calls/hour (AGENTS.md updated; ~6 calls per sign-up, ~$0.04 each); link-preview tags + 1200×630 share image (public/og.png); product-market fit question on Today after 3+ emails sent (pmf table, /admin shows % very disappointed).
+- 2026-10-14 · Claude Code · hello@ and anurag@firstcheq.ai live via ImprovMX (records checked); Gmail spam fix is a filter on Anurag's side.
