@@ -7,6 +7,7 @@ import NotFound from "./pages/NotFound";
 import { Privacy, Terms } from "./pages/Legal";
 import Admin from "./pages/Admin";
 import CompareConsultant from "./pages/CompareConsultant";
+import LandingDraft from "./landing/LandingDraft";
 import Tracker from "./lib/Tracker";
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/draft" element={<LandingDraft />} />
       <Route path="/compare/fundraising-consultant" element={<CompareConsultant />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

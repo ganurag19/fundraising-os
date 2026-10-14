@@ -28,7 +28,7 @@ export default function Tracker() {
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const name = (e.target as HTMLElement | null)?.closest?.("[data-track]")?.getAttribute("data-track");
-      if (name && !noTrack()) hit({ token: visitorToken(), name }).catch(() => {});
+      if (name && !noTrack() && location.pathname !== "/draft") hit({ token: visitorToken(), name }).catch(() => {});
     };
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
