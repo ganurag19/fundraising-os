@@ -114,12 +114,12 @@ export const forFollowup = internalQuery({
 });
 
 export const saveFollowup = internalMutation({
-  args: { followupId: v.id("followups"), subject: v.optional(v.string()), body: v.optional(v.string()), failed: v.optional(v.boolean()) },
+  args: { followupId: v.id("followups"), subject: v.optional(v.string()), body: v.optional(v.string()), failed: v.optional(v.boolean()), cancel: v.optional(v.boolean()) },
   returns: v.null(),
-  handler: async (ctx, { followupId, subject, body, failed }) => {
+  handler: async (ctx, { followupId, subject, body, failed, cancel }) => {
     const fu = await ctx.db.get("followups", followupId);
     if (!fu || fu.state !== "scheduled") return null; // cancelled while it was being written
-    await ctx.db.patch("followups", followupId, failed ? { state: "failed" } : { state: "ready", subject, body });
+    await ctx.db.patch("followups", followupId, cancel ? { state: "cancelled" } : failed ? { state: "failed" } : { state: "ready", subject, body });
     return null;
   },
 });

@@ -150,7 +150,7 @@ export default function Dashboard() {
         )}
 
         {tab === "today" && <Today me={me} token={token} onToast={setToast} go={go} />}
-        {tab === "investors" && <Investors me={me} token={token} onToast={setToast} />}
+        {tab === "investors" && <Investors me={preview && location.search.includes("retired") ? { ...me, rows: me.rows.map((r) => r.rank === 1 ? { ...r, retired: true, website: null, linkedin: null } : r) } : me} token={token} onToast={setToast} />}
         {tab === "pipeline" && (me.rows.some((r) => r.status !== "new")
           ? <Pipeline rows={me.rows} token={token} onToast={setToast} account={me.gmail} />
           : <div className="empty"><b>Nothing sent yet.</b><span>Tap "I sent it" after you send an email. It shows up here with its follow-ups.</span><button className="btn primary sm" onClick={() => go("today")}>See today's moves</button></div>)}
@@ -249,8 +249,8 @@ function Settings({ me, token, theme, setTheme, signOut }: { me: Me; token: stri
 function Today({ me, token, onToast, go }: { me: Me; token: string; onToast: (s: string) => void; go: (t: Tab) => void }) {
   const [now] = useState(() => Date.now());
   const followups = me.rows.filter((r) => r.status === "sent" && r.followups.some((f) => f.state === "ready"));
-  const picks = me.rows.filter((r) => r.rank < 3 && r.status === "new");
-  const nextBest = me.rows.find((r) => r.rank >= 3 && r.status === "new" && r.hasEmail);
+  const picks = me.rows.filter((r) => r.rank < 3 && r.status === "new" && !r.retired);
+  const nextBest = me.rows.find((r) => r.rank >= 3 && r.status === "new" && r.hasEmail && !r.retired);
   const nextDue = me.rows.flatMap((r) => r.followups.filter((f) => f.state === "scheduled" && f.dueAt > now).map((f) => f.dueAt)).sort((a, b) => a - b)[0];
   const sent = me.rows.filter((r) => r.status !== "new").length;
   const replied = me.rows.filter((r) => r.status === "replied" || r.status === "meeting").length;

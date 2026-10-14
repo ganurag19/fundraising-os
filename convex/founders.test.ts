@@ -180,3 +180,18 @@ describe("a claimed list after sign-out", () => {
     expect((await owner.query(api.founders.me, { token: tokenA }))?.rows[0].draft).not.toBeNull();
   });
 });
+
+describe("a retired investor on her list", () => {
+  test("stays on the list as retired, with no website, sources, LinkedIn or apply link", async () => {
+    const t = await setup();
+    await t.mutation(api.founders.start, { ...nisha, token: tokenA });
+    const founderId = await t.run(async (ctx) => (await ctx.db.query("founders").withIndex("by_token", (q) => q.eq("token", tokenA)).unique())!._id);
+    // Made-up investor whose domain was taken over.
+    const inv = await t.run((ctx) => ctx.db.insert("investors", { seedId: "gone1", kind: "vc", firm: "Old Fund", displayName: "Old Fund", email: "a@oldfund.example", website: "https://oldfund.example", linkedin: "https://www.linkedin.com/company/oldfund", applyUrl: "https://oldfund.example/apply", sectors: ["ai"], stages: ["seed"], portfolio: [], recent: [], sourceUrls: ["https://oldfund.example/team"], retired: true } as never));
+    await t.run((ctx) => ctx.db.insert("matches", { founderId, investorId: inv, rank: 0, score: 80 }));
+    const row = (await t.query(api.founders.me, { token: tokenA }))!.rows[0];
+    expect(row.retired).toBe(true);
+    expect([row.website, row.linkedin, row.applyUrl, row.sourceUrls.length]).toEqual([null, null, null, 0]);
+    expect(row.displayName).toBe("Old Fund");
+  });
+});

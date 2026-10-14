@@ -67,7 +67,7 @@ export function PickCard({ r, token, onToast }: { r: Row; token: string; onToast
   return (
     <article className="pick-card rise">
       <Head r={r} rank badges />
-      {r.draft ? (
+      {r.retired ? <p className="row-reason muted"><span className="tag retired-tag">No longer active</span> Our research shows they're no longer investing in startups like yours, so skip this one.</p> : r.draft ? (
         <>
           <div className="reason"><Dial score={r.score} size={52} /><p>{r.draft.reason}</p></div>
           <Why r={r} d={r.draft} />
@@ -352,28 +352,29 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
   const setStatus = useMutation(api.pipeline.setStatus);
   const tag = applyOnly && r.status === "sent" ? "Applied" : STATUS_TAG[r.status];
   const closes = r.applyDeadline ? new Date(r.applyDeadline + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : null;
-  const act = tag ? <span className={`tag status-${r.status}`}>{tag}</span> : applyOnly
+  const act = r.retired && r.status === "new" ? null : tag ? <span className={`tag status-${r.status}`}>{tag}</span> : applyOnly
     ? <a className="btn primary sm" href={r.applyUrl!} target="_blank" rel="noreferrer">Apply</a>
     : r.draft
     ? <button className="btn ghost sm" onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Email"}</button>
     : <button className="btn primary sm" data-track="click_write" disabled={busy} onClick={write}>{busy ? "Writing…" : "Write email"}</button>;
   return (
-    <div className={`row-card inv-row${r.rank < 3 ? " top" : ""}${why ? " why-open" : ""}`} id={`inv-${r.rank}`}>
+    <div className={`row-card inv-row${r.rank < 3 && !r.retired ? " top" : ""}${why ? " why-open" : ""}${r.retired ? " retired" : ""}`} id={`inv-${r.rank}`}>
       <div className="inv-grid">
-        <div className="inv-who"><Head r={r} rank={r.rank < 3} badges />{r.leadsRounds && <span className="ft-lead">Leads</span>}</div>
+        <div className="inv-who"><Head r={r} rank={r.rank < 3 && !r.retired} badges={!r.retired} />{r.retired ? <span className="tag retired-tag">No longer active</span> : r.leadsRounds && <span className="ft-lead">Leads</span>}</div>
         <button className={`inv-score${r.score >= 85 ? " hi" : ""}`} onClick={() => setWhy((w) => !w)} aria-expanded={why} aria-label={`Fit Score ${r.score}. Show why they fit`}><ScoreBars score={r.score} />{r.score}</button>
         <span className="inv-deal" data-l="Recent deal" title={r.deal ? r.deal.company : undefined}>{r.deal ? [r.deal.company, r.deal.round, r.deal.year ?? (r.deal.round ? null : "portfolio")].filter(Boolean).join(" · ") : <span className="muted">No deal on record</span>}</span>
         <span className="inv-cheque">{cheque(r)}</span>
         <span className="inv-act">{act}</span>
       </div>
-      {applyOnly && r.status === "new" && (
+      {r.retired && <p className="row-reason muted">{r.status === "new" ? "Our research shows they're no longer investing in startups like yours, so we've stopped suggesting them." : "No longer active in our research. Follow-ups to them are stopped; keep their status up to date here."}</p>}
+      {applyOnly && r.status === "new" && !r.retired && (
         <div className="apply-row">
           {closes && <span className="due">Closes {closes}</span>}
           <span className="muted small">Applications go through their form.</span>
           <button className="btn ghost sm" onClick={() => { void setStatus({ token, rank: r.rank, status: "sent" }); onToast("Noted. It's in your pipeline under Waiting on them."); }}>I applied</button>
         </div>
       )}
-      {why ? <WhyPanel r={r} /> : r.reason && <p className="row-reason">{r.reason} <button className="why-link" onClick={() => setWhy(true)}>Why they fit</button></p>}
+      {r.retired ? null : why ? <WhyPanel r={r} /> : r.reason && <p className="row-reason">{r.reason} <button className="why-link" onClick={() => setWhy(true)}>Why they fit</button></p>}
       {open && r.draft && (
         <div className="row-email">
           <Why r={r} d={r.draft} />

@@ -26,6 +26,8 @@ export const write = internalAction({
   handler: async (ctx, { followupId }) => {
     const d: Ctx | null = await ctx.runQuery(internal.pipeline.forFollowup, { followupId });
     if (!d || d.followup.state !== "scheduled" || d.followup.dueAt > Date.now() + 60_000) return null;
+    // No more nudges to an investor who's no longer active.
+    if (d.investor?.retired) { await ctx.runMutation(internal.pipeline.saveFollowup, { followupId, cancel: true }); return null; }
     if (!d.match || d.match.status !== "sent" || !d.founder || !d.investor || !d.first) {
       await ctx.runMutation(internal.pipeline.saveFollowup, { followupId, failed: true });
       return null;

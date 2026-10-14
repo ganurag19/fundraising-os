@@ -153,6 +153,7 @@ const rowV = v.object({
   displayName: v.union(v.string(), v.null()), person: v.union(v.string(), v.null()), email: v.union(v.string(), v.null()),
   website: v.union(v.string(), v.null()), lastChecked: v.union(v.string(), v.null()), sourceUrls: v.array(v.string()),
   linkedin: v.union(v.string(), v.null()), // the investor's LinkedIn profile, when the research found one
+  retired: v.boolean(), // dropped from the research (stopped investing, not a fit, dead site): shown as "No longer active", no links
   draft: v.union(v.null(), draftV),
   reason: v.union(v.string(), v.null()), // one line on why they fit
   parts: v.array(v.object({ key: v.string(), label: v.string(), got: v.number(), max: v.number() })), // the score, part by part
@@ -199,10 +200,11 @@ export const me = query({
         chequeMinLakh: inv.chequeMinLakh ?? null, chequeMaxLakh: inv.chequeMaxLakh ?? null, sentAt: m.sentAt ?? null,
         // Beyond her top 3, an email address is only revealed once she asks for that investor's email ("Write email", capped daily).
         displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: m.rank < 3 || d ? inv.email ?? null : null,
-        website: open ? inv.website ?? null : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open ? inv.sourceUrls : [],
-        linkedin: open ? inv.linkedin ?? null : null,
+        // A retired investor keeps its place on her list, but its links are gone: a dead or taken-over site must never open from here.
+        website: open && !inv.retired ? inv.website ?? null : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open && !inv.retired ? inv.sourceUrls : [],
+        linkedin: open && !inv.retired ? inv.linkedin ?? null : null, retired: !!inv.retired,
         reason: d?.reason ?? m.reason ?? null,
-        applyUrl: open ? inv.applyUrl ?? null : null, applyDeadline: inv.applyDeadline ?? null, hasEmail: !!inv.email,
+        applyUrl: open && !inv.retired ? inv.applyUrl ?? null : null, applyDeadline: inv.applyDeadline ?? null, hasEmail: !!inv.email,
         parts: scoreParts(inv, f, new Date(m._creationTime).getFullYear()) ?? [], // the year she was matched (queries don't read the clock)
         leadsRounds: !!inv.leadsRounds, firstCheques: inv.stages.includes("idea") || inv.stages.includes("pre_seed"), lastDealYear: inv.recent.reduce<number | null>((y, r) => (r.year && (!y || r.year > y) ? r.year : y), null),
         deal: open ? dealToShow(inv, f.sectors) : null,

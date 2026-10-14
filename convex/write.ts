@@ -146,6 +146,7 @@ export const writeMore = action({
     const row: { founder: Doc<"founders">; investor: Doc<"investors">; hasDraft: boolean } | null = await ctx.runQuery(internal.founders.rowForDrafting, { token, rank, userId });
     if (!row) return { ok: false as const, error: "We couldn't find that investor on your list." };
     if (row.hasDraft) return { ok: true as const };
+    if (row.investor.retired) return { ok: false as const, error: "This investor is no longer active, so we won't write to them." };
     if (!row.investor.email) return { ok: false as const, error: "This one takes applications through a form. Tap Apply instead." };
     const mine = await limits.limit(ctx, row.founder.plan === "round_pass" ? "extraEmailsPass" : "extraEmailsPerFounder", { key: row.founder._id });
     if (!mine.ok) return { ok: false as const, error: "That's today's emails. Come back tomorrow for more." };
@@ -213,6 +214,7 @@ export const writeNote = action({
     const row: { founder: Doc<"founders">; investor: Doc<"investors">; draftId: Id<"drafts">; body: string; hasNote: boolean } | null = await ctx.runQuery(internal.founders.draftForNote, { token, rank, userId });
     if (!row) return { ok: false as const, error: "Write the email first." };
     if (row.hasNote) return { ok: true as const };
+    if (row.investor.retired) return { ok: false as const, error: "This investor is no longer active." };
     if (!(await limits.limit(ctx, "notesPerFounder", { key: row.founder._id })).ok) return { ok: false as const, error: "That's today's LinkedIn notes. Come back tomorrow." };
     if (!(await limits.limit(ctx, "aiCallsGlobal", { count: 1 })).ok) return { ok: false as const, error: BUSY };
     const founder = briefOf(row.founder), facts = investorFacts(row.investor);
