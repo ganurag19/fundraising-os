@@ -78,6 +78,7 @@ Investor side (confirm profile, founders for you, team members) · founder ratin
 
 ## Parked (not now)
 
+- **Warm intros (candidate, from the GrowthX feedback 14 Oct):** "top VCs don't fund cold emails; intros matter". If the pain question or the mandates point here: "Ask for an intro": who in her network could introduce her (she checks LinkedIn mutuals herself; we never read LinkedIn) + a short forwardable blurb for the connector. Never paid-per-intro (seen as pay-to-pitch; arranging investment for a fee is SEBI territory).
 - US version for first-time founders: only after India traction (e.g. founders sending 5+ emails, investor reply rate, week-2 return). Then a cheap demand test first: a US landing page and waitlist with about $300–500 of ads. If intent is strong, build a narrow version (one or two sectors) so the US investor list stays small enough to research well. (US investor lists are a commodity; US ad clicks cost several times more; the app is India-shaped: ₹, Indian stages, Indian investors.)
 - "Raising again?": help for a founder's next round (Series A investors, warm intros, data room, metrics prep). v2, after the first-round product is proven; same account and pipeline.
 - **Next version of LinkedIn notes:** one click to send on LinkedIn, like Open in Gmail (LinkedIn has no prefilled-note link, so this needs a browser extension or LinkedIn's API; still never sent without her press), plus a follow-up DM once they accept. Now: profile link (or search) + the note to copy.
