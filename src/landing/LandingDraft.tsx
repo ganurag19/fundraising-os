@@ -6,6 +6,7 @@ import type { SheetMode } from "./InviteSheet";
 import { HeroStart } from "./Sections";
 import type { StartAnswers } from "./Sections";
 import { savedInviteCode, savePrefill } from "../lib/token";
+import PainPoll from "./PainPoll";
 
 // DRAFT landing (v8), for Anurag to review at /draft before it replaces "/".
 // Plain words, six blocks, almost no animation. Lines marked [rewrite] are placeholders for his own voice.
@@ -73,6 +74,8 @@ export default function LandingDraft() {
           </div>
         </section>
 
+        <PainPoll />
+
         {/* 3. How it works */}
         <section className="lp2-block">
           <h2 className="lp2-h2">How it works</h2>
@@ -125,7 +128,7 @@ export default function LandingDraft() {
 
         <section className="lp2-end">
           <h2 className="lp2-h2">Start with three emails.</h2>
-          <button className="btn primary" onClick={() => go()}>{GO}</button>
+          <button className="btn primary" data-track="click_go" onClick={() => go()}>{GO}</button>
         </section>
 
         <footer><div className="foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Not affiliated with any fund · Example founder and investor on this page are made up · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span></div></footer>

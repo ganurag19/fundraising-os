@@ -13,9 +13,10 @@ const RANGES: [Range, string][] = [["today", "Today"], ["7d", "7 days"], ["30d",
 const sinceFor = (r: Range, now: number) => r === "all" ? 0 : r === "today" ? Math.floor((now + IST) / DAY) * DAY - IST : now - (r === "7d" ? 7 : 30) * DAY;
 const when = (t: number) => new Date(t).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-const WANT_LABEL: Record<string, string> = { competitors: "Competitors", trends: "Funding trends", deck: "Deck review", qa: "Investor questions", faq: "Raise FAQ", vip: "VIP mentors and intros", dataroom: "Data room", inbox: "Inbox", connect: "Founders connect" };
+const WANT_LABEL: Record<string, string> = { pain_deck: "Hardest: deck and documents", pain_find: "Hardest: which investors fit", pain_write: "Hardest: emails that get replies", pain_follow: "Hardest: following up", pain_intros: "Hardest: warm intros", pain_qa: "Hardest: investor questions and DD", teaser: "Two-page teaser", readiness: "Readiness check", terms: "Term sheet and SHA", competitors: "Competitors", trends: "Funding trends", deck: "Deck review", qa: "Investor questions", faq: "Raise FAQ", vip: "VIP mentors and intros", dataroom: "Data room", inbox: "Inbox", connect: "Founders connect" };
 
 const CLICKS: [string, string][] = [
+  ["visit_draft_a", "Draft A (simple): visits"], ["click_go_draft_a", "Draft A: Find my investors"], ["visit_draft_b", "Draft B (full stack): visits"], ["click_go_draft_b", "Draft B: Find my investors"],
   ["visit_compare", "Opened the consultant comparison"], ["click_go", "Find my investors"], ["click_code", "I have a code"], ["click_request", "Request invite"],
   ["click_unlock", "Unlock all (Google)"], ["click_gmail", "Open in Gmail"], ["click_copy", "Copy email"],
   ["click_write", "Write email"], ["click_linkedin", "Open / find on LinkedIn"], ["click_copy_note", "Copy LinkedIn note"], ["click_write_note", "Write LinkedIn note"], ["click_upgrade", "Upgrade: Request access / call"], ["click_feedback", "Opened Send feedback"],

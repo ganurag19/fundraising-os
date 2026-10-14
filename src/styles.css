@@ -798,3 +798,21 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .lp2-card.muted-card{background:transparent}
 .lp2-story p{max-width:68ch;font-size:16.5px;line-height:1.6;color:var(--fg2)}
 .lp2-end{text-align:center;padding-top:clamp(72px,9vw,112px);display:flex;flex-direction:column;align-items:center;gap:14px}
+.pain-poll{padding-top:clamp(72px,9vw,112px)}
+.pain-opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:8px}
+.pain-opts button{min-height:48px;text-align:left;border:1px solid var(--line2);background:var(--card);color:var(--fg);border-radius:14px;padding:12px 14px;font:600 14.5px/1.35 var(--body);cursor:pointer}
+.pain-opts button.on{border-color:var(--blue);background:var(--blue-soft)}
+/* draft B: the four stages */
+.stage-strip{display:flex;flex-wrap:wrap;gap:8px}
+.stage-strip span{border:1px solid var(--line2);border-radius:999px;padding:7px 12px;font-size:14px;color:var(--fg2)}
+.stage-strip span.on{border-color:var(--green);color:var(--fg)}
+.stage-strip b{font-family:var(--mono);margin-right:4px} .stage-strip em{font-style:normal;color:var(--muted)}
+.stage-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:980px){.stage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.stage-grid{grid-template-columns:minmax(0,1fr)}}
+.stage-card{border:1px solid var(--line2);border-radius:18px;background:var(--card);padding:16px;display:flex;flex-direction:column;gap:8px}
+.stage-card.live{border-color:var(--blue-line);background:linear-gradient(180deg,var(--blue-soft),transparent 70%),var(--card)}
+.stage-top{display:flex;align-items:center;gap:8px} .stage-top b{font-size:17px;flex:1}
+.stage-n{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font:700 13px/1 var(--mono);background:var(--card2);border:1px solid var(--line2)}
+.stage-card p{margin:0;color:var(--fg)} .stage-card ul{margin:0;padding-left:18px;color:var(--fg2);font-size:14px;display:flex;flex-direction:column;gap:4px}
+.lp2 .kicker{display:block;margin-bottom:8px}

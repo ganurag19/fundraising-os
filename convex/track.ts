@@ -13,6 +13,7 @@ export const EVENT_NAMES = [
   "click_linkedin", "click_copy_note", "click_write_note",
   // which coming-soon idea she tapped: cards, and the sidebar's SOON pages
   "soon_competitors", "soon_trends", "soon_deck", "soon_qa", "soon_faq", "soon_vip", "soon_dataroom", "soon_inbox", "soon_connect",
+  "visit_draft_a", "visit_draft_b", "click_go_draft_a", "click_go_draft_b", "soon_teaser", "soon_readiness", "soon_terms",
   "soon_tab_competition", "soon_tab_qa", "soon_tab_dataroom", "soon_tab_inbox", "soon_tab_connect", "click_feedback",
 ] as const;
 const NAMES = new Set<string>(EVENT_NAMES);
@@ -37,7 +38,9 @@ export const hit = mutation({
 });
 
 /** The coming-soon ideas a founder can say she wants. */
-export const WANT_KEYS = ["competitors", "trends", "deck", "qa", "faq", "vip", "dataroom", "inbox", "connect"] as const;
+export const WANT_KEYS = ["competitors", "trends", "deck", "qa", "faq", "vip", "dataroom", "inbox", "connect", "teaser", "readiness", "terms",
+  // "What's hardest about raising your first round?" (landing drafts)
+  "pain_deck", "pain_find", "pain_write", "pain_follow", "pain_intros", "pain_qa"] as const;
 const WANTS = new Set<string>(WANT_KEYS);
 
 /** "I'm interested": remembered once per visitor and idea, with her company if she has a list. */
