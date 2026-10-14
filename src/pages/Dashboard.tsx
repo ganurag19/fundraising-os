@@ -261,6 +261,35 @@ function Settings({ me, token, theme, setTheme, signOut }: { me: Me; token: stri
 }
 
 /** Next moves, most urgent first: follow-ups due, top picks not sent, then the next best email to write. */
+/** The product-market fit question (asked once, after 3+ emails sent). */
+function FitQuestion({ token }: { token: string }) {
+  const send = useMutation(api.pmf.answer);
+  const [pick, setPick] = useState<"very" | "somewhat" | "not" | null>(null);
+  const [benefit, setBenefit] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const submit = async () => {
+    if (!pick) return;
+    setBusy(true); setErr("");
+    const r = await send({ token, answer: pick, benefit: benefit || undefined }).catch(() => ({ ok: false as const, error: "Couldn't send. Check your connection." }));
+    setBusy(false);
+    if (!r.ok) setErr(r.error);
+  };
+  const OPTS: [typeof pick & string, string][] = [["very", "Very disappointed"], ["somewhat", "Somewhat disappointed"], ["not", "Not disappointed"]];
+  return (
+    <section className="fit-q rise" aria-label="One quick question">
+      <span className="kicker">One quick question</span>
+      <b>How would you feel if you could no longer use FirstCheq?</b>
+      <div className="fit-q-opts" role="radiogroup">{OPTS.map(([k, label]) => <button key={k} role="radio" aria-checked={pick === k} className={pick === k ? "on" : ""} onClick={() => setPick(k)}>{label}</button>)}</div>
+      {pick && <>
+        <label className="muted small" style={{ display: "flex", flexDirection: "column", gap: 6 }}>What's the main benefit you get from FirstCheq? (optional)<textarea className="field" rows={2} maxLength={600} value={benefit} onChange={(e) => setBenefit(e.target.value)} /></label>
+        {err && <p className="err">{err}</p>}
+        <button className="btn primary sm" disabled={busy} onClick={submit}>{busy ? "Sending…" : "Send"}</button>
+      </>}
+    </section>
+  );
+}
+
 function Today({ me, token, onToast, go }: { me: Me; token: string; onToast: (s: string) => void; go: (t: Tab) => void }) {
   const [now] = useState(() => Date.now());
   const followups = me.rows.filter((r) => r.status === "sent" && r.followups.some((f) => f.state === "ready"));
@@ -301,6 +330,9 @@ function Today({ me, token, onToast, go }: { me: Me; token: string; onToast: (s:
           <div className={meetings ? "done" : ""}><b>{meetings}</b><span>meetings</span></div>
         </div>
       </section>
+
+      {/* Dev build only: ?preview&fitq shows the card without sign-in or 3 sends. */}
+      {((me.unlocked && !me.pmfAsked && sent >= 3) || (import.meta.env.DEV && location.search.includes("fitq"))) && <FitQuestion token={token} />}
 
       {followups.length > 0 && <>
         <h2 className="dash-h">Follow-ups due <span className="due today">{followups.length}</span></h2>

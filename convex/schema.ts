@@ -169,6 +169,9 @@ export default defineSchema({
   // Page visits and button clicks, for the owner's dashboard. visitor is a hash of the browser's random code, never the code itself.
   events: defineTable({ name: v.string(), visitor: v.string() }),
 
+  // The product-market fit question, asked once she has sent 3+ emails: "How would you feel if you could no longer use FirstCheq?"
+  pmf: defineTable({ founderId: v.id("founders"), answer: v.union(v.literal("very"), v.literal("somewhat"), v.literal("not")), benefit: v.optional(v.string()) }).index("by_founderId", ["founderId"]),
+
   // "Send feedback" from the app: what she wrote, where, and an email only if she gave one (or is signed in).
   feedback: defineTable({ page: v.string(), text: v.string(), email: v.optional(v.string()), company: v.optional(v.string()), visitor: v.string() }),
 

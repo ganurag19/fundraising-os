@@ -195,3 +195,26 @@ describe("a retired investor on her list", () => {
     expect(row.displayName).toBe("Old Fund");
   });
 });
+
+describe("fit question", () => {
+  test("only her, signed in, after 3 emails sent; one answer kept, the latest wins", async () => {
+    const t = await setup();
+    await t.mutation(api.founders.start, { ...nisha, token: tokenA });
+    const userId = await t.run((ctx) => ctx.db.insert("users", { email: "nisha@example.test" }));
+    const me = t.withIdentity({ subject: `${userId}|s1` });
+    await me.mutation(api.founders.claim, { token: tokenA });
+    const founderId = await t.run(async (ctx) => (await ctx.db.query("founders").withIndex("by_token", (q) => q.eq("token", tokenA)).unique())!._id);
+    expect((await t.mutation(api.pmf.answer, { token: tokenA, answer: "very" })).ok).toBe(false); // signed out
+    expect(await me.mutation(api.pmf.answer, { token: tokenA, answer: "very" })).toEqual({ ok: false, error: "Send a few emails first." });
+    for (let i = 0; i < 3; i++) {
+      // Made-up investors.
+      const inv = await t.run((ctx) => ctx.db.insert("investors", { seedId: `p${i}`, kind: "vc", firm: `Fund ${i}`, displayName: `Fund ${i}`, email: `a@fund${i}.example`, sectors: ["ai"], stages: ["seed"], portfolio: [], recent: [], sourceUrls: [] } as never));
+      await t.run((ctx) => ctx.db.insert("matches", { founderId, investorId: inv, rank: i, score: 80, status: "sent" }));
+    }
+    expect(await me.mutation(api.pmf.answer, { token: tokenA, answer: "somewhat" })).toEqual({ ok: true });
+    expect(await me.mutation(api.pmf.answer, { token: tokenA, answer: "very", benefit: "Saved me two weeks." })).toEqual({ ok: true });
+    const rows = await t.run((ctx) => ctx.db.query("pmf").collect());
+    expect(rows.map((r) => [r.answer, r.benefit])).toEqual([["very", "Saved me two weeks."]]);
+    expect((await me.query(api.founders.me, { token: tokenA }))?.pmfAsked).toBe(true);
+  });
+});

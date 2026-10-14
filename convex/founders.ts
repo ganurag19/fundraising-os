@@ -180,6 +180,7 @@ export const me = query({
       emailReminders: v.boolean(),
       gmail: v.union(v.string(), v.null()), // her sign-in email, so "Open in Gmail" picks the right account
       unlocked: v.boolean(), matchCount: v.number(), activeCount: v.number(), leadCount: v.number(), rows: v.array(rowV),
+      pmfAsked: v.boolean(), // she has answered the fit question
       claimed: v.boolean(), // the list belongs to a Google account: its emails show only to that account, signed in
     }),
   ),
@@ -226,7 +227,7 @@ export const me = query({
       gmail: unlocked && f.userId ? (await ctx.db.get("users", f.userId))?.email ?? null : null,
       plan: f.plan ?? null,
       emailReminders: f.emailReminders !== false,
-      unlocked, claimed: !!f.userId, matchCount: f.matchCount ?? rows.length, activeCount: f.activeCount ?? 0, leadCount: f.leadCount ?? 0, rows,
+      unlocked, claimed: !!f.userId, pmfAsked: !!(await ctx.db.query("pmf").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first()), matchCount: f.matchCount ?? rows.length, activeCount: f.activeCount ?? 0, leadCount: f.leadCount ?? 0, rows,
     };
   },
 });

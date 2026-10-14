@@ -751,3 +751,9 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .sc-invite .text-link{min-height:44px;display:inline-flex;align-items:center;vertical-align:middle}
 @media (max-width:720px){body:has(.sticky-cta) footer{padding-bottom:calc(110px + env(safe-area-inset-bottom))}}
 .link-btn{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer;min-height:44px}
+.fit-q{margin-top:16px;border:1px solid var(--blue-line);border-radius:18px;background:linear-gradient(180deg,var(--blue-soft),transparent 70%),var(--card);padding:16px;display:flex;flex-direction:column;gap:10px}
+.fit-q b{font-size:16px}
+.fit-q-opts{display:flex;flex-wrap:wrap;gap:8px}
+.fit-q-opts button{min-height:44px;border:1px solid var(--line2);background:var(--card);color:var(--fg);border-radius:999px;padding:8px 14px;font:600 14px/1 var(--body);cursor:pointer}
+.fit-q-opts button.on{border-color:var(--blue);background:var(--blue-soft)}
+.fit-q .btn{align-self:flex-start}

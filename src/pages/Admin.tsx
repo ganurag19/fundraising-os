@@ -152,6 +152,15 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
           <div className="admin-table">{forms.interest.map((p) => <div className="admin-tr wide" key={p.at + p.email}><span><b>{p.name}</b> · {p.plan === "round_pass" ? "Round Pass" : "Custom call"}{p.note ? ` · ${p.note}` : ""}</span><a href={`mailto:${p.email}`}>{p.email}</a><span className="muted small">{when(p.at)}</span></div>)}</div>
         )}
 
+        <h2 className="dash-h">Fit question (all time)</h2>
+        {(() => { const t = forms.pmf.very + forms.pmf.somewhat + forms.pmf.not; return (
+          <div className="admin-funnel small-funnel">
+            <div className={t >= 30 && forms.pmf.very / t >= 0.4 ? "" : ""}><b>{t ? Math.round((forms.pmf.very / t) * 100) : 0}%</b><span>very disappointed (aim 40%+, {t} answers{t < 30 ? "; need 30+" : ""})</span></div>
+            <div><b>{forms.pmf.very}</b><span>very</span></div><div><b>{forms.pmf.somewhat}</b><span>somewhat</span></div><div><b>{forms.pmf.not}</b><span>not</span></div>
+          </div>
+        ); })()}
+        {forms.pmf.benefits.map((b, i) => <p className="small" key={i}><span className="tag">{b.answer}</span> <b>{b.company}</b>: {b.text}</p>)}
+
         <h2 className="dash-h">Feedback ({forms.feedback.length})</h2>
         {forms.feedback.length === 0 ? <p className="muted small">None yet.</p> : (
           <div className="admin-people">{forms.feedback.map((n) => (
@@ -204,6 +213,7 @@ const DEMO: Demo = {
     invites: [{ at: T, name: "Kabir Shah", email: "kabir@example.test", company: "Stackwise", stage: "Seed", status: "waiting" }],
     interest: [{ at: T - 5000000, name: "Arjun Rao", email: "arjun@kilnlabs.example.in", plan: "round_pass", note: null }],
     codes: [{ code: "TEST-ONE", label: "colleagues", uses: 6, maxUses: 20 }, { code: "TEST-TWO", label: "GrowthX", uses: 2, maxUses: 50 }],
+    pmf: { very: 4, somewhat: 3, not: 1, benefits: [{ answer: "very", text: "I'd never have found Verdant Arc on my own.", company: "Kiln Labs" }] },
     feedback: [{ at: T, page: "dashboard", text: "I didn't know what to do after the first email.", email: "arjun@kilnlabs.example.in", company: "Kiln Labs" }],
     ai: { calls: 37, failed: 1, byPurpose: { match: 9, draft: 24, followup: 4 }, lastErrors: [{ at: T, purpose: "draft", error: "overloaded" }] },
   },
