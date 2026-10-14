@@ -106,6 +106,19 @@ If an investor has no published email, it can't be in the app today, so the real
 - The import replaces each investor's data, so a fact dropped in research (an email, a passed deadline) disappears from the app too.
 - The spreadsheet ids (`inv_0001`…) come from row order in `clean_investors.py` and shift if a raw file changes. `build_import.py` stops with "STOPPED: these ids now name a different investor" if that happens, rather than putting one investor's facts on another's record. Ask Claude to map old ids to new before importing.
 
+## Weekly routine (about 30 minutes; Anurag starts it, nothing runs on its own)
+
+What the landing page can truthfully say: contact links checked every week; every investor re-researched at least every 6 months.
+
+1. `python3 scripts/refresh_queue.py --months 0 --limit 25`: the 25 investors checked longest ago (never-checked first; angels whose identity failed in the last 30 days are skipped). Includes apply-only programmes.
+2. Ask the data session: "research this week's refresh queue". Agents follow ENRICHMENT_SPEC v2 (about 15 minutes).
+3. `python3 scripts/merge_enrichment.py && python3 scripts/check_records.py --verify-emails`: opens every email page and apply link for **all** investors (about 2 minutes). A page that fails to open twice in a row, a closed call, or a dead link retires that investor.
+4. Read the research notes for anything not marked excluded that should be: not an investor, growth or PE only, dead or taken-over domain, merged. Record each decision in `seed/enrichment/refresh_overrides_<date>.json` with its reason.
+5. `python3 scripts/build_import.py --schema 2 --out seed/investors_import_v2.jsonl`, then Anurag runs `node scripts/upsert_investors.mjs seed/investors_import_v2.jsonl` (dev), checks, then `--prod`.
+6. One line in the docs/CONTEXT.md status log.
+
+With 574 investors and 25 a week, the list rolls through in about 23 weeks.
+
 ## Refresh cadence
 
 - **Monthly (first week):** a recent-deals pass. An agent reads that month's funding news from allowed sources only (table above; single articles) and writes `seed/discovered/deals_<YYYY-MM>.jsonl` with a `deal` on each line. `add_candidates.py` routes deals to investors we already have and queues new names. Then run merge → check → import.
@@ -128,4 +141,6 @@ If an investor has no published email, it can't be in the app today, so the real
 - Realistic yield: 300–500 new early-stage investors, not 2,000 (Cat I plus a slice of Cat II; one manager often has several trusts; many already in our list).
 - Email caution: these are regulatory contacts, often a compliance officer or a trustee company serving many funds. Proposed rule: use a SEBI email only if its domain matches the fund's own site and research shows it's a general/pitch address or an investing partner; never trustee-company addresses; an address on the fund's own site wins. Note `check_records.py` treats .gov.in pages as official, so this rule must be added before any SEBI email is exported. Contact names kept only for matching; addresses never stored.
 - Plan when picked up: `scripts/fetch_sebi_aif.py` (one polite pass, 1 request / 2 s, raw pages saved to seed/raw/sebi_aif_<date>/) → parse, filter Cat I (+ Cat II if chosen), drop real estate / credit / infra by name, group trusts by email domain → `seed/discovered/sebi_aif_<date>.jsonl` → dedupe → research in batches of ~100 → checks → upsert.
-- Decisions needed: the email rule above; Cat I only, or Cat I + II; read SEBI's website and copyright policy first.
+- Decisions taken 14 Oct (Anurag: "let's do all"): Cat I plus Cat II names that suggest venture, angel, seed or tech; the register is used only as a list of names to research (name, category, email domain to find the fund's site). No SEBI text or email goes into the app.
+- SEBI's website policy (sebi.gov.in/website-policy.html): reproducing material needs permission by email; automated reading isn't addressed; robots.txt allows the list pages.
+- **Blocked on 14 Oct.** Page 1 loads, but the next pages come from an AJAX endpoint, and SEBI's firewall answered our single test request with "Unauthorized Request Blocked". We don't get around blocks, and there is no official download. Way forward: Anurag emails websitehelp@sebi.gov.in asking for the registered AIF list as a file and permission to use it as a research index (and, if wanted, to show the listed emails). With the file, the plan above runs from step 2.

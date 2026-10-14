@@ -463,6 +463,20 @@ class RefreshMergeTest(unittest.TestCase):
 
 
 class RefreshQueueTest(unittest.TestCase):
+    def test_weekly_slice_takes_the_oldest_and_includes_apply_only(self):
+        prog = legacy("g_prog", kind="incubator", firm="Made-up Campus Incubator", email=None, email_status="none",
+                      last_checked="2026-09-01")
+        prog["checks"] = {"contact": {"result": "pass", "why": "apply link"}}
+        s = Seed([legacy("inv_0001", firm="Newest", last_checked="2026-10-10"),
+                  legacy("inv_0002", firm="Oldest", last_checked="2026-08-01"), prog])
+        try:
+            q = refresh_queue.run(s.dir, months=0, limit=2, today=TODAY)
+            units = s.load("enrichment", os.path.basename(q["path"]))
+            self.assertEqual([u["firm"] for u in units], ["Oldest", "Made-up Campus Incubator"])
+        finally:
+            s.close()
+
+
     def test_second_batch_same_day_gets_its_own_file_and_skips_recent_unconfirmed(self):
         s = Seed([legacy("inv_0001", firm="Fund One"), legacy("inv_0002", kind="angel", person_name="Hard To Find")])
         try:

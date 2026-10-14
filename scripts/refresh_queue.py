@@ -10,6 +10,9 @@ add_candidates.py routes each deal to the investor we already have (docs/DATA_PI
 With --sectors, only investors tagged with one of those sectors (or sector_agnostic) are queued, and
 the thinnest come first: no thesis, then no sector-tagged deal.
 
+Weekly routine (docs/DATA_PIPELINE.md): --months 0 --limit 25 takes the 25 checked longest ago, so the
+whole list rolls through in about half a year.
+
 Run: python3 scripts/refresh_queue.py [--months 6] [--limit 50] [--sectors fintech,b2b_saas]
 """
 
@@ -31,7 +34,10 @@ def months_ago(today, months):
 
 
 def in_app(r):
-    return r.get("india_based") and r.get("email_status") == "listed" and not r.get("exclude") and not r.get("import_blocked")
+    """In the app: India, not excluded or blocked, and reachable by email or (schema 2) an apply link."""
+    reachable = r.get("email_status") == "listed" or (r.get("checks") or {}).get("contact", {}).get("result") == "pass"
+    india = r.get("india_based") or (r.get("checks") or {}).get("india", {}).get("result") == "pass"
+    return bool(india and reachable and not r.get("exclude") and not r.get("import_blocked"))
 
 
 def thin(r):
