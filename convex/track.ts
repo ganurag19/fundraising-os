@@ -1,6 +1,7 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { limits } from "./limits";
+import { founderByToken } from "./founders";
 
 const TOKEN = /^[a-f0-9]{48}$/;
 
@@ -11,7 +12,7 @@ export const EVENT_NAMES = [
   "click_gmail", "click_copy", "click_write", "click_upgrade", "click_soon",
   "click_linkedin", "click_copy_note", "click_write_note",
   // which coming-soon idea she tapped: cards, and the sidebar's SOON pages
-  "soon_competitors", "soon_trends", "soon_deck", "soon_qa", "soon_faq", "soon_vip",
+  "soon_competitors", "soon_trends", "soon_deck", "soon_qa", "soon_faq", "soon_vip", "soon_dataroom", "soon_inbox", "soon_connect",
   "soon_tab_competition", "soon_tab_qa", "soon_tab_dataroom", "soon_tab_inbox", "soon_tab_connect", "click_feedback",
 ] as const;
 const NAMES = new Set<string>(EVENT_NAMES);
@@ -31,6 +32,25 @@ export const hit = mutation({
     if (!(await limits.limit(ctx, "eventsPerVisitor", { key: token })).ok) return null;
     if (!(await limits.limit(ctx, "eventsGlobal")).ok) return null;
     await ctx.db.insert("events", { name, visitor: await visitorHash(token) });
+    return null;
+  },
+});
+
+/** The coming-soon ideas a founder can say she wants. */
+export const WANT_KEYS = ["competitors", "trends", "deck", "qa", "faq", "vip", "dataroom", "inbox", "connect"] as const;
+const WANTS = new Set<string>(WANT_KEYS);
+
+/** "I'm interested": remembered once per visitor and idea, with her company if she has a list. */
+export const want = mutation({
+  args: { token: v.string(), key: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { token, key }) => {
+    if (!TOKEN.test(token) || !WANTS.has(key)) return null;
+    if (!(await limits.limit(ctx, "eventsPerVisitor", { key: token })).ok) return null;
+    const visitor = await visitorHash(token);
+    if (await ctx.db.query("wants").withIndex("by_visitor_and_key", (q) => q.eq("visitor", visitor).eq("key", key)).first()) return null;
+    const f = await founderByToken(ctx, token);
+    await ctx.db.insert("wants", { key, visitor, founderId: f?._id });
     return null;
   },
 });

@@ -117,6 +117,9 @@ export const claim = mutation({
     if (!f) return { ok: false as const, error: "Please start again from the first step." };
     if (f.userId && f.userId !== userId) return { ok: false as const, error: "This list belongs to another account." };
     if (!f.userId) {
+      // One Google account holds one startup's list.
+      const other = await ctx.db.query("founders").withIndex("by_userId", (q) => q.eq("userId", userId)).first();
+      if (other && other._id !== f._id) return { ok: false as const, error: `This Google account already holds ${other.company}'s list.` };
       const user = await ctx.db.get("users", userId);
       // Internal only, never shown to her: does her sign-in email match her company's website?
       const domainMatch = user?.email && f.website ? domainOf(user.email) === domainOf(f.website) : undefined;
@@ -131,12 +134,12 @@ export const claim = mutation({
 /** Signed in on a browser that doesn't hold her list (another device, or after signing out): her list's token, so the browser can use it. */
 export const myToken = query({
   args: {},
-  returns: v.union(v.string(), v.null()),
+  returns: v.union(v.object({ token: v.string(), company: v.string() }), v.null()),
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
     const f = await ctx.db.query("founders").withIndex("by_userId", (q) => q.eq("userId", userId)).order("desc").first();
-    return f?.token ?? null;
+    return f ? { token: f.token, company: f.company } : null;
   },
 });
 
@@ -154,6 +157,7 @@ const rowV = v.object({
   displayName: v.union(v.string(), v.null()), person: v.union(v.string(), v.null()), email: v.union(v.string(), v.null()),
   website: v.union(v.string(), v.null()), lastChecked: v.union(v.string(), v.null()), sourceUrls: v.array(v.string()),
   linkedin: v.union(v.string(), v.null()), // the investor's LinkedIn profile, when the research found one
+  title: v.union(v.string(), v.null()), // the named person's role at the fund (from the research)
   retired: v.boolean(), // dropped from the research (stopped investing, not a fit, dead site): shown as "No longer active", no links
   draft: v.union(v.null(), draftV),
   reason: v.union(v.string(), v.null()), // one line on why they fit
@@ -206,7 +210,7 @@ export const me = query({
         displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: m.rank < 3 || d ? inv.email ?? null : null,
         // A retired investor keeps its place on her list, but its links are gone: a dead or taken-over site must never open from here.
         website: open && !inv.retired ? cleanWebsite(inv.website) : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open && !inv.retired ? inv.sourceUrls : [],
-        linkedin: open && !inv.retired ? inv.linkedin ?? null : null, retired: !!inv.retired,
+        linkedin: open && !inv.retired ? inv.linkedin ?? null : null, retired: !!inv.retired, title: open ? inv.title ?? null : null,
         reason: d?.reason ?? m.reason ?? null,
         applyUrl: open && !inv.retired ? inv.applyUrl ?? null : null, applyDeadline: inv.applyDeadline ?? null, hasEmail: !!inv.email,
         parts: scoreParts(inv, f, new Date(m._creationTime).getFullYear()) ?? [], // the year she was matched (queries don't read the clock)

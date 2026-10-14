@@ -5,6 +5,7 @@ import type { FunctionReturnType } from "convex/server";
 import { Badges, Dial, Face, Logo, Medal } from "./Art";
 import type { BadgeKey } from "../lib/badges";
 import { cheque, soonFor } from "../lib/investor";
+import { visitorToken } from "../lib/token";
 
 // Shared by the reveal page and the dashboard: one investor, their email, and the buttons around it.
 
@@ -269,6 +270,14 @@ export function Pipeline({ rows, token, onToast, account }: { rows: Row[]; token
 }
 
 /** "Why they fit you": a gold button that opens the reasons, the one watch-out and the sources. */
+/** Who the email goes to, from the research: the named partner and their role. Never guessed. */
+function WhoToWrite({ r }: { r: Row }) {
+  const angel = r.kind === "angel";
+  const person = r.person && r.person !== r.displayName ? r.person : angel ? r.displayName : null;
+  if (!person) return <p className="who-to muted small">No named partner in our research yet; your email goes to the fund's team inbox.</p>;
+  return <p className="who-to"><span className="ft-pop-k">Who you're writing to</span><b>{person}</b>{r.title ? <span className="muted">, {r.title}</span> : null}{!angel && r.displayName ? <span className="muted"> · {r.displayName}</span> : null}</p>;
+}
+
 export function Why({ r, d }: { r: Row; d: Draft }) {
   const [open, setOpen] = useState(false);
   return (
@@ -278,6 +287,7 @@ export function Why({ r, d }: { r: Row; d: Draft }) {
       </button>
       {open && (
         <div className="why-body">
+          <WhoToWrite r={r} />
           <ul className="rat">{d.whyFit.map((w) => <li key={w}>{w}</li>)}</ul>
           <ul className="rat risk">{d.watchOut.map((w) => <li key={w}>Watch out: {w}</li>)}</ul>
           <ScoreBreakdown r={r} />
@@ -319,6 +329,7 @@ const checked = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDate
 function WhyPanel({ r }: { r: Row }) {
   return (
     <div className="why-panel">
+      <WhoToWrite r={r} />
       <span className="ft-pop-k">Why they fit</span>
       {r.reason && <p>{r.reason}</p>}
       {r.draft && r.draft.whyFit.length > 0 && <ul className="why-list">{r.draft.whyFit.map((x) => <li key={x}>{x}</li>)}</ul>}
@@ -337,7 +348,13 @@ export function InvestorHead() {
   return <div className="inv-head" aria-hidden="true"><span>Investor</span><span>Fit Score ↓</span><span>Recent deal</span><span>Cheque</span><span /></div>;
 }
 
-export function InvestorRow({ r, token, onToast, startOpen = false, account = null }: { r: Row; token: string; onToast: Toast; startOpen?: boolean; account?: string | null }) {
+const HINT_KEY = "fos_hint_score";
+const hintSeen = () => { try { return localStorage.getItem(HINT_KEY) === "1"; } catch { return true; } };
+const markHintSeen = () => { try { localStorage.setItem(HINT_KEY, "1"); } catch { /* ignore */ } };
+
+export function InvestorRow({ r, token, onToast, startOpen = false, account = null, hint = false }: { r: Row; token: string; onToast: Toast; startOpen?: boolean; account?: string | null; hint?: boolean }) {
+  // First visit: point at the Fit Score once, until she taps one.
+  const [showHint, setShowHint] = useState(() => hint && !hintSeen());
   const writeMore = useAction(api.write.writeMore);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(startOpen);
@@ -361,7 +378,10 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
     <div className={`row-card inv-row${r.rank < 3 && !r.retired ? " top" : ""}${why ? " why-open" : ""}${r.retired ? " retired" : ""}`} id={`inv-${r.rank}`}>
       <div className="inv-grid">
         <div className="inv-who"><Head r={r} rank={r.rank < 3 && !r.retired} badges={!r.retired} />{r.retired ? <span className="tag retired-tag">No longer active</span> : r.leadsRounds && <span className="ft-lead">Leads</span>}</div>
-        <button className={`inv-score${r.score >= 85 ? " hi" : ""}`} onClick={() => setWhy((w) => !w)} aria-expanded={why} aria-label={`Fit Score ${r.score}. Show why they fit`}><ScoreBars score={r.score} />{r.score}</button>
+        <span className="inv-score-wrap">
+          <button className={`inv-score${r.score >= 85 ? " hi" : ""}${showHint ? " pulse" : ""}`} onClick={() => { setWhy((w) => !w); if (showHint) { markHintSeen(); setShowHint(false); } }} aria-expanded={why} aria-label={`Fit Score ${r.score}. Show why they fit`}><ScoreBars score={r.score} />{r.score}</button>
+          {showHint && <span className="score-hint" role="note">Tap the Fit Score to see why they fit ↑</span>}
+        </span>
         <span className="inv-deal" data-l="Recent deal" title={r.deal ? r.deal.company : undefined}>{r.deal ? [r.deal.company, r.deal.round, r.deal.year ?? (r.deal.round ? null : "portfolio")].filter(Boolean).join(" · ") : <span className="muted">No deal on record</span>}</span>
         <span className="inv-cheque">{cheque(r)}</span>
         <span className="inv-act">{act}</span>
@@ -385,16 +405,33 @@ export function InvestorRow({ r, token, onToast, startOpen = false, account = nu
   );
 }
 
+/** "I'm interested" on a coming-soon idea: remembered in her browser, recorded once on the server (who wants what). */
+export function WantButton({ k, label = "I'm interested", vip = false, onToast }: { k: string; label?: string; vip?: boolean; onToast?: Toast }) {
+  const want = useMutation(api.track.want);
+  const [done, setDone] = useState(() => { try { return localStorage.getItem(`fos_want_${k}`) === "1"; } catch { return false; } });
+  if (done) return <span className="want-done">✓ Noted. We'll tell you when it's ready.</span>;
+  return (
+    <button className={vip ? "vip-btn" : "btn ghost sm want-btn"} data-track={`soon_${k}`} onClick={() => {
+      setDone(true);
+      try { localStorage.setItem(`fos_want_${k}`, "1"); } catch { /* ignore */ }
+      want({ token: visitorToken(), key: k }).catch(() => {});
+      onToast?.("Thanks. We'll let you know when it's ready.");
+    }}>{label} →</button>
+  );
+}
+
 export function SoonCards({ onToast, company, sector, stage }: { onToast: Toast; company?: string; sector?: string; stage?: string }) {
   return (
     <div className="soon-grid six">
       {soonFor(company, sector, stage).map((s) => (
-        <button className={`soon-card${"vip" in s ? " vip" : ""}`} data-track={`soon_${s.key}`} key={s.title} onClick={() => onToast(`${s.title}: coming soon.`)}>
+        <div className={`soon-card${"vip" in s ? " vip" : ""}`} key={s.title}>
           <span className="soon-icon" aria-hidden="true">{s.icon}</span>
-          {"vip" in s
-            ? <span className="soon-text"><b>{s.title}</b><span>{s.line}</span><span className="vip-btn">VIP access · SOON</span></span>
-            : <span className="soon-text"><b>{s.title} <span className="soon-tag">SOON</span></b><span>{s.line}</span></span>}
-        </button>
+          <span className="soon-text">
+            <b>{s.title} {!("vip" in s) && <span className="soon-tag">SOON</span>}</b>
+            <span>{s.line}</span>
+            <WantButton k={s.key} label={"vip" in s ? "Request VIP access" : "I'm interested"} vip={"vip" in s} onToast={onToast} />
+          </span>
+        </div>
       ))}
     </div>
   );

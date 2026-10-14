@@ -83,3 +83,21 @@ describe("feedback", () => {
     expect(f?.feedback.some((n) => n.page === "other")).toBe(true); // unknown pages are stored as "other"
   });
 });
+
+describe("I'm interested", () => {
+  beforeEach(() => { vi.stubEnv("ADMIN_EMAIL", OWNER); vi.stubEnv("ADMIN_PIN", PIN); });
+  afterEach(() => vi.unstubAllEnvs());
+
+  test("is recorded once per visitor and idea, ignores unknown ideas, and is counted for the owner", async () => {
+    const { t, owner } = await setup();
+    await t.mutation(api.track.want, { token, key: "qa" });
+    await t.mutation(api.track.want, { token, key: "qa" }); // a second tap changes nothing
+    await t.mutation(api.track.want, { token, key: "deck" });
+    await t.mutation(api.track.want, { token: "d".repeat(48), key: "qa" });
+    await t.mutation(api.track.want, { token, key: "crypto-tips" });
+    const r = await owner.mutation(api.admin.unlock, { pin: PIN });
+    if (!r.ok) throw new Error(r.error);
+    const f = await owner.query(api.admin.forms, { key: r.key, since: 0 });
+    expect(f?.wants.map((w) => [w.key, w.n])).toEqual([["qa", 2], ["deck", 1]]);
+  });
+});

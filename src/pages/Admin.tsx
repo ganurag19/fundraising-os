@@ -13,11 +13,13 @@ const RANGES: [Range, string][] = [["today", "Today"], ["7d", "7 days"], ["30d",
 const sinceFor = (r: Range, now: number) => r === "all" ? 0 : r === "today" ? Math.floor((now + IST) / DAY) * DAY - IST : now - (r === "7d" ? 7 : 30) * DAY;
 const when = (t: number) => new Date(t).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
+const WANT_LABEL: Record<string, string> = { competitors: "Competitors", trends: "Funding trends", deck: "Deck review", qa: "Investor questions", faq: "Raise FAQ", vip: "VIP mentors and intros", dataroom: "Data room", inbox: "Inbox", connect: "Founders connect" };
+
 const CLICKS: [string, string][] = [
   ["visit_compare", "Opened the consultant comparison"], ["click_go", "Find my investors"], ["click_code", "I have a code"], ["click_request", "Request invite"],
   ["click_unlock", "Unlock all (Google)"], ["click_gmail", "Open in Gmail"], ["click_copy", "Copy email"],
   ["click_write", "Write email"], ["click_linkedin", "Open / find on LinkedIn"], ["click_copy_note", "Copy LinkedIn note"], ["click_write_note", "Write LinkedIn note"], ["click_upgrade", "Upgrade: Request access / call"], ["click_feedback", "Opened Send feedback"],
-  ["soon_competitors", "Soon card: competitors"], ["soon_trends", "Soon card: funding trends"], ["soon_deck", "Soon card: deck review"], ["soon_qa", "Soon card: investor questions"], ["soon_faq", "Soon card: raise FAQ"], ["soon_vip", "Soon card: VIP mentors and intros"],
+  ["soon_competitors", "Soon card: competitors"], ["soon_trends", "Soon card: funding trends"], ["soon_deck", "Soon card: deck review"], ["soon_qa", "Soon card: investor questions"], ["soon_faq", "Soon card: raise FAQ"], ["soon_vip", "Soon card: VIP mentors and intros"], ["soon_dataroom", "Interested: Data room"], ["soon_inbox", "Interested: Inbox"], ["soon_connect", "Interested: Founders connect"],
   ["soon_tab_competition", "Soon page: Competition"], ["soon_tab_qa", "Soon page: Investor Q&A"], ["soon_tab_dataroom", "Soon page: Data room"], ["soon_tab_inbox", "Soon page: Inbox"], ["soon_tab_connect", "Soon page: Founders connect"],
 ];
 
@@ -152,6 +154,14 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
           <div className="admin-table">{forms.interest.map((p) => <div className="admin-tr wide" key={p.at + p.email}><span><b>{p.name}</b> · {p.plan === "round_pass" ? "Round Pass" : "Custom call"}{p.note ? ` · ${p.note}` : ""}</span><a href={`mailto:${p.email}`}>{p.email}</a><span className="muted small">{when(p.at)}</span></div>)}</div>
         )}
 
+        <h2 className="dash-h">"I'm interested" (all time)</h2>
+        {forms.wants.length === 0 ? <p className="muted small">None yet.</p> : (
+          <div className="admin-table">
+            <div className="admin-tr head"><span>Idea</span><span>People</span><span /></div>
+            {forms.wants.map((w) => <div className="admin-tr" key={w.key}><span><b>{WANT_LABEL[w.key] ?? w.key}</b>{w.companies.length > 0 && <span className="muted small"> · {w.companies.join(", ")}</span>}</span><b>{w.n}</b><span /></div>)}
+          </div>
+        )}
+
         <h2 className="dash-h">Fit question (all time)</h2>
         {(() => { const t = forms.pmf.very + forms.pmf.somewhat + forms.pmf.not; return (
           <div className="admin-funnel small-funnel">
@@ -213,6 +223,7 @@ const DEMO: Demo = {
     invites: [{ at: T, name: "Kabir Shah", email: "kabir@example.test", company: "Stackwise", stage: "Seed", status: "waiting" }],
     interest: [{ at: T - 5000000, name: "Arjun Rao", email: "arjun@kilnlabs.example.in", plan: "round_pass", note: null }],
     codes: [{ code: "TEST-ONE", label: "colleagues", uses: 6, maxUses: 20 }, { code: "TEST-TWO", label: "GrowthX", uses: 2, maxUses: 50 }],
+    wants: [{ key: "qa", n: 7, companies: ["Kiln Labs", "Ledgerly"] }, { key: "deck", n: 5, companies: ["Paniwala Labs"] }],
     pmf: { very: 4, somewhat: 3, not: 1, benefits: [{ answer: "very", text: "I'd never have found Verdant Arc on my own.", company: "Kiln Labs" }] },
     feedback: [{ at: T, page: "dashboard", text: "I didn't know what to do after the first email.", email: "arjun@kilnlabs.example.in", company: "Kiln Labs" }],
     ai: { calls: 37, failed: 1, byPurpose: { match: 9, draft: 24, followup: 4 }, lastErrors: [{ at: T, purpose: "draft", error: "overloaded" }] },

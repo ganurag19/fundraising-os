@@ -172,6 +172,9 @@ export default defineSchema({
   // The product-market fit question, asked once she has sent 3+ emails: "How would you feel if you could no longer use FirstCheq?"
   pmf: defineTable({ founderId: v.id("founders"), answer: v.union(v.literal("very"), v.literal("somewhat"), v.literal("not")), benefit: v.optional(v.string()) }).index("by_founderId", ["founderId"]),
 
+  // "I'm interested" on a coming-soon idea: which founder (or visitor) wants which, once each.
+  wants: defineTable({ key: v.string(), visitor: v.string(), founderId: v.optional(v.id("founders")) }).index("by_visitor_and_key", ["visitor", "key"]),
+
   // "Send feedback" from the app: what she wrote, where, and an email only if she gave one (or is signed in).
   feedback: defineTable({ page: v.string(), text: v.string(), email: v.optional(v.string()), company: v.optional(v.string()), visitor: v.string() }),
 

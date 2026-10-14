@@ -175,7 +175,7 @@ describe("a claimed list after sign-out", () => {
     expect(signedOut?.rows[0].draft).toBeNull();
     expect(signedOut?.rows[0].displayName).toBeNull();
     expect(signedOut?.profile.oneLiner).toBe("");
-    expect(await owner.query(api.founders.myToken, {})).toBe(tokenA);
+    expect((await owner.query(api.founders.myToken, {}))?.token).toBe(tokenA);
     expect(await t.query(api.founders.myToken, {})).toBeNull();
     expect((await owner.query(api.founders.me, { token: tokenA }))?.rows[0].draft).not.toBeNull();
   });
@@ -216,5 +216,20 @@ describe("fit question", () => {
     const rows = await t.run((ctx) => ctx.db.query("pmf").collect());
     expect(rows.map((r) => [r.answer, r.benefit])).toEqual([["very", "Saved me two weeks."]]);
     expect((await me.query(api.founders.me, { token: tokenA }))?.pmfAsked).toBe(true);
+  });
+});
+
+describe("one Google account, one startup", () => {
+  test("an account that already holds a list can't claim a second startup's list", async () => {
+    const t = await setup();
+    await t.mutation(internal.invites.createCode, { code: "TEST-TWO", label: "test", maxUses: 1 });
+    await t.mutation(api.founders.start, { ...nisha, token: tokenA });
+    await t.mutation(api.founders.start, { ...nisha, inviteCode: "TEST-TWO", company: "Paniwala Agro", token: tokenB });
+    const userId = await t.run((ctx) => ctx.db.insert("users", { email: "nisha@example.test" }));
+    const me = t.withIdentity({ subject: `${userId}|s1` });
+    expect(await me.mutation(api.founders.claim, { token: tokenA })).toEqual({ ok: true });
+    expect(await me.mutation(api.founders.claim, { token: tokenB })).toEqual({ ok: false, error: "This Google account already holds Ledgerly's list." });
+    expect(await me.query(api.founders.myToken, {})).toEqual({ token: tokenA, company: "Ledgerly" });
+    expect((await t.query(api.founders.me, { token: tokenB }))?.claimed).toBe(false); // the new list stays unclaimed, for another account
   });
 });

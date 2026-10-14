@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dial, Logo, Medal } from "../components/Art";
 import { FitTable } from "./More";
+import { WantButton } from "../components/Investor";
 
 // Landing sections (v6). Every founder and investor on this page is made up.
 
@@ -218,20 +219,23 @@ export function Compare() {
 
 /** What's more, free with your account (coming soon). */
 export function WhatsMore() {
-  const items: [string, string, string][] = [
-    ["⚔", "Track your top competitors", "Who else is raising in your space, and who backed them."],
-    ["▲", "Funding trends in your sector", "Who's writing cheques, and at what size."],
-    ["▤", "Pitch deck review", "Slide-by-slide notes on what investors will question."],
-    ["?", "Questions investors will ask", "Are you ready? Answers drafted from your profile."],
-    ["❝", "Your raise FAQ", "Round, terms, use of funds: written once, reused everywhere."],
-    ["★", "Mentors, advisors and warm intros", "From founders who've already raised their first cheque."],
+  const items: [string, string, string, string][] = [
+    ["competitors", "⚔", "Track your top competitors", "Who else is raising in your space, and who backed them."],
+    ["trends", "▲", "Funding trends in your sector", "Who's writing cheques, and at what size."],
+    ["deck", "▤", "Pitch deck review", "Slide-by-slide notes on what investors will question."],
+    ["qa", "?", "Questions investors will ask", "Are you ready? Answers drafted from your profile."],
+    ["faq", "❝", "Your raise FAQ", "Round, terms, use of funds: written once, reused everywhere."],
+    ["vip", "★", "Mentors, advisors and warm intros", "From founders who've already raised their first cheque."],
   ];
   return (
     <div className="soon-grid six">
-      {items.map(([ic, t, d], i) => i === items.length - 1 ? (
-        <div className="soon-card vip" key={t}><span className="soon-icon" aria-hidden="true">{ic}</span><span className="soon-text"><b>{t}</b><span>{d}</span><span className="vip-btn">VIP access · SOON</span></span></div>
-      ) : (
-        <div className="soon-card" key={t}><span className="soon-icon" aria-hidden="true">{ic}</span><span className="soon-text"><b>{t} <span className="soon-tag">SOON</span></b><span>{d}</span></span></div>
+      {items.map(([k, ic, t, d]) => (
+        <div className={`soon-card${k === "vip" ? " vip" : ""}`} key={t}>
+          <span className="soon-icon" aria-hidden="true">{ic}</span>
+          <span className="soon-text"><b>{t} {k !== "vip" && <span className="soon-tag">SOON</span>}</b><span>{d}</span>
+            <WantButton k={k} label={k === "vip" ? "Request VIP access" : "I'm interested"} vip={k === "vip"} />
+          </span>
+        </div>
       ))}
     </div>
   );

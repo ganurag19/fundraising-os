@@ -140,6 +140,7 @@ export const forms = query({
     interest: v.array(v.object({ at: v.number(), name: v.string(), email: v.string(), plan: v.string(), note: v.union(v.string(), v.null()) })),
     codes: v.array(v.object({ code: v.string(), label: v.string(), uses: v.number(), maxUses: v.number() })),
     feedback: v.array(v.object({ at: v.number(), page: v.string(), text: v.string(), email: v.union(v.string(), v.null()), company: v.union(v.string(), v.null()) })),
+    wants: v.array(v.object({ key: v.string(), n: v.number(), companies: v.array(v.string()) })),
     pmf: v.object({ very: v.number(), somewhat: v.number(), not: v.number(), benefits: v.array(v.object({ answer: v.string(), text: v.string(), company: v.string() })) }),
     ai: v.object({ calls: v.number(), failed: v.number(), byPurpose: v.record(v.string(), v.number()), lastErrors: v.array(v.object({ at: v.number(), purpose: v.string(), error: v.string() })) }),
   })),
@@ -148,6 +149,7 @@ export const forms = query({
     const invites = await ctx.db.query("waitlist").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(100);
     const interest = await ctx.db.query("passInterest").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(100);
     const codes = await ctx.db.query("inviteCodes").take(50);
+    const wantRows = await ctx.db.query("wants").order("desc").take(2000); // all time
     const fit = await ctx.db.query("pmf").order("desc").take(500); // all time: the fit score needs every answer
     const notes = await ctx.db.query("feedback").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(100);
     const calls = await ctx.db.query("aiCalls").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(3000);
@@ -158,6 +160,12 @@ export const forms = query({
       invites: invites.map((w) => ({ at: w._creationTime, name: w.name, email: w.email, company: w.company, stage: w.stage, status: w.status })),
       interest: interest.map((p) => ({ at: p._creationTime, name: p.name, email: p.email, plan: p.plan, note: p.note ?? null })),
       codes: codes.map((c) => ({ code: c.code, label: c.label, uses: c.uses, maxUses: c.maxUses })),
+      wants: await Promise.all([...new Set(wantRows.map((w) => w.key))].map(async (key) => {
+        const rows = wantRows.filter((w) => w.key === key);
+        const ids = [...new Set(rows.map((w) => w.founderId).filter((x): x is NonNullable<typeof x> => !!x))].slice(0, 30);
+        const companies = (await Promise.all(ids.map((id) => ctx.db.get("founders", id)))).map((f) => f?.company).filter((c): c is string => !!c);
+        return { key, n: rows.length, companies };
+      })).then((xs) => xs.sort((a, b) => b.n - a.n)),
       pmf: {
         very: fit.filter((x) => x.answer === "very").length, somewhat: fit.filter((x) => x.answer === "somewhat").length, not: fit.filter((x) => x.answer === "not").length,
         benefits: await Promise.all(fit.filter((x) => x.benefit).slice(0, 40).map(async (x) => ({ answer: x.answer, text: x.benefit!, company: (await ctx.db.get("founders", x.founderId))?.company ?? "" }))),

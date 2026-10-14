@@ -5,7 +5,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
 import { LogoMark, Wordmark } from "../components/Brand";
 import { Face, Logo } from "../components/Art";
-import { FollowupBox, Head, InvestorHead, InvestorRow, Pipeline, SoonCards, StatusMenu, UpgradeCard } from "../components/Investor";
+import { FollowupBox, Head, InvestorHead, InvestorRow, Pipeline, SoonCards, StatusMenu, UpgradeCard, WantButton } from "../components/Investor";
 import JoinSheet from "../components/JoinSheet";
 import { FeedbackButton } from "../components/Feedback";
 import { applyTheme, savedTheme } from "../lib/theme";
@@ -49,8 +49,12 @@ export default function Dashboard() {
   const signOut = () => authSignOut().finally(() => { freshVisitorToken(); location.assign("/"); });
   // Signed in on a browser that doesn't hold her list: find it from her account.
   const mine = useQuery(api.founders.myToken, isAuthenticated ? {} : "skip");
-  const switching = isAuthenticated && !!mine && mine !== token && (me === null || (!!me && !me.unlocked));
-  useEffect(() => { if (switching && mine) { adoptToken(mine); location.reload(); } }, [switching, mine]);
+  const mineToken = mine?.token;
+  // One Google account = one startup. This browser holds a new, unclaimed list but her account already has another: ask, don't switch.
+  const conflict = isAuthenticated && !!mine && mineToken !== token && !!me && !me.claimed;
+  // This browser holds no list, or someone else's: use the one her account holds.
+  const switching = isAuthenticated && !!mine && mineToken !== token && (me === null || (!!me && me.claimed && !me.unlocked));
+  useEffect(() => { if (switching && mineToken) { adoptToken(mineToken); location.reload(); } }, [switching, mineToken]);
   const claim = useMutation(api.founders.claim);
   const explainRest = useAction(api.write.explainRest);
   const claimed = useRef(false);
@@ -68,10 +72,10 @@ export default function Dashboard() {
 
   // Back from Google: move her visitor list to her account (once).
   useEffect(() => {
-    if (!isAuthenticated || !me || me.unlocked || claimed.current || mine === undefined || switching) return;
+    if (!isAuthenticated || !me || me.unlocked || claimed.current || mine === undefined || switching || conflict) return;
     claimed.current = true;
     claim({ token }).then((r) => { if (!r.ok) setClaimError(r.error); });
-  }, [isAuthenticated, me, claim, token, mine, switching]);
+  }, [isAuthenticated, me, claim, token, mine, switching, conflict]);
   // Older lists have no one-line reasons for ranks 4–20; ask once.
   useEffect(() => {
     if (!me?.unlocked || explained.current || !me.rows.some((r) => r.rank >= 3 && !r.reason)) return;
@@ -86,6 +90,17 @@ export default function Dashboard() {
   // Signed out: a list still waiting to be claimed goes to its reveal; anyone else to the home page, invite box open.
   if (!isAuthenticated && !preview) return <Navigate to={me && me.emailsStatus === "ready" && !me.claimed ? "/emails" : "/?code"} replace />;
   if (!me) return <Navigate to="/?code" replace />;
+  if (conflict && mine) {
+    return (
+      <Page><div className="step center" style={{ margin: "60px auto", maxWidth: 420 }}>
+        <span className="kicker">One account, one startup</span>
+        <h1 style={{ marginTop: 10 }}>This Google account already holds <span className="it">{mine.company}'s list.</span></h1>
+        <p className="help">Each Google account keeps one startup's investors, emails and pipeline. To keep {me.company}'s new list, sign in with a different Google account.</p>
+        <button className="btn primary" onClick={() => { if (mineToken) { adoptToken(mineToken); location.reload(); } }}>Open {mine.company}'s list</button>
+        <button className="btn ghost" style={{ marginTop: 10 }} onClick={() => { void authSignOut().finally(() => location.assign("/emails")); }}>Use another Google account for {me.company}</button>
+      </div></Page>
+    );
+  }
   if (claimError) return <Page><div className="step center" style={{ margin: "60px auto" }}><h1>{claimError}</h1><p className="help">Sign in with the Google account you used first, or start a new list.</p><button className="btn primary" onClick={() => void signOut()}>Sign out</button></div></Page>;
   if (!me.unlocked && !preview) return <Opening />;
 
@@ -197,7 +212,8 @@ function SoonPage({ tab, company }: { tab: keyof typeof SOON_PAGES; company: str
       <span className="soon-tag">SOON</span>
       <p className="lede-sm">{p.line}</p>
       <ul className="rat">{p.points.map((x) => <li key={x}>{x}</li>)}</ul>
-      <p className="muted small">We're building this for founders like you at {company}. It'll appear here when it's ready.</p>
+      <p className="muted small">We're building this for founders like you at {company}. Tell us you want it, and we'll build it sooner.</p>
+      <WantButton k={tab === "competition" ? "competitors" : tab} />
     </div>
   );
 }
@@ -346,7 +362,7 @@ function Today({ me, token, onToast, go }: { me: Me; token: string; onToast: (s:
 
       {picks.length > 0 && <>
         <h2 className="dash-h">Send your top picks</h2>
-        <div className="rows">{picks.map((r, i) => <InvestorRow key={r.rank} r={r} token={token} onToast={onToast} account={me.gmail} startOpen={i === 0 && !followups.length} />)}</div>
+        <div className="rows">{picks.map((r, i) => <InvestorRow key={r.rank} r={r} token={token} onToast={onToast} account={me.gmail} startOpen={i === 0 && !followups.length} hint={i === 0} />)}</div>
       </>}
 
       {!picks.length && nextBest && <>
@@ -388,7 +404,7 @@ function Investors({ me, token, onToast }: { me: Me; token: string; onToast: (s:
       </div>
       <p className="muted small">{rows.length} of your best {me.rows.length}{me.matchCount > me.rows.length ? ` (out of ${me.matchCount} who fit)` : ""}. Tap a Fit Score to see why they fit, with sources.</p>
       <InvestorHead />
-      <div className="rows">{rows.map((r) => <InvestorRow key={r.rank} r={r} token={token} onToast={onToast} account={me.gmail} />)}</div>
+      <div className="rows">{rows.map((r, i) => <InvestorRow key={r.rank} r={r} token={token} onToast={onToast} account={me.gmail} hint={i === 0} />)}</div>
       {!rows.length && <div className="empty"><b>No investors match these filters.</b><button className="btn ghost sm" onClick={() => { setKind("all"); setCity(""); }}>Clear filters</button></div>}
     </>
   );
