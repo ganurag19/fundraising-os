@@ -463,6 +463,22 @@ class RefreshMergeTest(unittest.TestCase):
 
 
 class RefreshQueueTest(unittest.TestCase):
+    def test_second_batch_same_day_gets_its_own_file_and_skips_recent_unconfirmed(self):
+        s = Seed([legacy("inv_0001", firm="Fund One"), legacy("inv_0002", kind="angel", person_name="Hard To Find")])
+        try:
+            first = refresh_queue.run(s.dir, months=6, today=TODAY)
+            units = s.load("enrichment", os.path.basename(first["path"]))
+            angel = next(u for u in units if u["person_name"])
+            s.add_result(result(angel["slug"], checked_on="2026-10-13", identity_confirmed=False, confidence="low"))
+            second = refresh_queue.run(s.dir, months=6, today=TODAY)
+            self.assertNotEqual(first["path"], second["path"])
+            again = s.load("enrichment", os.path.basename(second["path"]))
+            self.assertEqual([u["firm"] for u in again], ["Fund One"])
+            self.assertNotEqual(again[0]["slug"], units[0]["slug"])
+        finally:
+            s.close()
+
+
     def test_sector_batch_puts_the_thinnest_first(self):
         s = Seed([legacy("inv_0001", firm="Fintech Full", sectors=["fintech"], thesis="Backs payments.",
                          recent_investments=[{"company": "Madeup Pay", "year": 2026, "sector": "fintech"}]),

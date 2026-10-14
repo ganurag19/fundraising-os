@@ -15,6 +15,7 @@ Run: python3 scripts/refresh_queue.py [--months 6] [--limit 50] [--sectors finte
 
 import argparse
 import datetime
+import glob
 import os
 import sys
 
@@ -40,11 +41,26 @@ def thin(r):
     return 1 if not any(d.get("sector") for d in r.get("recent_investments") or []) else 2
 
 
-def run(seed, months=6, limit=None, today=None, sectors=None):
+def unconfirmed_since(seed, today, days):
+    """Angels whose identity a refresh couldn't confirm in the last `days` days: searching again so soon fails again."""
+    if not days:
+        return set()
+    since = (today - datetime.timedelta(days=days)).isoformat()
+    ids = set()
+    for p in glob.glob(os.path.join(seed, "enrichment", "queue_refresh_*.json")):
+        for u in load_json(p, []):
+            res = load_json(os.path.join(seed, "enrichment", "results", u["slug"] + ".json"), {})
+            if res.get("identity_confirmed") is False and (res.get("checked_on") or "") >= since:
+                ids.update(u["record_ids"])
+    return ids
+
+
+def run(seed, months=6, limit=None, today=None, sectors=None, skip_unconfirmed_days=30):
     today = today or datetime.date.today()
     cutoff = months_ago(today, months)
     records = load_json(os.path.join(seed, "investors_enriched.json"))["investors"]
-    due = [r for r in records if in_app(r) and (r.get("last_checked") or "") < cutoff]
+    due = [r for r in records if in_app(r) and (r.get("last_checked") or "") < cutoff
+           and r["id"] not in unconfirmed_since(seed, today, skip_unconfirmed_days)]
     if sectors:
         due = [r for r in due if set(sectors + ["sector_agnostic"]) & set(r.get("sectors") or [])]
 
@@ -75,7 +91,11 @@ def run(seed, months=6, limit=None, today=None, sectors=None):
                                                  u["firm"] is None, u["firm"] or u["person_name"] or ""))
     if limit:
         queue = queue[:limit]
-    tag = today.isoformat()
+    # a second batch on the same day gets its own file and slugs, so earlier results still find their unit
+    tag, n = today.isoformat(), 0
+    while os.path.exists(os.path.join(seed, "enrichment", f"queue_refresh_{tag}.json")):
+        n += 1
+        tag = today.isoformat() + "abcdefghij"[n - 1]
     for i, u in enumerate(queue, start=1):
         u["n"] = i
         u["slug"] = f"r{tag.replace('-', '')}-" + slugify(u["firm"] or u["person_name"] or u["key"]) + f"-{i:03d}"
