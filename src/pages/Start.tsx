@@ -23,6 +23,8 @@ function sameStartup(typed: string, company: string, website: string | null) {
   return t === name || t === host || (!!host && host.split(".")[0] === t) || t.split(".")[0] === name;
 }
 
+const nowMs = () => Date.now();
+
 export default function Start() {
   const token = useMemo(() => visitorToken(), []);
   const code = savedInviteCode();
@@ -45,7 +47,9 @@ export default function Start() {
   const [note, setNote] = useState(""); // why we couldn't draft from her website (not an error)
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [seconds, setSeconds] = useState(0);
+  // The wait, by the clock: from her press of "Find my investors" to the emails being ready.
+  const [clock, setClock] = useState({ from: 0, now: 0 });
+  const seconds = Math.max(0, Math.round((clock.now - clock.from) / 1000));
 
   // This browser holds another list: one saved to a Google account (and she's signed out), or a different startup
   // than the one she just typed on the home page. Start her as a new visitor; the old list stays where it is.
@@ -59,7 +63,7 @@ export default function Start() {
   }, [switching, pre]);
   // Coming back: her emails are already written.
   useEffect(() => { if (!switching && me?.emailsStatus === "ready" && step < 6) navigate("/emails"); }, [me, step, navigate, switching]);
-  useEffect(() => { if (step !== 6) return; const t = setInterval(() => setSeconds((s) => s + 1), 1000); return () => clearInterval(t); }, [step]);
+  useEffect(() => { if (step !== 6) return; const t = setInterval(() => setClock((c) => ({ ...c, now: Date.now() })), 500); return () => clearInterval(t); }, [step]);
 
   if (me === undefined || switching) return <Shell><div className="spinner" /></Shell>;
   if (!me && !code) {
@@ -116,12 +120,15 @@ export default function Start() {
     next();
   }
   async function submitProfile() {
+    const from = nowMs();
+    setClock({ from, now: from });
     setBusy(true); setError("");
     const r = await saveProfile({ token, ...p }).catch(() => ({ ok: false as const, error: "Couldn't save that. Check your connection and try again." }));
     if (!r.ok) { setBusy(false); setError(r.error); return; }
-    setStep(6); setSeconds(0);
+    setStep(6);
     const w = await write({ token }).catch(() => ({ ok: false as const, error: "Busy right now. Try again in a few minutes." }));
     setBusy(false);
+    setClock({ from, now: nowMs() }); // freeze the total for "Written in"
     if (w.ok) setStep(7); else { setStep(5); setError(w.error); }
   }
 

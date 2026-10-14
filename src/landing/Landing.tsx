@@ -59,7 +59,8 @@ function ProofBar() {
 
 export default function Landing() {
   const navigate = useNavigate();
-  const [sheet, setSheet] = useState<SheetMode | null>(null);
+  // "/?code" (e.g. from /dashboard while signed out) opens the invite-code box straight away.
+  const [sheet, setSheet] = useState<SheetMode | null>(() => (new URLSearchParams(location.search).has("code") ? "code" : null));
   const open = (m: SheetMode) => () => setSheet(m);
   // Hero card answers go to sign-up; without a saved code she enters one first.
   const go = (a?: StartAnswers) => {
@@ -81,10 +82,10 @@ export default function Landing() {
         <section className="hero hero-split">
           <div className="hero-copy">
             <h1 className="h-xl rise">The journey to your first cheque <span className="it">starts here.</span></h1>
-            <p className="lede rise">Your investor outreach starts tonight. Follow-ups run themselves.</p>
-            <div className="facts rise"><span>Free</span><span>4 questions, 2 minutes</span><span>Your 3 best-fit investors, emails and LinkedIn notes ready</span></div>
+            <p className="lede rise">Your first investor emails, written in minutes once you're in. Follow-ups run themselves.</p>
+            <div className="facts rise"><span>Free in beta</span><span>About 3 minutes</span><span>Your 3 best-fit investors, emails and LinkedIn notes ready</span></div>
           </div>
-          <HeroStart onGo={go} onCode={open("code")} />
+          <HeroStart onGo={go} onCode={open("code")} onRequest={open("request")} />
           <HeroFeed />
         </section>
 

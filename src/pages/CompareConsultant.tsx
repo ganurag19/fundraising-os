@@ -9,7 +9,7 @@ import { Choose, Mark } from "../landing/More";
 const DIFFS: [string, string, string, boolean][] = [
   ["What it is", "A person who runs parts of your raise with you", "Software that finds who fits and writes to each of them", false],
   ["Cost", "Often a monthly retainer, plus a 2–5% success fee", "Free to start", true],
-  ["Time to your first email", "Weeks: onboarding, then their list", "Tonight: about 2 minutes to your first 3 emails", true],
+  ["Time to your first email", "Weeks: onboarding, then their list", "About 3 minutes to your first 3 emails, once you have an invite", true],
   ["Who picks the investors", "Their network and judgement", "Researched investors, ranked by Fit Score, each with its source", false],
   ["Who writes the emails", "They do, or they introduce you", "Written for you, to each investor, in your words; you edit", false],
   ["Who sends", "Often they do, in their name", "You, from your own Gmail", true],
@@ -43,7 +43,7 @@ export default function CompareConsultant() {
         <section className="hero cmp-hero">
           <span className="kicker">Consultant alternative</span>
           <h1 className="h-xl">Your first raise, <span className="it"><Mark>without the success fee.</Mark></span></h1>
-          <p className="lede">A good consultant brings a network and a partner for the pitch. FirstCheq brings the investors who fit, an email written to each one, and follow-ups on time, so you can start tonight, from your own Gmail.</p>
+          <p className="lede">A good consultant brings a network and a partner for the pitch. FirstCheq brings the investors who fit, an email written to each one, and follow-ups on time, so you can start this week, from your own Gmail.</p>
           <ul className="cmp-triad"><li>No retainer or success fee to start</li><li>No waiting weeks for an intro list</li><li>Nothing is sent until you send it</li></ul>
           <div className="cta-row"><Link className="btn primary" to="/" data-track="click_go">Find my 3 best investors, free →</Link></div>
         </section>

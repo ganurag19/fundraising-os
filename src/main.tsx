@@ -12,7 +12,8 @@ if (location.hostname === 'dazzling-fox-925.ap-southeast-2.convex.site') locatio
 
 applyTheme('dark') // public pages are dark; the dashboard switches to its own theme
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string)
+// No "Leave site?" prompt: a click counter still in flight when she heads to Google sign-in isn't unsaved work.
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string, { unsavedChangesWarning: false })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

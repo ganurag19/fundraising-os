@@ -27,7 +27,7 @@ export function Mark({ children }: { children: React.ReactNode }) {
 
 /** Hero: small notes of what FirstCheq is doing for a made-up founder, one popping in every few seconds. */
 const NOTES: [string, string][] = [
-  ["Northlight Seed · Fit Score 89", "Opens on Smeltwise, from their portfolio."],
+  ["Northlight Seed · Fit Score 90", "Opens on Smeltwise, from their portfolio."],
   ["Email + LinkedIn note ready", "For Meera at Verdant Arc, about Kiln Labs."],
   ["86 investors fit Kiln Labs", "Your top 3 have emails ready."],
   ["Day 3: follow-up written", "For Kestrel Ridge Angels. Ready when you are."],
@@ -62,9 +62,9 @@ export function HeroFeed() {
 /** Fit Score, shown working: five made-up funds sort themselves, then a pointer opens why each fits, with sources. */
 type Fund = { id: string; fund: string; score: number; cheque: string; deal: string; leads: boolean; why: string; sources: string[] };
 const FUNDS: Fund[] = [
-  { id: "va", fund: "Verdant Arc Capital", score: 94, cheque: "₹50L–2 Cr", deal: "GridLeaf · seed · 2025", leads: true, why: "Backed GridLeaf at seed in 2025, and 3 of their last 4 deals are climate.", sources: ["Verdant Arc website · checked Oct 2026", "Deal news · GridLeaf seed, 2025"] },
-  { id: "nl", fund: "Northlight Seed", score: 89, cheque: "₹25L–1 Cr", deal: "Smeltwise · portfolio", leads: false, why: "Smeltwise, the closest company to Kiln Labs, is in their portfolio. One cheque covers a third of your round.", sources: ["Northlight portfolio page · checked Oct 2026"] },
-  { id: "kr", fund: "Kestrel Ridge Angels", score: 86, cheque: "₹10–75L", deal: "FurnaceIQ · 2025", leads: false, why: "Wrote a cheque into FurnaceIQ in 2025, and backs industrial climate at seed.", sources: ["Kestrel Ridge website · checked Sep 2026", "Deal news · FurnaceIQ, 2025"] },
+  { id: "va", fund: "Verdant Arc Capital", score: 95, cheque: "₹50L–2 Cr", deal: "GridLeaf · seed · 2025", leads: true, why: "Backed GridLeaf at seed in 2025, and 3 of their last 4 deals are climate.", sources: ["Verdant Arc website · checked Oct 2026", "Deal news · GridLeaf seed, 2025"] },
+  { id: "nl", fund: "Northlight Seed", score: 90, cheque: "₹25L–1 Cr", deal: "Smeltwise · portfolio", leads: false, why: "Smeltwise, the closest company to Kiln Labs, is in their portfolio. One cheque covers a third of your round.", sources: ["Northlight portfolio page · checked Oct 2026"] },
+  { id: "kr", fund: "Kestrel Ridge Angels", score: 84, cheque: "₹10–75L", deal: "FurnaceIQ · 2025", leads: false, why: "Wrote a cheque into FurnaceIQ in 2025, and backs industrial climate at seed.", sources: ["Kestrel Ridge website · checked Sep 2026", "Deal news · FurnaceIQ, 2025"] },
   { id: "ma", fund: "Monsoon Angels", score: 81, cheque: "₹10–50L", deal: "Kheti Cloud · 2024", leads: false, why: "", sources: [] },
   { id: "bs", fund: "Banyan Seed Fund", score: 77, cheque: "₹50L–1.5 Cr", deal: "Tarang Energy · 2024", leads: false, why: "", sources: [] },
 ];
@@ -133,7 +133,7 @@ export function Choose() {
   const cols: [string, string[], boolean][] = [
     ["On your own, if", ["You already know the 20 investors who fit", "You have evenings to research and write", "You never forget a follow-up"], false],
     ["A fundraising consultant, if", ["You want someone to pitch alongside you", "Your round is ₹10 Cr or more", "A 2–5% success fee works for you"], false],
-    ["FirstCheq, if", ["It's your first round", "You want to start emailing tonight", "You want every email to come from you"], true],
+    ["FirstCheq, if", ["It's your first round", "You want to start emailing this week", "You want every email to come from you"], true],
   ];
   return (
     <div className="choose">

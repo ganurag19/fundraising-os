@@ -10,7 +10,8 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { rankMatches, topMatches } from "./lib/match";
 import { shortUrl } from "./lib/links";
-import { checkDraft, checkNote, hookNamesADeal, unsourcedFacts } from "./lib/checks";
+import { checkDraft, checkNote, hookNamesADeal, unsourcedFacts, withSignature } from "./lib/checks";
+import { sharesHerDomain } from "./lib/links";
 import { DRAFT_SYSTEM, FACT_FIELDS, NOTE_SYSTEM, REASONS_SYSTEM } from "./lib/prompt";
 import { limits } from "./limits";
 
@@ -147,6 +148,7 @@ export const writeMore = action({
     if (!row) return { ok: false as const, error: "We couldn't find that investor on your list." };
     if (row.hasDraft) return { ok: true as const };
     if (row.investor.retired) return { ok: false as const, error: "This investor is no longer active, so we won't write to them." };
+    if (sharesHerDomain(row.founder.website, row.investor)) return { ok: false as const, error: "This one shares your company's domain, so we left it out." };
     if (!row.investor.email) return { ok: false as const, error: "This one takes applications through a form. Tap Apply instead." };
     const mine = await limits.limit(ctx, row.founder.plan === "round_pass" ? "extraEmailsPass" : "extraEmailsPerFounder", { key: row.founder._id });
     if (!mine.ok) return { ok: false as const, error: "That's today's emails. Come back tomorrow for more." };
@@ -192,7 +194,7 @@ async function writeOne(ctx: ActionCtx, client: Anthropic, founderId: Id<"founde
       }
       await ctx.runMutation(internal.founders.saveDraft, {
         founderId, investorId: inv._id, hook: out.hook, reason: out.reason, whyFit: out.whyFit.slice(0, 2), watchOut: out.watchOut.slice(0, 1),
-        subject: out.subject, body: out.body, warnings: [...problems, ...unsourced.map((u) => `Check this: "${u}"`)],
+        subject: out.subject, body: withSignature(out.body, founder), warnings: [...problems, ...unsourced.map((u) => `Check this: "${u}"`)],
         linkedin: noteProblems.length ? undefined : out.linkedin.trim(), // a note that fails its checks is left out; she can ask for a new one
       });
       return true;

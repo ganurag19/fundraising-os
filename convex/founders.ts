@@ -5,7 +5,8 @@ import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc } from "./_generated/dataModel";
 import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS, dealToShow, scoreParts } from "./lib/match";
-import { domainOf, normaliseLinkedin, normaliseUrl } from "./lib/links";
+import { cleanCity, cleanWebsite, domainOf, normaliseLinkedin, normaliseUrl, roundLabel, sharesHerDomain, shortUrl } from "./lib/links";
+import { withSignature } from "./lib/checks";
 import { limits } from "./limits";
 
 const TOKEN = /^[a-f0-9]{48}$/;
@@ -189,30 +190,32 @@ export const me = query({
     // Free: her best 20. Round Pass: up to 100 (we always keep 100 ranked).
     const matches = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(f.plan === "round_pass" ? 100 : 20);
     const rows = [];
+    const sig = { name: f.name, company: f.company, website: f.website ? shortUrl(f.website) : undefined, linkedin: f.linkedin ? shortUrl(f.linkedin) : undefined };
     for (const m of matches) {
       const inv = await ctx.db.get("investors", m.investorId);
       if (!inv) continue;
+      if (sharesHerDomain(f.website, inv)) continue; // her own company's fund or team: never shown as her investor
       // Before sign-in her top 3 are open to her browser; once the list is claimed, only to the signed-in owner.
       const open = unlocked || (m.rank < 3 && !f.userId);
       const d = open ? await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", f._id).eq("investorId", inv._id)).first() : null;
       rows.push({
-        rank: m.rank, score: m.score, kind: inv.kind, city: inv.city ?? null,
+        rank: m.rank, score: m.score, kind: inv.kind, city: cleanCity(inv.city),
         chequeMinLakh: inv.chequeMinLakh ?? null, chequeMaxLakh: inv.chequeMaxLakh ?? null, sentAt: m.sentAt ?? null,
         // Beyond her top 3, an email address is only revealed once she asks for that investor's email ("Write email", capped daily).
         displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: m.rank < 3 || d ? inv.email ?? null : null,
         // A retired investor keeps its place on her list, but its links are gone: a dead or taken-over site must never open from here.
-        website: open && !inv.retired ? inv.website ?? null : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open && !inv.retired ? inv.sourceUrls : [],
+        website: open && !inv.retired ? cleanWebsite(inv.website) : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open && !inv.retired ? inv.sourceUrls : [],
         linkedin: open && !inv.retired ? inv.linkedin ?? null : null, retired: !!inv.retired,
         reason: d?.reason ?? m.reason ?? null,
         applyUrl: open && !inv.retired ? inv.applyUrl ?? null : null, applyDeadline: inv.applyDeadline ?? null, hasEmail: !!inv.email,
         parts: scoreParts(inv, f, new Date(m._creationTime).getFullYear()) ?? [], // the year she was matched (queries don't read the clock)
         leadsRounds: !!inv.leadsRounds, firstCheques: inv.stages.includes("idea") || inv.stages.includes("pre_seed"), lastDealYear: inv.recent.reduce<number | null>((y, r) => (r.year && (!y || r.year > y) ? r.year : y), null),
-        deal: open ? dealToShow(inv, f.sectors) : null,
+        deal: open ? (() => { const x = dealToShow(inv, f.sectors, d ? `${d.hook ?? ""} ${(d.editedBody ?? d.body).slice(0, 400)}` : undefined); return x && { ...x, round: x.round && roundLabel(x.round) }; })() : null,
         status: m.status ?? ("new" as const),
         followups: open ? (await ctx.db.query("followups").withIndex("by_match_and_n", (q) => q.eq("matchId", m._id)).take(4))
           .filter((x) => x.state !== "cancelled")
           .map((x) => ({ id: x._id, n: x.n, state: x.state, dueAt: x.dueAt, subject: x.subject ?? null, body: x.body ?? null })) : [],
-        draft: d ? { reason: d.reason, whyFit: d.whyFit, watchOut: d.watchOut, hook: d.hook ?? null, subject: d.editedSubject ?? d.subject, body: d.editedBody ?? d.body, warnings: d.warnings, linkedin: d.linkedin ?? null } : null,
+        draft: d ? { reason: d.reason, whyFit: d.whyFit, watchOut: d.watchOut, hook: d.hook ?? null, subject: d.editedSubject ?? d.subject, body: d.editedBody ?? withSignature(d.body, sig), warnings: d.warnings, linkedin: d.linkedin ?? null } : null,
       });
     }
     return {
@@ -258,7 +261,8 @@ export const forDrafting = internalQuery({
   handler: async (ctx, { token }) => {
     const f = await founderByToken(ctx, token);
     if (!f) return null;
-    const investors = await ctx.db.query("investors").take(2000);
+    // Never match her with her own company's fund or team (same website or email domain).
+    const investors = (await ctx.db.query("investors").take(2000)).filter((i) => !sharesHerDomain(f.website, i));
     // Re-running matching rewrites her list; never do that once her pipeline has started.
     const mine = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(150);
     return { founder: f, investors, hasSent: mine.some((m) => !!m.sentAt) };

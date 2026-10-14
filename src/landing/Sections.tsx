@@ -10,12 +10,12 @@ const ASKS = ["₹25–50L", "₹50L–1Cr", "₹1–3 Cr", "₹3–5 Cr", "₹5
 export type StartAnswers = { first: string; sectors: string[]; stage: string; ask: string };
 
 /** The hero's "Start here" card: the first questions, answered right on the page. */
-export function HeroStart({ onGo, onCode }: { onGo: (a: StartAnswers) => void; onCode: () => void }) {
+export function HeroStart({ onGo, onCode, onRequest }: { onGo: (a: StartAnswers) => void; onCode: () => void; onRequest: () => void }) {
   const [a, setA] = useState<StartAnswers>({ first: "", sectors: [], stage: "", ask: "" });
   const toggle = (s: string) => setA((o) => ({ ...o, sectors: o.sectors.includes(s) ? o.sectors.filter((x) => x !== s) : o.sectors.length < 3 ? [...o.sectors, s] : o.sectors }));
   return (
     <form className="start-card" onSubmit={(e) => { e.preventDefault(); onGo(a); }}>
-      <span className="kicker">Start here · free</span>
+      <span className="kicker">Start here · free · about 3 minutes</span>
       <label className="sc-q">Your website, or your startup's name<input className="field" value={a.first} onChange={(e) => { const first = e.target.value; setA((o) => ({ ...o, first })); }} placeholder="e.g. kilnlabs.in" maxLength={200} autoCapitalize="none" /></label>
       <div className="sc-q"><div className="sc-label">Your space <span className="muted">(up to 3)</span></div>
       <div className="pick small-pick">{SECTORS.map((s) => <button type="button" key={s} aria-pressed={a.sectors.includes(s)} onClick={() => toggle(s)}>{s}</button>)}</div></div>
@@ -23,6 +23,7 @@ export function HeroStart({ onGo, onCode }: { onGo: (a: StartAnswers) => void; o
         <label>Stage<select className="field" value={a.stage} onChange={(e) => { const stage = e.target.value; setA((o) => ({ ...o, stage })); }}><option value="">Choose</option>{STAGES.map((s) => <option key={s}>{s}</option>)}</select></label>
         <label>Raising<select className="field" value={a.ask} onChange={(e) => { const ask = e.target.value; setA((o) => ({ ...o, ask })); }}><option value="">Choose</option>{ASKS.map((s) => <option key={s}>{s}</option>)}</select></label>
       </div>
+      <p className="sc-invite"><b>Invite-only beta.</b> Have a code? You'll enter it next, then a few short steps. No code? <button type="button" className="text-link" data-track="click_request" onClick={onRequest}>Request one</button>; we usually reply within a day.</p>
       <div className="sc-actions">
         <button className="btn primary" type="submit" data-track="click_go">Find my 3 best investors, free →</button>
         <button className="btn ghost" type="button" data-track="click_code" onClick={onCode}>I have a code</button>
@@ -33,7 +34,7 @@ export function HeroStart({ onGo, onCode }: { onGo: (a: StartAnswers) => void; o
 
 /** Before vs after: nine pains cross out as three steps appear. */
 const PAINS = ["Who do I even pitch?", "Who invests at my stage?", "Writing every email from scratch", "ChatGPT drafts that sound like everyone", "Forgetting to follow up", "Ghosted", "A spreadsheet that's always out of date", "Months pass", "Still no meeting"];
-const STEPS: [string, string][] = [["Tell us about your startup", "2 MIN"], ["Find the investors who fit you", "INSTANT"], ["Send personalised emails from Gmail", "2 MIN"]];
+const STEPS: [string, string][] = [["Tell us about your startup", "3 MIN"], ["Find the investors who fit you", "INSTANT"], ["Send personalised emails from Gmail", "2 MIN"]];
 
 export function BeforeAfter() {
   const ref = useRef<HTMLDivElement>(null);
@@ -65,9 +66,9 @@ export function BeforeAfter() {
 /** "See it work": the real app screens, light mode, with made-up investors. */
 const SCENES = ["Tell us about you", "Your best-fit investors", "Personalised email, ready to send", "Your pipeline"];
 const PICKS: [string, number, string][] = [
-  ["Verdant Arc Capital", 94, "Backed GridLeaf at seed: software for old industry."],
-  ["Northlight Seed", 89, "Smeltwise is in their portfolio: fuel savings for heavy industry."],
-  ["Kestrel Ridge Angels", 86, "Wrote one of FurnaceIQ's first cheques in 2025."],
+  ["Verdant Arc Capital", 95, "Backed GridLeaf at seed: software for old industry."],
+  ["Northlight Seed", 90, "Smeltwise is in their portfolio: fuel savings for heavy industry."],
+  ["Kestrel Ridge Angels", 84, "Wrote one of FurnaceIQ's first cheques in 2025."],
 ];
 
 export function ProductDemo() {
@@ -126,18 +127,20 @@ export function ProductDemo() {
 
 /** "What it writes": one founder, three investors, three different emails, each with its Fit Score. */
 const EMAILS = [
-  { inv: "Verdant Arc Capital", to: "meera@verdantarc.example", score: 94, parts: [30, 20, 20, 15], hook: "Opens on GridLeaf, their seed deal",
+  { inv: "Verdant Arc Capital", to: "meera@verdantarc.example", parts: [30, 20, 20, 15, 5, 5], hook: "Opens on GridLeaf, their seed deal",
     subj: "After GridLeaf, kilns are next",
     body: "Hi Meera,\n\nYou backed GridLeaf at seed last year, when few funds would touch software for old industry. Brick kilns are the same bet, ten years behind: India has over a lakh of them, still burning coal by hand.\n\nI'm Arjun; I ran my family's kiln for six years before building Kiln Labs. Our retrofit burner and fuel-tracking app cut coal use by 18%.\n\n62 kilns pay us monthly, up from 9 in March.\n\nWe're raising ₹3 Cr at seed. Could I send the deck?\n\nArjun Rao\nFounder, Kiln Labs", note: "Hi Meera, you backed GridLeaf when few funds touched software for old industry. Kiln Labs cuts coal use in brick kilns by 18%, and 62 kilns now pay us. We're raising ₹3 Cr at seed; happy to share the deck. Arjun" },
-  { inv: "Northlight Seed", to: "kabir@northlight.example", score: 89, parts: [30, 20, 15, 15], hook: "Opens on Smeltwise, from their portfolio",
+  { inv: "Northlight Seed", to: "kabir@northlight.example", parts: [30, 20, 15, 15, 5, 5], hook: "Opens on Smeltwise, from their portfolio",
     subj: "Smeltwise, but for brick kilns",
     body: "Hi Kabir,\n\nSmeltwise showed that heavy industry will pay for software that cuts its fuel bill. Brick kilns, one of India's biggest coal users, have no such tool yet.\n\nKiln Labs fits a retrofit burner and an app that tracks fuel per batch; kilns use 18% less coal from the first month. I learned where the coal goes running my family's kiln for six years.\n\nWe've gone from 9 paying kilns in March to 62.\n\nWe're raising ₹3 Cr at seed. Would 20 minutes next week work?\n\nArjun Rao\nFounder, Kiln Labs", note: "Hi Kabir, Smeltwise proved heavy industry pays to cut its fuel bill. Kiln Labs does that for India's brick kilns: 18% less coal, 62 paying kilns, up from 9 in March. Could I send our seed deck? Arjun" },
-  { inv: "Kestrel Ridge Angels", to: "anjali@kestrelridge.example", score: 86, parts: [24, 20, 20, 15], hook: "Opens on FurnaceIQ, their 2025 cheque",
+  { inv: "Kestrel Ridge Angels", to: "anjali@kestrelridge.example", parts: [24, 20, 20, 15, 0, 5], hook: "Opens on FurnaceIQ, their 2025 cheque",
     subj: "Your FurnaceIQ cheque, and kilns",
     body: "Hi Anjali,\n\nYou wrote one of FurnaceIQ's first cheques in 2025. Kiln Labs goes after the same coal bill, in a market with almost no software: India's brick kilns.\n\nSix years running my family's kiln taught me where the coal goes. Our burner and app cut it by 18%.\n\n62 kilns pay us monthly, up from 9 in March, and we're raising ₹3 Cr at seed.\n\nCould I send you the deck?\n\nArjun Rao\nFounder, Kiln Labs", note: "Hi Anjali, after your FurnaceIQ cheque, I thought you'd like this: Kiln Labs cuts the coal bill of brick kilns by 18%. 62 kilns pay us monthly. Raising ₹3 Cr at seed; may I share the deck? Arjun" },
 ];
-const PART_LABELS = ["Invests in your space", "Invests at your stage", "Cheque fits your round", "Invested recently"];
-const PART_MAX = [30, 20, 20, 15];
+const PART_LABELS = ["Invests in your space", "Invests at your stage", "Cheque fits your round", "Invested recently", "Their stated focus matches", "Recently checked by us"];
+const PART_MAX = [30, 20, 20, 15, 10, 5];
+/** One calculation for the number and its breakdown: the Fit Score is the sum of the parts. */
+const scoreOf = (parts: number[]) => parts.reduce((a, b) => a + b, 0);
 
 export function ThreeEmails() {
   const [i, setI] = useState(0);
@@ -157,7 +160,7 @@ export function ThreeEmails() {
             : <div className="email li-note"><div className="to">LinkedIn note to {e.to.split("@")[0].replace(/^./, (c) => c.toUpperCase())} <span className="muted small">{e.note.length}/300</span></div>{e.note}</div>}
         </div>
         <aside className="te-why">
-          <div className="te-score"><Dial score={e.score} size={56} /><div className="te-label"><b>FirstCheq Fit Score</b><span>{e.hook}</span></div></div>
+          <div className="te-score"><Dial score={scoreOf(e.parts)} size={56} /><div className="te-label"><b>FirstCheq Fit Score</b><span>{e.hook}</span></div></div>
           {PART_LABELS.map((l, k) => (
             <div className="bd-row" key={l}><span>{l}</span><span className="bd-bar" aria-hidden="true"><i className={e.parts[k] / PART_MAX[k] >= 0.75 ? "hi" : "mid"} style={{ width: `${(e.parts[k] / PART_MAX[k]) * 100}%` }} /></span><b>{e.parts[k]}/{PART_MAX[k]}</b></div>
           ))}
@@ -190,7 +193,7 @@ export function FitScore() {
 
 /** Do it yourself, hire, agency, or FirstCheq. */
 const ROWS: [string, string, string, string, string][] = [
-  ["Time to your first email", "2–4 weeks", "4–8 weeks to hire and ramp up", "2–4 weeks to onboard", "2 minutes"],
+  ["Time to your first email", "2–4 weeks", "4–8 weeks to hire and ramp up", "2–4 weeks to onboard", "About 3 minutes, once you have an invite"],
   ["Targeted reach", "Anyone you can find, by guesswork", "Their own network", "Their own network", "Only investors who fit your space, stage and round, ranked by Fit Score"],
   ["Personalised emails", "Hours each, or a generic draft", "Varies", "Templates at scale", "Researched and written to each investor, opening on a real deal"],
   ["Ways in", "Whatever you have time for", "Usually email", "Usually email", "An email and a LinkedIn note for each, same research"],

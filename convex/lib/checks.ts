@@ -77,3 +77,9 @@ export function hookNamesADeal(body: string, record: { recent?: { company: strin
   const low = body.toLowerCase();
   return names.some((n) => low.includes(n.toLowerCase())) ? null : "Opens on their website copy, not a named deal or portfolio company";
 }
+
+/** Every email ends with her signature. If a draft came back without one, add it (same lines the prompt asks for). */
+export function withSignature(body: string, f: { name: string; company: string; website?: string; linkedin?: string }): string {
+  if (body.toLowerCase().includes(`founder, ${f.company.toLowerCase()}`)) return body;
+  return [body.trimEnd(), "", f.name, `Founder, ${f.company}`, f.website, f.linkedin].filter((x) => x !== undefined && x !== null).join("\n");
+}

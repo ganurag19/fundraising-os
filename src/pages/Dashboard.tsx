@@ -27,6 +27,17 @@ const remember = (k: string, v?: string): string | null => {
   return null;
 };
 
+/** While sign-in finishes and her list moves to her account: say so, instead of a bare header. */
+function Opening() {
+  return (
+    <Page><div className="step center opening" role="status" aria-live="polite">
+      <div className="spinner" />
+      <h1 style={{ fontSize: 24 }}>Opening your dashboard…</h1>
+      <p className="help">Signing you in and moving your investors to your account. This takes a few seconds.</p>
+    </div></Page>
+  );
+}
+
 // After Google sign-in: her raise. Today (next moves), Investors (the ranked list) and Pipeline.
 export default function Dashboard() {
   const token = useMemo(() => visitorToken(), []);
@@ -70,10 +81,12 @@ export default function Dashboard() {
 
   // Dev build only: ?preview shows the layout without Google sign-in (names beyond the top 3 stay hidden). Not in the live build.
   const preview = import.meta.env.DEV && new URLSearchParams(location.search).has("preview");
-  if (isLoading || me === undefined || switching || (isAuthenticated && !me && mine === undefined)) return <Page><div className="spinner" /></Page>;
-  if ((!isAuthenticated && !preview) || !me) return <Navigate to="/emails" replace />;
+  if (isLoading || me === undefined || switching || (isAuthenticated && !me && mine === undefined)) return <Opening />;
+  // Signed out: a list still waiting to be claimed goes to its reveal; anyone else to the home page, invite box open.
+  if (!isAuthenticated && !preview) return <Navigate to={me && me.emailsStatus === "ready" && !me.claimed ? "/emails" : "/?code"} replace />;
+  if (!me) return <Navigate to="/?code" replace />;
   if (claimError) return <Page><div className="step center" style={{ margin: "60px auto" }}><h1>{claimError}</h1><p className="help">Sign in with the Google account you used first, or start a new list.</p><button className="btn primary" onClick={() => void signOut()}>Sign out</button></div></Page>;
-  if (!me.unlocked && !preview) return <Page><div className="spinner" /></Page>;
+  if (!me.unlocked && !preview) return <Opening />;
 
   const go = (t: Tab) => { setTab(t); setMore(false); if (RAISE.some(([k]) => k === t)) remember("fos_tab", t); window.scrollTo(0, 0); };
   const waiting = me.rows.filter((r) => r.status === "sent").length;

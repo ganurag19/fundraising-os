@@ -739,3 +739,14 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .row-card.retired .inv-score{pointer-events:none;color:var(--muted)}
 .retired-tag{flex:none;background:var(--card2);color:var(--muted);border:1px solid var(--line2);font-size:11.5px}
 .inv-who{flex-wrap:wrap;row-gap:4px} .inv-who .pick-head{flex:1 1 170px}
+.sc-invite{margin:0;padding:14px 0 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5;color:var(--fg2)}
+.sc-invite b{color:var(--fg)} .sc-invite .text-link{background:none;border:0;padding:0;font:inherit;font-weight:600;cursor:pointer}
+.sc-invite+.sc-actions{border-top:0;padding-top:12px}
+/* phones: 44px tap targets, and room under the footer for the sticky button (review 2026-10-14) */
+.small-pick button{min-height:44px;padding:8px 12px}
+.nav .btn.sm{min-height:44px}
+.faq details{padding:6px 0}
+.faq summary{min-height:44px;align-items:center;padding:6px 0}
+.foot a{display:inline-flex;align-items:center;min-height:44px;padding:0 2px}
+.sc-invite .text-link{min-height:44px;display:inline-flex;align-items:center;vertical-align:middle}
+@media (max-width:720px){body:has(.sticky-cta) footer{padding-bottom:calc(110px + env(safe-area-inset-bottom))}}
