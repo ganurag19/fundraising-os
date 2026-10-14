@@ -210,7 +210,7 @@ export const me = query({
         applyUrl: open && !inv.retired ? inv.applyUrl ?? null : null, applyDeadline: inv.applyDeadline ?? null, hasEmail: !!inv.email,
         parts: scoreParts(inv, f, new Date(m._creationTime).getFullYear()) ?? [], // the year she was matched (queries don't read the clock)
         leadsRounds: !!inv.leadsRounds, firstCheques: inv.stages.includes("idea") || inv.stages.includes("pre_seed"), lastDealYear: inv.recent.reduce<number | null>((y, r) => (r.year && (!y || r.year > y) ? r.year : y), null),
-        deal: open ? (() => { const x = dealToShow(inv, f.sectors, d ? `${d.hook ?? ""} ${(d.editedBody ?? d.body).slice(0, 400)}` : undefined); return x && { ...x, round: x.round && roundLabel(x.round) }; })() : null,
+        deal: open ? (() => { const x = dealToShow(inv, f.sectors, d ? [d.hook ?? "", (d.editedBody ?? d.body).slice(0, 400)] : []); return x && { ...x, round: x.round && roundLabel(x.round) }; })() : null,
         status: m.status ?? ("new" as const),
         followups: open ? (await ctx.db.query("followups").withIndex("by_match_and_n", (q) => q.eq("matchId", m._id)).take(4))
           .filter((x) => x.state !== "cancelled")

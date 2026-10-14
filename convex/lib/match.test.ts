@@ -188,8 +188,10 @@ describe("dealToShow follows her email", () => {
   // Made-up investor.
   const inv = { portfolio: ["Dodo Pay"], recent: [{ company: "Bizup", year: 2026, sector: "b2b_saas" }, { company: "Paymint", year: 2024, round: "seed", sector: "fintech" }] };
   test("the deal the email opens on wins over the newest", () => {
-    expect(dealToShow(inv, ["Fintech"], "You backed Dodo Pay early")?.company).toBe("Dodo Pay");
-    expect(dealToShow(inv, ["B2B SaaS"], "Your Paymint seed cheque")?.company).toBe("Paymint");
-    expect(dealToShow(inv, ["B2B SaaS"], "Your thesis on SMB software")?.company).toBe("Bizup");
+    expect(dealToShow(inv, ["Fintech"], ["You backed Dodo Pay early"])?.company).toBe("Dodo Pay");
+    // the hook wins over another deal the body also names
+    expect(dealToShow(inv, ["Fintech"], ["Backed Paymint at seed", "After Bizup and Paymint, ..."])?.company).toBe("Paymint");
+    expect(dealToShow(inv, ["B2B SaaS"], ["Your Paymint seed cheque"])?.company).toBe("Paymint");
+    expect(dealToShow(inv, ["B2B SaaS"], ["Your thesis on SMB software"])?.company).toBe("Bizup");
   });
 });

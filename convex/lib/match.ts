@@ -145,10 +145,10 @@ export function topMatches<T extends MatchInvestor>(investors: T[], f: FounderAs
 export function dealToShow(
   inv: { recent: { company: string; year?: number; round?: string; sector?: string }[]; portfolio: string[] },
   sectors: string[],
-  opener?: string, // her email's hook or opening lines: show the deal the email itself opens on
+  openers: string[] = [], // her email's hook, then its opening lines: show the deal the email itself opens on
 ): { company: string; year: number | null; round: string | null; inHers: boolean } | null {
   const wanted = sectors.map((s) => SECTOR_KEYS[s]).filter(Boolean);
-  if (opener) {
+  for (const opener of openers.filter(Boolean)) {
     const low = opener.toLowerCase();
     const named = (c: string) => c.length > 2 && low.includes(c.toLowerCase());
     const r = inv.recent.find((x) => named(x.company));
