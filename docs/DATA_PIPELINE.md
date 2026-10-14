@@ -119,3 +119,13 @@ If an investor has no published email, it can't be in the app today, so the real
 - No LinkedIn. No site whose terms forbid automated reading.
 - Real investor data stays in `seed/`. Never in the repo, tests, logs or chat summaries beyond counts.
 - Nothing is emailed to anyone. The import to prod is Anurag's.
+
+## Open notes (parked, Anurag will revisit)
+
+**SEBI AIF register** (sebi.gov.in, `OtherAction.do?doRecognisedFpi=yes&intmId=16`), studied 14 Oct 2026, not started.
+- 2,038 registered AIFs, 25 per page (82 pages, paged by a form post). robots.txt allows it. Each entry: trust name, registration no., email, address, contact person, validity.
+- Category from the registration no.: `IN/AIF1/` = Cat I (VC, angel, social), `AIF2` = mostly PE, debt, real estate, `AIF3` = hedge funds. Page 1 sample: 7 of 25 Cat I.
+- Realistic yield: 300–500 new early-stage investors, not 2,000 (Cat I plus a slice of Cat II; one manager often has several trusts; many already in our list).
+- Email caution: these are regulatory contacts, often a compliance officer or a trustee company serving many funds. Proposed rule: use a SEBI email only if its domain matches the fund's own site and research shows it's a general/pitch address or an investing partner; never trustee-company addresses; an address on the fund's own site wins. Note `check_records.py` treats .gov.in pages as official, so this rule must be added before any SEBI email is exported. Contact names kept only for matching; addresses never stored.
+- Plan when picked up: `scripts/fetch_sebi_aif.py` (one polite pass, 1 request / 2 s, raw pages saved to seed/raw/sebi_aif_<date>/) → parse, filter Cat I (+ Cat II if chosen), drop real estate / credit / infra by name, group trusts by email domain → `seed/discovered/sebi_aif_<date>.jsonl` → dedupe → research in batches of ~100 → checks → upsert.
+- Decisions needed: the email rule above; Cat I only, or Cat I + II; read SEBI's website and copyright policy first.

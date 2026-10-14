@@ -54,6 +54,7 @@ Added by the growth pipeline (docs/DATA_PIPELINE.md):
 | `application` | `{url, deadline, type}` for accelerators, grants and form-only funds (not imported until the app supports it) |
 | `corporate_parent` | parent company of a corporate arm or family office |
 | `recent_investments[].sector` | one sector key per deal, with its `source_url` |
+| `linkedin_url` → export `linkedin` | the person's public LinkedIn profile (`/in/…`), or the firm's `/company/…` page when there is no person. Taken only from Anurag's spreadsheets today; exported in canonical form `https://www.linkedin.com/in/<id>`. Never built from a pattern, never looked up on LinkedIn |
 | `checks`, `check_failures[]`, `import_blocked` | written by `scripts/check_records.py`; a blocked growth record is skipped by the import |
 
 Extra kinds: `incubator` (split from accelerator by name in merge_enrichment.py: Atal Incubation Centres, NIDHI/TBI, BioNEST, Seed Fund Scheme and campus incubators), `family_office` (imported as `corporate_vc`) and `grant` (schema 2 only).

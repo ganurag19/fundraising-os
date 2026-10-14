@@ -124,6 +124,23 @@ class MatchingTest(unittest.TestCase):
         self.assertEqual(refine_kind("accelerator", "Made-up Cohort Program"), "accelerator")
         self.assertEqual(refine_kind("vc", "Made-up University Fund"), "vc")
 
+    def test_linkedin_is_canonical_and_fits_who_we_write_to(self):
+        r = {"linkedin_url": "http://in.linkedin.com/in/made-up-angel-123/?trk=x"}
+        self.assertEqual(build_import.linkedin(r, "Made Up"), "https://www.linkedin.com/in/made-up-angel-123")
+        self.assertIsNone(build_import.linkedin(r, None))
+        self.assertEqual(build_import.linkedin({"linkedin_url": "linkedin.com/company/madeup-vc"}, None),
+                         "https://www.linkedin.com/company/madeup-vc")
+        self.assertIsNone(build_import.linkedin({"linkedin_url": "https://madeup.test/team"}, "Made Up"))
+
+    def test_linkedin_lookup_needs_a_source_and_skips_parent_pages(self):
+        rec = {"linkedin_url": None}
+        ok = {"linkedin": "https://www.linkedin.com/company/madeup-vc", "source_url": "https://madeup.test/team", "match": "team page links it"}
+        self.assertTrue(merge_enrichment.attach_linkedin(dict(rec), ok))
+        self.assertFalse(merge_enrichment.attach_linkedin(dict(rec), {**ok, "source_url": None}))
+        self.assertFalse(merge_enrichment.attach_linkedin(dict(rec), {**ok, "match": "parent group's page"}))
+        self.assertFalse(merge_enrichment.attach_linkedin(dict(rec), {**ok, "linkedin": "https://linkedin.com/in/x?trk=1"}))
+        self.assertFalse(merge_enrichment.attach_linkedin({"linkedin_url": "https://www.linkedin.com/in/kept"}, ok))
+
     def test_stable_id_does_not_change(self):
         self.assertEqual(stable_id("firm:x.test"), stable_id("firm:x.test"))
 
@@ -363,6 +380,18 @@ class MergeAndCheckTest(unittest.TestCase):
         rec["sources"][0]["found_via"] = "aim"
         self.assertEqual(check_records.india_check(rec)[0], "fail")
 
+    def test_one_failed_page_open_keeps_a_pass_two_in_a_row_fail(self):
+        page = {"https://greenteapot.test/contact": "pitch@greenteapot.test"}
+        gid = self.by_name["Green Teapot Fund"]["id"]
+        self.s.pipeline(fetch=lambda u: page.get(u))
+        self.assertFalse(self.s.records()[gid]["import_blocked"])
+        self.s.pipeline(fetch=lambda u: None)
+        g = self.s.records()[gid]
+        self.assertFalse(g["import_blocked"])
+        self.assertIn("did not open this run", g["checks"]["email"]["why"])
+        self.s.pipeline(fetch=lambda u: None)
+        self.assertTrue(self.s.records()[gid]["import_blocked"])
+
     def test_cloudflare_hidden_email_is_seen(self):
         key, em = 0x5a, "pitch@greenteapot.test"
         hexed = "%02x" % key + "".join("%02x" % (ord(c) ^ key) for c in em)
@@ -395,6 +424,42 @@ class MergeAndCheckTest(unittest.TestCase):
         self.assertEqual(r[self.by_name["Green Teapot Fund"]["id"]]["thesis"], "Now backs climate too.")
         self.assertEqual(r[self.by_name["Green Teapot Fund"]["id"]]["last_checked"], "2027-06-01")
         self.assertEqual(r["inv_0001"]["recent_investments"][0]["company"], "Fictional Foods")
+
+
+class RefreshMergeTest(unittest.TestCase):
+    def test_refresh_keeps_old_findings_and_skips_unconfirmed_angels(self):
+        s = Seed([legacy("inv_0001", firm="Steady Fund", sectors=["fintech"]),
+                  legacy("inv_0002", kind="angel", person_name="Common Name Angel", email="angel@mail.test")])
+        try:
+            json.dump([{"slug": "steady-001", "record_ids": ["inv_0001"], "firm": "Steady Fund", "person_name": None}],
+                      open(os.path.join(s.dir, "enrichment", "queue.json"), "w"))
+            s.add_result(result("steady-001", checked_on="2026-10-09", active=True,
+                                recent_investments=[{"company": "Old Madeup", "year": 2025, "round": "seed",
+                                                     "sector": "fintech", "source_url": "https://news.test/old"}],
+                                pitch_route={"type": "form", "value": "https://steady.test/pitch"},
+                                sources=[{"url": "https://steady.test/pitch", "supports": ["pitch_route"]}]))
+            json.dump([{"slug": "r1-steady", "record_ids": ["inv_0001"], "firm": "Steady Fund", "person_name": None},
+                       {"slug": "r1-angel", "record_ids": ["inv_0002"], "firm": None, "person_name": "Common Name Angel"}],
+                      open(os.path.join(s.dir, "enrichment", "queue_refresh_2026-10-14.json"), "w"))
+            s.add_result(result("r1-steady", checked_on="2026-10-14", active=None, thesis="Backs payments infra.",
+                                recent_investments=[{"company": "New Madeup", "year": 2026, "round": "seed",
+                                                     "sector": "fintech", "source_url": "https://news.test/new"}],
+                                sources=[{"url": "https://steady.test/about", "supports": ["thesis"]}]))
+            s.add_result(result("r1-angel", checked_on="2026-10-14", identity_confirmed=False, confidence="low",
+                                active=False))
+            merge_enrichment.run(s.dir)
+            r = s.records()
+            f = r["inv_0001"]
+            self.assertTrue(f["active"])
+            self.assertEqual([d["company"] for d in f["recent_investments"]], ["New Madeup", "Old Madeup"])
+            self.assertEqual(f["pitch_route"]["value"], "https://steady.test/pitch")
+            self.assertEqual(f["thesis"], "Backs payments infra.")
+            self.assertEqual({x["url"] for x in f["enrichment"]["sources"]}, {"https://steady.test/about", "https://steady.test/pitch"})
+            a = r["inv_0002"]
+            self.assertFalse(a.get("exclude"))
+            self.assertIsNone(a.get("last_checked"))
+        finally:
+            s.close()
 
 
 class RefreshQueueTest(unittest.TestCase):

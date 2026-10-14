@@ -49,6 +49,15 @@ def clean_list(xs, limit):
     return out[:limit]
 
 
+def linkedin(r, person):
+    """The stored LinkedIn link from Anurag's spreadsheets, in canonical form: a /in/ profile for the person
+    we write to, or a /company/ page when there is no person. Never built, never looked up here."""
+    m = re.search(r"linkedin\.com/(in|company)/([A-Za-z0-9\-_%]+)", r.get("linkedin_url") or "")
+    if not m or (m.group(1) == "in") != bool(person):
+        return None
+    return f"https://www.linkedin.com/{m.group(1)}/{m.group(2)}"
+
+
 def identity_clashes(registry, rows):
     """An id names the same investor if its name or its email is unchanged."""
     out = []
@@ -100,7 +109,7 @@ def main(schema=1):
             "applyUrl": link,
             "applyDeadline": app.get("deadline") if link and (app.get("deadline") or "") >= TODAY else None,
             "applyType": app.get("type") if link and app.get("url") == link else ("form" if link else None),
-            "person": person, "firm": firm, "title": r.get("title"), "city": r.get("city"),
+            "person": person, "linkedin": linkedin(r, person) if schema >= 2 else None, "firm": firm, "title": r.get("title"), "city": r.get("city"),
             "website": r.get("website"), "thesis": r.get("thesis"),
             "chequeMinLakh": r.get("cheque_min_inr_lakh"), "chequeMaxLakh": r.get("cheque_max_inr_lakh"),
             "leadsRounds": r.get("leads_rounds"), "active": r.get("active"),
@@ -136,6 +145,7 @@ def main(schema=1):
     print(f"  added by the growth pipeline: {sum(1 for d in rows if d['seedId'].startswith('g_'))}")
     if schema >= 2:
         print(f"  apply link only, no email: {sum(1 for d in rows if 'email' not in d)}")
+        print(f"  with a LinkedIn link: {sum(1 for d in rows if 'linkedin' in d)}")
         print(f"  retired (exported before, not now): {len(retired)}")
     blocked = sum(1 for r in data["investors"] if r.get("import_blocked") and not r.get("exclude"))
     if blocked:

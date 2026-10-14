@@ -20,6 +20,7 @@ Run: python3 scripts/merge_enrichment.py
 import glob
 import json
 import os
+import re
 import sys
 from collections import Counter
 
@@ -65,7 +66,8 @@ def new_record(u):
     }
 
 
-def apply(rec, res):
+def apply(rec, res, refresh=False):
+    """refresh=True: a re-check of a record we already have; a blank answer never erases an earlier finding."""
     ok = sourced(res)
     changed = []
 
@@ -132,14 +134,28 @@ def apply(rec, res):
     if res.get("corporate_parent"):
         put("corporate_parent", res["corporate_parent"])
 
-    rec["active"] = res.get("active")
-    rec["recent_investments"] = res.get("recent_investments") or []
-    rec["pitch_route"] = res.get("pitch_route")
+    old = rec.get("enrichment") or {}
+    if refresh:
+        if res.get("active") is not None:
+            rec["active"] = res["active"]
+        new = res.get("recent_investments") or []
+        seen = {(d.get("company") or "").lower() for d in new}
+        rec["recent_investments"] = new + [d for d in rec.get("recent_investments") or []
+                                           if (d.get("company") or "").lower() not in seen]
+        rec["recent_investments"].sort(key=lambda x: -(x.get("year") or 0))
+        if (res.get("pitch_route") or {}).get("type") not in (None, "unknown"):
+            rec["pitch_route"] = res["pitch_route"]
+    else:
+        rec["active"] = res.get("active")
+        rec["recent_investments"] = res.get("recent_investments") or []
+        rec["pitch_route"] = res.get("pitch_route")
+    keep = old.get("sources") or [] if refresh else []
+    urls = {x.get("url") for x in res.get("sources") or []}
     rec["enrichment"] = {
         "checked_on": res.get("checked_on"),
         "confidence": res.get("confidence"),
         "identity_confirmed": res.get("identity_confirmed"),
-        "sources": res.get("sources") or [],
+        "sources": (res.get("sources") or []) + [x for x in keep if x.get("url") not in urls],
         "blocked": res.get("blocked") or [],
         "notes": res.get("notes"),
     }
@@ -185,6 +201,21 @@ def attach_deals(rec, deals):
     return added
 
 
+WEAK_LINKEDIN = re.compile(r"parent|manag|advis|group page|holding", re.I)
+
+
+def attach_linkedin(rec, res):
+    """A LinkedIn link found by the lookup pass (seed/enrichment/linkedin/<id>.json), only with the page it came
+    from, only in canonical form, and never when the finder flagged it as a parent or manager's page."""
+    url, src = res.get("linkedin"), res.get("source_url")
+    if rec.get("linkedin_url") or not url or not src or WEAK_LINKEDIN.search(res.get("match") or ""):
+        return False
+    if not re.fullmatch(r"https://www\.linkedin\.com/(in|company)/[A-Za-z0-9\-_%]+", url):
+        return False
+    rec["linkedin_url"], rec["linkedin_source_url"] = url, src
+    return True
+
+
 def run(seed):
     enr = os.path.join(seed, "enrichment")
     data = load_json(os.path.join(seed, "investors.json"))
@@ -215,11 +246,15 @@ def run(seed):
     pending_refresh = sum(1 for u in refresh if u["slug"] not in results)
 
     field_counts, conf = Counter(), Counter()
-    for _, u, res in sorted(pairs, key=lambda p: p[2].get("checked_on") or ""):
+    unconfirmed = 0
+    for group, u, res in sorted(pairs, key=lambda p: p[2].get("checked_on") or ""):
         conf[res.get("confidence")] += 1
+        if group == "refresh" and res.get("identity_confirmed") is False:
+            unconfirmed += 1  # not sure it's the same person: keep the record as it was, still due
+            continue
         for rid in u["record_ids"]:
             if rid in by_id:
-                field_counts.update(apply(by_id[rid], res))
+                field_counts.update(apply(by_id[rid], res, refresh=group == "refresh"))
 
     deals_added = 0
     by_record = {}
@@ -236,6 +271,12 @@ def run(seed):
     for rec in data["investors"]:
         rec["kind"] = refine_kind(rec["kind"], rec.get("firm"), rec.get("person_name"), notes.get(rec["id"]))
 
+    linkedin_added = 0
+    for p in sorted(glob.glob(os.path.join(enr, "linkedin", "*.json"))):
+        res = load_json(p, {})
+        if res.get("id") in by_id:
+            linkedin_added += attach_linkedin(by_id[res["id"]], res)
+
     data["enriched_on"] = max((r.get("checked_on") or "" for _, _, r in pairs), default=None)
     save_json(os.path.join(seed, "investors_enriched.json"), data)
 
@@ -250,6 +291,8 @@ def run(seed):
         f"Not yet researched: {len(missing)} (plus {pending_refresh} refreshes pending)",
         f"New investors added as records: {new_made}",
         f"Deals from funding reports attached: {deals_added}",
+        f"Refreshes skipped (identity not confirmed): {unconfirmed}",
+        f"LinkedIn links added by the lookup pass: {linkedin_added}",
         f"Confidence: high {conf['high']}, medium {conf['medium']}, low {conf['low']}", "",
         f"- Thesis found: {has('thesis')}",
         f"- Stages found: {has('stages')}",

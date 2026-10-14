@@ -164,8 +164,32 @@ def active_check(rec, today):
     return "fail", "no deal or news from the last two years"
 
 
-def check(rec, today, fetch=None):
+NOT_OPENED = ("could not open the email page", "link does not open")
+
+
+def tolerate_blip(rec, key, now, state):
+    """A page that passed before and fails to open once keeps its pass; two misses in a row fail it.
+    `state` survives merge_enrichment.py rebuilds (seed/enrichment/check_state.json)."""
+    prev = state.setdefault(rec["id"], {})
+    before = prev.get(key) or {}
+    misses = prev.setdefault("open_misses", {})
+    if now[0] == "fail" and now[1] in NOT_OPENED and before.get("result") == "pass":
+        misses[key] = misses.get(key, 0) + 1
+        if misses[key] < 2:
+            return "pass", f"page did not open this run; passed before ({before.get('why')})"
+    elif now[0] == "pass" or now[1] not in NOT_OPENED:
+        misses.pop(key, None)
+    if now[0] == "pass" and not now[1].startswith("page did not open"):
+        prev[key] = {"result": "pass", "why": now[1]}
+    elif now[0] == "fail" and now[1] not in NOT_OPENED:
+        prev.pop(key, None)
+    return now
+
+
+def check(rec, today, fetch=None, state=None):
     em, ap = email_check(rec, fetch), apply_check(rec, fetch, today)
+    if fetch and state is not None:
+        em, ap = tolerate_blip(rec, "email", em, state), tolerate_blip(rec, "apply", ap, state)
     res = {
         "contact": ("pass", "email") if em[0] == "pass" else ("pass", "apply link") if ap[0] == "pass" else ("fail", "no email or apply link"),
         "email": em,
@@ -277,8 +301,12 @@ def run(seed, since=None, today=None, fetch=None):
             urls += [src.get("url") for src in (r.get("enrichment") or {}).get("sources") or []
                      if set(src.get("supports") or []) & {"pitch_route", "application"}]
         fetch.prefetch(urls)
+    state_path = os.path.join(seed, "enrichment", "check_state.json")
+    state = load_json(state_path, {})
     for r in records:
-        check(r, today, fetch)
+        check(r, today, fetch, state)
+    if fetch:
+        save_json(state_path, state)
     save_json(path, data)
 
     since = since or max((r.get("last_checked") or "" for r in records), default="")
