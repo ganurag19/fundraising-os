@@ -54,6 +54,20 @@ Before milestone 1: GitHub repo, Convex project, Claude keys and caps (the setup
 3. One-tap reply buttons in the 9 AM reminder: "Did they reply? Yes · Meeting · No reply yet" (signed links, her list only).
 Later (v2): Gmail access to detect replies (a restricted Google scope: security assessment and review), and possibly a FirstCheq connector for founders' own Claude.
 
+## Milestone after tracking: Readiness v1 (unlocks Round Pass Plus)
+
+Founders need these ready before and during outreach ("send the deck", "what's your burn?"). Claude drafts from her facts only, code checks her numbers, she edits. Order (let the colleague test's coming-soon taps on /admin confirm it; deck review moves up if it wins):
+
+1. Investor Q&A prep: ~20 questions Indian seed investors ask, answers drafted from her profile and numbers; gaps flagged ("you haven't told us your burn").
+2. Two-page teaser: a shareable one-pager (problem, solution, traction, team, the ask) as a link or PDF to attach to emails.
+3. Deck review: she uploads her deck (PDF, Convex storage); slide-by-slide notes on what investors will question, what's missing for her stage, and the order. Paid tier (about ₹20–50 of AI per review).
+4. Readiness check: a score and gap list across deck, teaser, metrics, data room and Q&A.
+5. Data room checklist and a financial model template (our structure, her numbers).
+
+Never generated: full pitch decks (review hers or give a template), financial models with numbers (template plus a check of her figures), a valuation figure for her company (explain methods and typical ranges only).
+First: a reference library (seed deck contents by stage for Indian investors, investor question bank with good and bad answers, metric definitions, data room list). Every output goes through the eval method in docs/evals (rubric, read 50) before launch.
+Moves Investor Q&A and the data room up from v1.5.
+
 ## v1.5 (weeks 3–6, after the first founders)
 
 Investor Q&A with answers unlocked by profile completion · Competition page · Data room checklist and share link · full Profile builder · Settings with Gmail and Calendar integrations · Chat with us · Gmail send-only · "Full research" panel with "What to say" · SEBI fund-list research pilot · checked-investor queue to 300.
