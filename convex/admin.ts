@@ -139,6 +139,7 @@ export const forms = query({
     invites: v.array(v.object({ at: v.number(), name: v.string(), email: v.string(), company: v.string(), stage: v.string(), status: v.string() })),
     interest: v.array(v.object({ at: v.number(), name: v.string(), email: v.string(), plan: v.string(), note: v.union(v.string(), v.null()) })),
     codes: v.array(v.object({ code: v.string(), label: v.string(), uses: v.number(), maxUses: v.number() })),
+    feedback: v.array(v.object({ at: v.number(), page: v.string(), text: v.string(), email: v.union(v.string(), v.null()), company: v.union(v.string(), v.null()) })),
     ai: v.object({ calls: v.number(), failed: v.number(), byPurpose: v.record(v.string(), v.number()), lastErrors: v.array(v.object({ at: v.number(), purpose: v.string(), error: v.string() })) }),
   })),
   handler: async (ctx, { key, since }) => {
@@ -146,6 +147,7 @@ export const forms = query({
     const invites = await ctx.db.query("waitlist").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(100);
     const interest = await ctx.db.query("passInterest").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(100);
     const codes = await ctx.db.query("inviteCodes").take(50);
+    const notes = await ctx.db.query("feedback").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(100);
     const calls = await ctx.db.query("aiCalls").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(3000);
     const byPurpose = new Map<string, number>();
     for (const c of calls) count(byPurpose, c.purpose);
@@ -154,6 +156,7 @@ export const forms = query({
       invites: invites.map((w) => ({ at: w._creationTime, name: w.name, email: w.email, company: w.company, stage: w.stage, status: w.status })),
       interest: interest.map((p) => ({ at: p._creationTime, name: p.name, email: p.email, plan: p.plan, note: p.note ?? null })),
       codes: codes.map((c) => ({ code: c.code, label: c.label, uses: c.uses, maxUses: c.maxUses })),
+      feedback: notes.map((n) => ({ at: n._creationTime, page: n.page, text: n.text, email: n.email ?? null, company: n.company ?? null })),
       ai: { calls: calls.length, failed: failed.length, byPurpose: Object.fromEntries(byPurpose), lastErrors: failed.slice(0, 5).map((c) => ({ at: c._creationTime, purpose: c.purpose, error: (c.error ?? "").slice(0, 160) })) },
     };
   },

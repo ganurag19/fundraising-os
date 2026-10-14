@@ -16,7 +16,9 @@ const when = (t: number) => new Date(t).toLocaleString("en-IN", { timeZone: "Asi
 const CLICKS: [string, string][] = [
   ["visit_compare", "Opened the consultant comparison"], ["click_go", "Find my investors"], ["click_code", "I have a code"], ["click_request", "Request invite"],
   ["click_unlock", "Unlock all (Google)"], ["click_gmail", "Open in Gmail"], ["click_copy", "Copy email"],
-  ["click_write", "Write email"], ["click_linkedin", "Open / find on LinkedIn"], ["click_copy_note", "Copy LinkedIn note"], ["click_write_note", "Write LinkedIn note"], ["click_upgrade", "Upgrade: Request access / call"], ["click_soon", "Coming-soon cards"],
+  ["click_write", "Write email"], ["click_linkedin", "Open / find on LinkedIn"], ["click_copy_note", "Copy LinkedIn note"], ["click_write_note", "Write LinkedIn note"], ["click_upgrade", "Upgrade: Request access / call"], ["click_feedback", "Opened Send feedback"],
+  ["soon_competitors", "Soon card: competitors"], ["soon_trends", "Soon card: funding trends"], ["soon_deck", "Soon card: deck review"], ["soon_qa", "Soon card: investor questions"], ["soon_faq", "Soon card: raise FAQ"], ["soon_vip", "Soon card: VIP mentors and intros"],
+  ["soon_tab_competition", "Soon page: Competition"], ["soon_tab_qa", "Soon page: Investor Q&A"], ["soon_tab_dataroom", "Soon page: Data room"], ["soon_tab_inbox", "Soon page: Inbox"], ["soon_tab_connect", "Soon page: Founders connect"],
 ];
 
 const sinceNow = (r: Range) => sinceFor(r, Date.now());
@@ -150,6 +152,17 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
           <div className="admin-table">{forms.interest.map((p) => <div className="admin-tr wide" key={p.at + p.email}><span><b>{p.name}</b> · {p.plan === "round_pass" ? "Round Pass" : "Custom call"}{p.note ? ` · ${p.note}` : ""}</span><a href={`mailto:${p.email}`}>{p.email}</a><span className="muted small">{when(p.at)}</span></div>)}</div>
         )}
 
+        <h2 className="dash-h">Feedback ({forms.feedback.length})</h2>
+        {forms.feedback.length === 0 ? <p className="muted small">None yet.</p> : (
+          <div className="admin-people">{forms.feedback.map((n) => (
+            <div className="admin-card" key={n.at}>
+              <div className="admin-card-top"><b>{n.company ?? "Visitor"}</b><span className="tag">{n.page}</span></div>
+              <span style={{ whiteSpace: "pre-wrap" }}>{n.text}</span>
+              <span className="muted small">{when(n.at)}{n.email && <> · <a href={`mailto:${n.email}`}>{n.email}</a></>}</span>
+            </div>
+          ))}</div>
+        )}
+
         <h2 className="dash-h">Invite codes</h2>
         <div className="admin-table">
           <div className="admin-tr head"><span>Code</span><span>Used</span><span>Of</span></div>
@@ -191,6 +204,7 @@ const DEMO: Demo = {
     invites: [{ at: T, name: "Kabir Shah", email: "kabir@example.test", company: "Stackwise", stage: "Seed", status: "waiting" }],
     interest: [{ at: T - 5000000, name: "Arjun Rao", email: "arjun@kilnlabs.example.in", plan: "round_pass", note: null }],
     codes: [{ code: "TEST-ONE", label: "colleagues", uses: 6, maxUses: 20 }, { code: "TEST-TWO", label: "GrowthX", uses: 2, maxUses: 50 }],
+    feedback: [{ at: T, page: "dashboard", text: "I didn't know what to do after the first email.", email: "arjun@kilnlabs.example.in", company: "Kiln Labs" }],
     ai: { calls: 37, failed: 1, byPurpose: { match: 9, draft: 24, followup: 4 }, lastErrors: [{ at: T, purpose: "draft", error: "overloaded" }] },
   },
 };

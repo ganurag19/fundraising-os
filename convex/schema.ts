@@ -169,6 +169,9 @@ export default defineSchema({
   // Page visits and button clicks, for the owner's dashboard. visitor is a hash of the browser's random code, never the code itself.
   events: defineTable({ name: v.string(), visitor: v.string() }),
 
+  // "Send feedback" from the app: what she wrote, where, and an email only if she gave one (or is signed in).
+  feedback: defineTable({ page: v.string(), text: v.string(), email: v.optional(v.string()), company: v.optional(v.string()), visitor: v.string() }),
+
   // The owner's /admin unlocks: Google sign-in as ADMIN_EMAIL plus ADMIN_PIN. Each one is deleted when it expires.
   adminSessions: defineTable({ key: v.string(), userId: v.id("users") }).index("by_key", ["key"]),
 });

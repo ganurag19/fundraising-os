@@ -59,12 +59,7 @@ export const writeFirstEmails = action({
     if (f.emailsStatus === "writing") return { ok: true as const };
     if (data.hasSent) return { ok: false as const, error: "You've started sending, so your list is kept as it is." };
 
-    const run = await limits.limit(ctx, "runsPerVisitor", { key: f._id });
-    if (!run.ok) return { ok: false as const, error: "You've used today's 3 runs. Come back tomorrow." };
-    const calls = await limits.limit(ctx, "aiCallsGlobal", { count: 4 }); // 3 emails + 1 call for the other reasons
-    if (!calls.ok) return { ok: false as const, error: BUSY };
-
-    await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: "writing" });
+    // Match first (no AI, no cost): if nothing fits, say so plainly, before using one of her runs.
     const year = new Date().getFullYear();
     const ranked = rankMatches(data.investors, f, year);
     const matchCount = ranked.length;
@@ -73,9 +68,16 @@ export const writeFirstEmails = action({
     const list: { inv: Doc<"investors">; score: number }[] = topMatches(data.investors, f, year, 100); // free sees 20, Round Pass 100
     const top = list.slice(0, 3);
     if (!top.length) {
-      await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: "failed" });
-      return { ok: false as const, error: "We don't have investors for this sector and stage yet." };
+      const space = f.sectors.join(" and ");
+      return { ok: false as const, error: `No investors in our research back ${space} at ${f.stage.toLowerCase()} for ${f.ask} yet. Try another stage or raise size, or add a second sector. We add investors as we research them.` };
     }
+
+    const run = await limits.limit(ctx, "runsPerVisitor", { key: f._id });
+    if (!run.ok) return { ok: false as const, error: "You've used today's 3 runs. Come back tomorrow." };
+    const calls = await limits.limit(ctx, "aiCallsGlobal", { count: 4 }); // 3 emails + 1 call for the other reasons
+    if (!calls.ok) return { ok: false as const, error: BUSY };
+
+    await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: "writing" });
     await ctx.runMutation(internal.founders.saveMatches, { founderId: f._id, matchCount, activeCount, leadCount, picks: list.map((t) => ({ investorId: t.inv._id, score: t.score })) });
 
     const founder = briefOf(f);

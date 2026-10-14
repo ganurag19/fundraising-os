@@ -7,6 +7,7 @@ import { LogoMark, Wordmark } from "../components/Brand";
 import { Face, Logo } from "../components/Art";
 import { FollowupBox, Head, InvestorHead, InvestorRow, Pipeline, SoonCards, StatusMenu, UpgradeCard } from "../components/Investor";
 import JoinSheet from "../components/JoinSheet";
+import { FeedbackButton } from "../components/Feedback";
 import { applyTheme, savedTheme } from "../lib/theme";
 import type { Theme } from "../lib/theme";
 import type { Me, Row } from "../components/Investor";
@@ -96,7 +97,7 @@ export default function Dashboard() {
   const ready = me.rows.filter((r) => r.draft && r.status === "new").length;
 
   const navItem = ([k, label, icon]: [Tab, string, string], badge?: number, soon?: boolean) => (
-    <button key={k} className={tab === k ? "on" : ""} aria-current={tab === k ? "page" : undefined} onClick={() => go(k)}>
+    <button key={k} className={tab === k ? "on" : ""} aria-current={tab === k ? "page" : undefined} data-track={soon ? `soon_tab_${k}` : undefined} onClick={() => go(k)}>
       <span className="ic" aria-hidden="true">{icon}</span><span className="lb">{label}</span>
       {soon ? <span className="soon-tag">SOON</span> : badge ? <span className={`dot${k === "today" ? "" : " quiet"}`}>{badge}</span> : null}
     </button>
@@ -117,7 +118,7 @@ export default function Dashboard() {
           <button className={`me-btn${tab === "profile" || tab === "settings" ? " on" : ""}`} onClick={() => go("profile")}>
             <Face name={me.name} size={30} /><div><b>{me.name}</b><span>{me.gmail ?? "Profile and settings"}</span></div>
           </button>
-          <div className="foot-links"><button onClick={() => go("settings")}>Settings</button><button onClick={() => void signOut()}>Sign out</button></div>
+          <div className="foot-links"><FeedbackButton page="dashboard" signedIn className="" /><button onClick={() => go("settings")}>Settings</button><button onClick={() => void signOut()}>Sign out</button></div>
         </div>
       </aside>
 
@@ -132,9 +133,10 @@ export default function Dashboard() {
           <div className="sheet more-sheet rise" role="dialog" aria-label="More">
             <div className="ws"><Logo name={me.company} size={30} /><div><b>{me.company}</b><span>{me.stage} · {me.ask}</span></div><button className="xbtn" aria-label="Close" onClick={() => setMore(false)}>✕</button></div>
             {[...PREPARE.map((p) => [...p, true] as const), ["profile", "Profile", "◐", false] as const, ["settings", "Settings", "⚙", false] as const].map(([k, label, icon, soon]) => (
-              <button key={k} className="more-item" onClick={() => go(k as Tab)}><span className="ic" aria-hidden="true">{icon}</span>{label}{soon && <span className="soon-tag">SOON</span>}</button>
+              <button key={k} className="more-item" data-track={soon ? `soon_tab_${k}` : undefined} onClick={() => go(k as Tab)}><span className="ic" aria-hidden="true">{icon}</span>{label}{soon && <span className="soon-tag">SOON</span>}</button>
             ))}
             <button className="more-item" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}><span className="ic" aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>{theme === "dark" ? "Light mode" : "Dark mode"}</button>
+            <FeedbackButton page="dashboard" signedIn className="more-item" />
             <button className="more-item muted" onClick={() => void signOut()}><span className="ic" aria-hidden="true">⎋</span>Sign out</button>
           </div>
         </div>

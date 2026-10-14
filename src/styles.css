@@ -750,3 +750,4 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .foot a{display:inline-flex;align-items:center;min-height:44px;padding:0 2px}
 .sc-invite .text-link{min-height:44px;display:inline-flex;align-items:center;vertical-align:middle}
 @media (max-width:720px){body:has(.sticky-cta) footer{padding-bottom:calc(110px + env(safe-area-inset-bottom))}}
+.link-btn{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer;min-height:44px}

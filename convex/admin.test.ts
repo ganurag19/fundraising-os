@@ -64,3 +64,22 @@ describe("owner dashboard", () => {
     expect(f?.events.click_go).toEqual({ n: 2, people: 1 });
   });
 });
+
+describe("feedback", () => {
+  beforeEach(() => { vi.stubEnv("ADMIN_EMAIL", OWNER); vi.stubEnv("ADMIN_PIN", PIN); });
+  afterEach(() => vi.unstubAllEnvs());
+
+  test("is saved with the page, capped at 5 an hour per visitor, and listed for the owner", async () => {
+    const { t, owner } = await setup();
+    expect((await t.mutation(api.feedback.send, { token, page: "emails", text: "  " })).ok).toBe(false);
+    expect(await t.mutation(api.feedback.send, { token, page: "emails", text: "The second email had no signature.", email: "tester@example.test" })).toEqual({ ok: true });
+    for (let i = 0; i < 4; i++) await t.mutation(api.feedback.send, { token, page: "nowhere", text: `note ${i}` });
+    expect((await t.mutation(api.feedback.send, { token, page: "emails", text: "one too many" })).ok).toBe(false);
+    const r = await owner.mutation(api.admin.unlock, { pin: PIN });
+    if (!r.ok) throw new Error(r.error);
+    const f = await owner.query(api.admin.forms, { key: r.key, since: 0 });
+    expect(f?.feedback.length).toBe(5);
+    expect(f?.feedback.some((n) => n.email === "tester@example.test" && n.page === "emails")).toBe(true);
+    expect(f?.feedback.some((n) => n.page === "other")).toBe(true); // unknown pages are stored as "other"
+  });
+});

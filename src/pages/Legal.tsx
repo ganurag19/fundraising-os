@@ -31,6 +31,7 @@ export function Privacy() {
         <li><b>When you sign in with Google:</b> your name, email address and profile picture link, from Google.</li>
         <li><b>A random code in your browser</b> that keeps your list yours before you sign in. It isn't used to track you anywhere else.</li>
         <li><b>If you ask for an invite:</b> your name, email, startup's name and stage.</li>
+        <li><b>If you send feedback:</b> your note, the page you sent it from, and your email if you give it (or your sign-in email).</li>
         <li><b>Usage counts:</b> which pages were opened, which buttons were pressed and which steps were reached, and when, so we can see where people get stuck. These are linked to a scrambled form of the random code in your browser, never to your name or email, and never include what you type.</li>
       </ul>
 

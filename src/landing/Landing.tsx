@@ -9,6 +9,7 @@ import { BeforeAfter, Compare, FitScore, HeroStart, ProductDemo, ThreeEmails, Wh
 import type { StartAnswers } from "./Sections";
 import { Choose, HeroFeed, Mark, Reminder } from "./More";
 import { savedInviteCode, savePrefill } from "../lib/token";
+import { FeedbackButton } from "../components/Feedback";
 
 const GO = "Find my 3 best investors, free →";
 
@@ -145,7 +146,7 @@ export default function Landing() {
         </section>
 
         <div className="cta-band"><h2 className="h-l" style={{ marginTop: 0 }}>You build. <span className="it"><Mark>We find who backs it.</Mark></span></h2><p className="lede center-lede" style={{ marginBottom: 22 }}>Good companies deserve a first look. Yours starts with one email.</p><div className="cta-row" style={{ justifyContent: "center" }}><button className="btn white" data-track="click_go" onClick={() => go()}>{GO}</button></div></div>
-        <footer><div className="foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Not affiliated with any fund · Example founders and investors on this page are made up · <a href="/compare/fundraising-consultant">Compare</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span></div></footer>
+        <footer><div className="foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Not affiliated with any fund · Example founders and investors on this page are made up · <a href="/compare/fundraising-consultant">Compare</a> · <FeedbackButton page="landing" className="link-btn" /> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span></div></footer>
       </div>
 
       {sheet && <InviteSheet mode={sheet} onMode={setSheet} onClose={() => setSheet(null)} />}

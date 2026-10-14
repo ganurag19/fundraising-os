@@ -8,6 +8,7 @@ import { PickCard, Pipeline, SoonCards } from "../components/Investor";
 import { cheque } from "../lib/investor";
 import type { Me } from "../components/Investor";
 import { LogoMark, Wordmark } from "../components/Brand";
+import { FeedbackButton } from "../components/Feedback";
 import { freshVisitorToken, visitorToken } from "../lib/token";
 
 const SPACE: Record<string, string> = { AI: "AI", "Climate & Energy": "climate", "B2B SaaS": "B2B SaaS", "Consumer brands": "consumer", "Media & adtech": "media and adtech", Web3: "Web3" };
@@ -57,6 +58,7 @@ export default function Emails() {
       <div className="picks">{picks.map((r) => <PickCard key={r.rank} r={r} token={token} onToast={setToast} />)}</div>
       {me.matchCount > 3 && <Teaser me={me} onToast={setToast} />}
       {me.matchCount > 3 && <UnlockNudge me={me} />}
+      <div className="center" style={{ margin: "40px 0 10px" }}><FeedbackButton page="emails" /></div>
       {toast && <div className="toast" role="status">{toast}</div>}
     </Page>
   );

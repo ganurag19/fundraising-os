@@ -31,12 +31,12 @@ export function soonFor(company = "your startup", sector = "your sector", stage 
   const whose = /s$/i.test(company) ? `${company}'` : `${company}'s`; // "Kiln Labs'", "Verdera's"
   const space = sector.replace(" & Energy", "").replace("Consumer brands", "consumer").replace("Media & adtech", "media");
   return [
-    { icon: "⚔", title: `Track ${whose} top competitors`, line: "Who else is raising in your space, and who backed them." },
-    { icon: "▲", title: `Funding trends in ${space}`, line: "Who's writing cheques now, and at what size." },
-    { icon: "▤", title: `Pitch deck review for ${company}`, line: "Slide-by-slide notes on what investors will question." },
-    { icon: "?", title: `Questions investors will ask ${company}`, line: "Are you ready? Answers drafted from your profile." },
-    { icon: "❝", title: `FAQ for your ${stage.toLowerCase()} raise`, line: "Round, terms, use of funds: written once, reused everywhere." },
-    { icon: "★", title: "Mentors, advisors and warm intros", line: "From founders who've already raised their first cheque.", vip: true },
+    { key: "competitors", icon: "⚔", title: `Track ${whose} top competitors`, line: "Who else is raising in your space, and who backed them." },
+    { key: "trends", icon: "▲", title: `Funding trends in ${space}`, line: "Who's writing cheques now, and at what size." },
+    { key: "deck", icon: "▤", title: `Pitch deck review for ${company}`, line: "Slide-by-slide notes on what investors will question." },
+    { key: "qa", icon: "?", title: `Questions investors will ask ${company}`, line: "Are you ready? Answers drafted from your profile." },
+    { key: "faq", icon: "❝", title: `FAQ for your ${stage.toLowerCase()} raise`, line: "Round, terms, use of funds: written once, reused everywhere." },
+    { key: "vip", icon: "★", title: "Mentors, advisors and warm intros", line: "From founders who've already raised their first cheque.", vip: true },
   ];
 }
 

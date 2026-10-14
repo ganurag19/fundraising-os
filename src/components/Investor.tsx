@@ -389,7 +389,7 @@ export function SoonCards({ onToast, company, sector, stage }: { onToast: Toast;
   return (
     <div className="soon-grid six">
       {soonFor(company, sector, stage).map((s) => (
-        <button className={`soon-card${"vip" in s ? " vip" : ""}`} data-track="click_soon" key={s.title} onClick={() => onToast(`${s.title}: coming soon.`)}>
+        <button className={`soon-card${"vip" in s ? " vip" : ""}`} data-track={`soon_${s.key}`} key={s.title} onClick={() => onToast(`${s.title}: coming soon.`)}>
           <span className="soon-icon" aria-hidden="true">{s.icon}</span>
           {"vip" in s
             ? <span className="soon-text"><b>{s.title}</b><span>{s.line}</span><span className="vip-btn">VIP access · SOON</span></span>

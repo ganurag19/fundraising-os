@@ -10,6 +10,9 @@ export const EVENT_NAMES = [
   "click_go", "click_code", "click_request", "click_unlock", "click_signin",
   "click_gmail", "click_copy", "click_write", "click_upgrade", "click_soon",
   "click_linkedin", "click_copy_note", "click_write_note",
+  // which coming-soon idea she tapped: cards, and the sidebar's SOON pages
+  "soon_competitors", "soon_trends", "soon_deck", "soon_qa", "soon_faq", "soon_vip",
+  "soon_tab_competition", "soon_tab_qa", "soon_tab_dataroom", "soon_tab_inbox", "soon_tab_connect", "click_feedback",
 ] as const;
 const NAMES = new Set<string>(EVENT_NAMES);
 

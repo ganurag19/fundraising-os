@@ -11,6 +11,7 @@
 import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
+import type * as feedback from "../feedback.js";
 import type * as followups from "../followups.js";
 import type * as founders from "../founders.js";
 import type * as http from "../http.js";
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   auth: typeof auth;
   crons: typeof crons;
+  feedback: typeof feedback;
   followups: typeof followups;
   founders: typeof founders;
   http: typeof http;
