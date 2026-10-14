@@ -4,6 +4,7 @@
 
 ## Decisions taken (defaults, change anytime)
 
+- Audience (14 Oct): **first-time founders raising their first round** (idea to seed, ₹25L–10 Cr, India). Not "any round". "Next cheque" comes later as retention for founders who already used FirstCheq, not as a new audience; revisit if /admin shows many repeat founders.
 - Cheque fit: an investor fits if their largest cheque is at least 2% of her round and their smallest is no more than the whole round.
 - Ask bands: ₹25–50L · ₹50L–1Cr · ₹1–3 Cr · ₹3–5 Cr · ₹5–10 Cr.
 - Stage mapping: as in docs/SEED_FORMAT.md.
@@ -56,6 +57,7 @@ Investor side (confirm profile, founders for you, team members) · founder ratin
 
 ## Parked (not now)
 
+- "Raising again?": help for a founder's next round (Series A investors, warm intros, data room, metrics prep). v2, after the first-round product is proven; same account and pipeline.
 - **Next version of LinkedIn notes:** one click to send on LinkedIn, like Open in Gmail (LinkedIn has no prefilled-note link, so this needs a browser extension or LinkedIn's API; still never sent without her press), plus a follow-up DM once they accept. Now: profile link (or search) + the note to copy.
 - More comparison pages (vs ChatGPT, vs buying an investor list) and one page per sector ("Investors for Indian climate startups"), counts and made-up examples only, never real investor names. First one live: /compare/fundraising-consultant.
 - A real testimonial on the landing page, once a founder agrees (never a made-up one).
