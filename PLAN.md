@@ -47,6 +47,13 @@ Before milestone 1: GitHub repo, Convex project, Claude keys and caps (the setup
 - [x] Convex project `fundraisingos` signed in, dev deployment running; app connected (12 Oct)
 - [x] `ANTHROPIC_API_KEY` set on the Convex dev deployment (12 Oct). Live key goes on prod at go-live.
 
+## Next milestone (after the colleague test, 15 Oct): tracking without "I sent it"
+
+1. "Did you send it?" when she returns to FirstCheq after Open in Gmail: one tap, Yes / Not yet.
+2. Sent is marked automatically: Open in Gmail pre-fills a BCC unique to her (e.g. track-xyz@firstcheq.ai); when her copy arrives we mark that investor sent with the real time. Keep only recipient, time and subject, never the email body; say so in the app and in Privacy. Needs the firstcheq.ai inbound mail set up.
+3. One-tap reply buttons in the 9 AM reminder: "Did they reply? Yes · Meeting · No reply yet" (signed links, her list only).
+Later (v2): Gmail access to detect replies (a restricted Google scope: security assessment and review), and possibly a FirstCheq connector for founders' own Claude.
+
 ## v1.5 (weeks 3–6, after the first founders)
 
 Investor Q&A with answers unlocked by profile completion · Competition page · Data room checklist and share link · full Profile builder · Settings with Gmail and Calendar integrations · Chat with us · Gmail send-only · "Full research" panel with "What to say" · SEBI fund-list research pilot · checked-investor queue to 300.
