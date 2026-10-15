@@ -545,3 +545,4 @@
 .ka-co-row b{flex:1;font-weight:600} .ka-co-row em{font-style:normal;font-size:11px;color:var(--green)}
 .ka-co-row.on{background:var(--card2)} .ka-co-row.add{cursor:pointer;color:var(--blue-ink)} .ka-co-row.add:hover{background:var(--blue-soft)}
 .ka-dot{width:10px;height:10px;border-radius:50%}
+.ka-band .ka-band-a{background:#fff;color:#2B1B7A;border-radius:999px;padding:7px 14px;font-weight:700;font-size:13px;text-decoration:none}

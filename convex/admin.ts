@@ -116,6 +116,10 @@ export const people = query({
     at: v.number(), company: v.string(), name: v.string(), sectors: v.array(v.string()), stage: v.string(), ask: v.string(),
     website: v.union(v.string(), v.null()), linkedin: v.union(v.string(), v.null()), code: v.string(),
     emails: v.string(), signedIn: v.union(v.string(), v.null()), sent: v.number(), plan: v.boolean(),
+    replied: v.number(), meetings: v.number(), drafts: v.number(),
+    kit: v.union(v.null(), v.object({ status: v.string(), deck: v.boolean(), uploads: v.number(), brand: v.string() })),
+    request: v.union(v.null(), v.object({ plan: v.string(), wouldPay: v.string(), solves: v.number(), valuable: v.number() })),
+    welcome: v.union(v.null(), v.boolean()), // welcome email sent (true), failed (false), not yet (null)
   }))),
   handler: async (ctx, { key, since }) => {
     if (!(await ownerFromKey(ctx, key))) return null;
@@ -123,7 +127,15 @@ export const people = query({
     return await Promise.all(fs.map(async (f) => {
       const user = f.userId ? await ctx.db.get("users", f.userId) : null;
       const ms = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(100);
+      const kit = await ctx.db.query("kits").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first();
+      const req = await ctx.db.query("upgradeRequests").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first();
+      const drafts = await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", f._id)).take(100);
+      const welcome = (await ctx.db.query("notifications").withIndex("by_founder", (q) => q.eq("founderId", f._id)).take(20)).find((x) => x.kind === "welcome");
       return {
+        replied: ms.filter((m) => m.status === "replied").length, meetings: ms.filter((m) => m.status === "meeting").length, drafts: drafts.length,
+        kit: kit ? { status: kit.status, deck: !!kit.deck, uploads: kit.uploads, brand: kit.brand.primary } : null,
+        request: req ? { plan: req.plan, wouldPay: req.wouldPay, solves: req.solves, valuable: req.valuable } : null,
+        welcome: welcome ? welcome.ok : null,
         at: f._creationTime, company: f.company, name: f.name, sectors: f.sectors, stage: f.stage, ask: f.ask,
         website: f.website ?? null, linkedin: f.linkedin ?? null, code: f.inviteCode,
         emails: f.emailsStatus, signedIn: user?.email ?? null, sent: ms.filter((m) => m.status).length, plan: f.plan === "round_pass",
@@ -180,5 +192,30 @@ export const forms = query({
       feedback: notes.map((n) => ({ at: n._creationTime, page: n.page, text: n.text, email: n.email ?? null, company: n.company ?? null })),
       ai: { calls: calls.length, failed: failed.length, byPurpose: Object.fromEntries(byPurpose), lastErrors: failed.slice(0, 5).map((c) => ({ at: c._creationTime, purpose: c.purpose, error: (c.error ?? "").slice(0, 160) })) },
     };
+  },
+});
+
+/** Raise Kit visibility: websites we read, signed-in accounts, emails we sent founders, and AI use by model. */
+export const activity = query({
+  args: { key: v.string(), since: v.number() },
+  returns: v.union(v.null(), v.object({
+    sites: v.array(v.object({ at: v.number(), site: v.string(), ok: v.boolean() })),
+    users: v.array(v.object({ at: v.number(), email: v.string(), company: v.union(v.string(), v.null()) })),
+    emails: v.array(v.object({ at: v.number(), kind: v.string(), ok: v.boolean(), error: v.union(v.string(), v.null()), company: v.string() })),
+    models: v.array(v.object({ model: v.string(), calls: v.number(), inputTokens: v.number(), outputTokens: v.number() })),
+  })),
+  handler: async (ctx, { key, since }) => {
+    if (!(await ownerFromKey(ctx, key))) return null;
+    const calls = await ctx.db.query("aiCalls").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(3000);
+    const sites = calls.filter((c) => c.purpose === "kit_read_site" || c.purpose === "peek_website").slice(0, 100).map((c) => ({
+      at: c._creationTime, site: (c.input.match(/^SITE: (\S+)/m)?.[1] ?? "").replace(/^https?:\/\//, "").replace(/\/$/, ""), ok: !c.error && !!c.output && !c.output.startsWith("stop_reason") && !c.output.includes('"found":false'),
+    }));
+    const models = new Map<string, { calls: number; inputTokens: number; outputTokens: number }>();
+    for (const c of calls) { const m = models.get(c.model) ?? { calls: 0, inputTokens: 0, outputTokens: 0 }; m.calls++; m.inputTokens += c.inputTokens ?? 0; m.outputTokens += c.outputTokens ?? 0; models.set(c.model, m); }
+    const us = await ctx.db.query("users").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(100);
+    const users = await Promise.all(us.map(async (u) => ({ at: u._creationTime, email: u.email ?? "(no email)", company: (await ctx.db.query("founders").withIndex("by_userId", (q) => q.eq("userId", u._id)).first())?.company ?? null })));
+    const ns = await ctx.db.query("notifications").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).order("desc").take(100);
+    const emails = await Promise.all(ns.map(async (n) => ({ at: n._creationTime, kind: n.kind, ok: n.ok, error: n.error ?? null, company: (await ctx.db.get("founders", n.founderId))?.company ?? "" })));
+    return { sites, users, emails, models: [...models].map(([model, m]) => ({ model, ...m })) };
   },
 });

@@ -63,14 +63,14 @@ export default function Build() {
   // "Edit my facts" from the dashboard: start from what's saved (adjusted during render, once).
   const editing = params.has("edit");
   const [seeded, setSeeded] = useState(false);
-  if (editing && !seeded && me && kit) {
+  if (editing && !seeded && me && kit !== undefined) {
     setSeeded(true);
     setF({
       ...EMPTY, company: me.company, website: me.website ?? "", name: me.name, linkedin: me.profile.linkedin, sectors: me.sectors, stage: me.stage, ask: me.ask,
       oneLiner: me.profile.oneLiner, founderLine: me.profile.founderLine, traction: me.profile.traction,
-      problem: kit.facts.problem ?? "", product: kit.facts.product ?? "", forWho: kit.facts.forWho ?? "", customers: kit.facts.customers ?? "",
-      market: kit.facts.market ?? "", businessModel: kit.facts.businessModel ?? "", competitors: kit.facts.competitors ?? "", useOfFunds: kit.facts.useOfFunds ?? "", whyNow: kit.facts.whyNow ?? "",
-      team: kit.facts.team, primary: kit.brand.primary, accent: kit.brand.accent ?? "", logo: kit.brand.logo ?? "", font: kit.brand.font ?? "",
+      problem: kit?.facts.problem ?? "", product: kit?.facts.product ?? "", forWho: kit?.facts.forWho ?? "", customers: kit?.facts.customers ?? "",
+      market: kit?.facts.market ?? "", businessModel: kit?.facts.businessModel ?? "", competitors: kit?.facts.competitors ?? "", useOfFunds: kit?.facts.useOfFunds ?? "", whyNow: kit?.facts.whyNow ?? "",
+      team: kit?.facts.team ?? [], primary: kit?.brand.primary ?? "#3D7BFF", accent: kit?.brand.accent ?? "", logo: kit?.brand.logo ?? "", font: kit?.brand.font ?? "",
     });
     setStep("confirm");
   }

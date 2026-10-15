@@ -80,14 +80,14 @@ function Pin({ onKey }: { onKey: (k: string) => void }) {
   );
 }
 
-type Demo = { funnel: typeof api.admin.funnel._returnType; people: typeof api.admin.people._returnType; forms: typeof api.admin.forms._returnType };
+type Demo = { funnel: typeof api.admin.funnel._returnType; people: typeof api.admin.people._returnType; forms: typeof api.admin.forms._returnType; activity: typeof api.admin.activity._returnType };
 
 function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: () => void; demo?: Demo }) {
   const [range, setRange] = useState<Range>("today");
   const [since, setSince] = useState(todayStart);
   const args = demo ? "skip" : { key: adminKey, since };
-  const qFunnel = useQuery(api.admin.funnel, args), qPeople = useQuery(api.admin.people, args), qForms = useQuery(api.admin.forms, args);
-  const funnel = demo ? demo.funnel : qFunnel, people = demo ? demo.people : qPeople, forms = demo ? demo.forms : qForms;
+  const qFunnel = useQuery(api.admin.funnel, args), qPeople = useQuery(api.admin.people, args), qForms = useQuery(api.admin.forms, args), qActivity = useQuery(api.admin.activity, args);
+  const funnel = demo ? demo.funnel : qFunnel, people = demo ? demo.people : qPeople, forms = demo ? demo.forms : qForms, activity = demo ? demo.activity : qActivity;
   const expired = funnel === null || people === null || forms === null;
   useEffect(() => {
     if (!expired) return;
@@ -98,6 +98,22 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
   const pick = (r: Range) => { setRange(r); setSince(sinceNow(r)); };
   const ev = (k: string) => funnel?.events[k] ?? { n: 0, people: 0 };
   const st = (k: string) => funnel?.steps[k] ?? 0;
+  // The Raise Kit path (main page since 16 Oct): visit → website read → facts → kit ready → Google → full-access request.
+  const kitSteps: [number | undefined, string][] = [
+    [funnel?.visitors, "visitors"],
+    [funnel ? ev("visit_landing").people : undefined, "saw the main page"],
+    [funnel ? ev("visit_build").people : undefined, "started a kit"],
+    [funnel ? st("kit_site_read") : undefined, "website read"],
+    [funnel ? st("kit_enriched") : undefined, "added a deck or CV"],
+    [funnel ? st("kit_facts_confirmed") : undefined, "confirmed their facts"],
+    [funnel ? st("kit_ready") : undefined, "got their kit"],
+    [funnel ? st("signed_in") : undefined, "signed in with Google"],
+    [funnel ? ev("click_swipe_send").people : undefined, "sent a pitch"],
+    [funnel ? st("kit_upgrade_requested") : undefined, "asked for full access"],
+  ];
+  const kitPeople = people?.filter((p) => p.kit) ?? [];
+  const wouldPay = forms ? forms.upgrades.filter((u) => u.wouldPay === "yes").length : 0;
+  const avg = (k: "solves" | "valuable") => forms && forms.upgrades.length ? (forms.upgrades.reduce((a, u) => a + u[k], 0) / forms.upgrades.length).toFixed(1) : "–";
   const steps: [number | undefined, string][] = [
     [funnel?.visitors, "visitors"],
     [funnel ? ev("visit_landing").people : undefined, "saw the landing page"],
@@ -117,7 +133,25 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
         </div>
       </header>
 
-      <h2 className="dash-h">Funnel</h2>
+      <h2 className="dash-h">At a glance</h2>
+      <div className="admin-funnel small-funnel">
+        <div><b>{funnel?.visitors ?? "·"}</b><span>visitors</span></div>
+        <div><b>{kitPeople.length}</b><span>kits built</span></div>
+        <div><b>{people?.filter((p) => p.signedIn).length ?? "·"}</b><span>signed in</span></div>
+        <div><b>{people?.reduce((a, p) => a + p.sent, 0) ?? "·"}</b><span>pitches sent</span></div>
+        <div><b>{people?.reduce((a, p) => a + p.replied + p.meetings, 0) ?? "·"}</b><span>replies and meetings</span></div>
+        <div><b>{forms?.upgrades.length ?? "·"}</b><span>asked for full access</span></div>
+        <div><b>{wouldPay}</b><span>would pay: yes</span></div>
+        <div><b>{avg("solves")}</b><span>avg "solves my problem" /5</span></div>
+        <div><b>{avg("valuable")}</b><span>avg "valuable" /5</span></div>
+      </div>
+
+      <h2 className="dash-h">Raise Kit funnel</h2>
+      <div className="admin-funnel">
+        {kitSteps.map(([n, label], i) => <div key={label}><b>{n ?? "·"}</b><span>{label}</span>{i > 0 && n !== undefined && kitSteps[0][0] ? <i>{Math.round((n / (kitSteps[0][0] || 1)) * 100)}%</i> : null}</div>)}
+      </div>
+
+      <h2 className="dash-h">Classic funnel</h2>
       <div className="admin-funnel">
         {steps.map(([n, label], i) => <div key={label}><b>{n ?? "·"}</b><span>{label}</span>{i > 0 && n !== undefined && steps[0][0] ? <i>{Math.round((n / (steps[0][0] || 1)) * 100)}%</i> : null}</div>)}
       </div>
@@ -142,7 +176,14 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
                 {p.website && <> · <a href={/^https?:/.test(p.website) ? p.website : `https://${p.website}`} target="_blank" rel="noreferrer noopener">{p.website.replace(/^https?:\/\//, "")}</a></>}
                 {p.linkedin && <> · <a href={p.linkedin} target="_blank" rel="noreferrer noopener">LinkedIn</a></>}
               </span>
-              {p.signedIn && <span className="small">{p.signedIn}</span>}
+              {p.signedIn && <span className="small"><a href={`mailto:${p.signedIn}`}>{p.signedIn}</a>{p.welcome === true ? " · welcome email sent" : p.welcome === false ? " · welcome email failed" : ""}</span>}
+              <span className="admin-chips">
+                {p.kit ? <span className={`tag ${p.kit.deck ? "green" : p.kit.status === "failed" ? "red" : ""}`}><i className="admin-sw" style={{ background: p.kit.brand }} />Kit {p.kit.deck ? "ready" : p.kit.status}{p.kit.uploads ? ` · ${p.kit.uploads} file${p.kit.uploads > 1 ? "s" : ""}` : ""}</span> : <span className="tag">Classic list</span>}
+                <span className="tag">{p.drafts} pitches written</span>
+                {p.sent > 0 && <span className="tag green">{p.sent} sent</span>}
+                {p.replied + p.meetings > 0 && <span className="tag gold">{p.replied} replied · {p.meetings} meetings</span>}
+                {p.request && <span className="tag violet">Wants {PLAN_LABEL[p.request.plan] ?? p.request.plan} · would pay {p.request.wouldPay} · {p.request.solves}/5 · {p.request.valuable}/5</span>}
+              </span>
             </div>
           ))}
         </div>
@@ -198,6 +239,27 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
           ))}</div>
         )}
 
+        <h2 className="dash-h">Websites we read ({activity?.sites.length ?? 0})</h2>
+        {!activity?.sites.length ? <p className="muted small">None in this range.</p> : (
+          <div className="admin-table">{activity.sites.map((x) => <div className="admin-tr wide" key={x.at}><span><a href={`https://${x.site}`} target="_blank" rel="noreferrer noopener">{x.site}</a></span><span className={`tag ${x.ok ? "green" : "red"}`}>{x.ok ? "read" : "couldn't read"}</span><span className="muted small">{when(x.at)}</span></div>)}</div>
+        )}
+
+        <h2 className="dash-h">Google accounts ({activity?.users.length ?? 0})</h2>
+        {!activity?.users.length ? <p className="muted small">None in this range.</p> : (
+          <div className="admin-table">{activity.users.map((u) => <div className="admin-tr wide" key={u.at}><a href={`mailto:${u.email}`}>{u.email}</a><span>{u.company ?? <span className="muted small">no startup yet</span>}</span><span className="muted small">{when(u.at)}</span></div>)}</div>
+        )}
+
+        <h2 className="dash-h">Emails we sent founders ({activity?.emails.length ?? 0})</h2>
+        {!activity?.emails.length ? <p className="muted small">None in this range.</p> : (
+          <div className="admin-table">{activity.emails.map((e) => <div className="admin-tr wide" key={e.at}><span><b>{e.company}</b> · {e.kind === "welcome" ? "Welcome" : "Follow-up reminder"}</span><span className={`tag ${e.ok ? "green" : "red"}`}>{e.ok ? "sent" : `failed${e.error ? `: ${e.error.slice(0, 60)}` : ""}`}</span><span className="muted small">{when(e.at)}</span></div>)}</div>
+        )}
+
+        <h2 className="dash-h">AI use by model</h2>
+        <div className="admin-table">
+          <div className="admin-tr head"><span>Model</span><span>Calls</span><span>Tokens in / out</span></div>
+          {(activity?.models ?? []).map((m) => <div className="admin-tr" key={m.model}><span>{m.model}</span><b>{m.calls}</b><span>{Math.round(m.inputTokens / 1000)}k / {Math.round(m.outputTokens / 1000)}k</span></div>)}
+        </div>
+
         <h2 className="dash-h">Invite codes</h2>
         <div className="admin-table">
           <div className="admin-tr head"><span>Code</span><span>Used</span><span>Of</span></div>
@@ -231,9 +293,9 @@ const DEMO: Demo = {
   funnel: { visitors: 42, capped: false, steps: { signup_done: 9, emails_ready: 8, signed_in: 5, sent: 11 },
     events: { visit_landing: { n: 51, people: 40 }, click_go: { n: 19, people: 14 }, click_code: { n: 12, people: 10 }, click_request: { n: 4, people: 4 }, click_unlock: { n: 6, people: 5 }, click_gmail: { n: 14, people: 4 }, click_copy: { n: 3, people: 2 }, click_write: { n: 7, people: 3 }, click_upgrade: { n: 2, people: 2 }, click_soon: { n: 5, people: 3 } } },
   people: [
-    { at: T, company: "Kiln Labs", name: "Arjun Rao", sectors: ["Climate & Energy"], stage: "Seed", ask: "₹1–3 Cr", website: "kilnlabs.example.in", linkedin: null, code: "TEST-ONE", emails: "ready", signedIn: "arjun@kilnlabs.example.in", sent: 3, plan: false },
-    { at: T - 3600000, company: "Ledgerly", name: "Nisha Kulkarni", sectors: ["AI", "Fintech"], stage: "Pre-seed", ask: "₹50L–1 Cr", website: "ledgerly.example.in", linkedin: "https://linkedin.com/in/example", code: "TEST-ONE", emails: "ready", signedIn: "nisha@example.test", sent: 0, plan: false },
-    { at: T - 7200000, company: "Paniwala Labs", name: "Priya Menon", sectors: ["Agritech"], stage: "Pre-seed", ask: "₹25–50L", website: null, linkedin: null, code: "TEST-TWO", emails: "writing", signedIn: null, sent: 0, plan: false },
+    { at: T, company: "Kiln Labs", name: "Arjun Rao", sectors: ["Climate & Energy"], stage: "Seed", ask: "₹1–3 Cr", website: "kilnlabs.example.in", linkedin: null, code: "KIT", emails: "ready", signedIn: "arjun@kilnlabs.example.in", sent: 3, plan: false, replied: 1, meetings: 0, drafts: 5, kit: { status: "ready", deck: true, uploads: 1, brand: "#7B5CFF" }, request: { plan: "raise_kit", wouldPay: "yes", solves: 4, valuable: 5 }, welcome: true },
+    { at: T - 3600000, company: "Ledgerly", name: "Nisha Kulkarni", sectors: ["AI", "Fintech"], stage: "Pre-seed", ask: "₹50L–1 Cr", website: "ledgerly.example.in", linkedin: "https://linkedin.com/in/example", code: "TEST-ONE", emails: "ready", signedIn: "nisha@example.test", sent: 0, plan: false, replied: 0, meetings: 0, drafts: 3, kit: null, request: null, welcome: false },
+    { at: T - 7200000, company: "Paniwala Labs", name: "Priya Menon", sectors: ["Agritech"], stage: "Pre-seed", ask: "₹25–50L", website: null, linkedin: null, code: "TEST-TWO", emails: "writing", signedIn: null, sent: 0, plan: false, replied: 0, meetings: 0, drafts: 0, kit: { status: "building", deck: false, uploads: 0, brand: "#2F6BFF" }, request: null, welcome: null },
   ],
   forms: {
     upgrades: [{ at: T - 2000000, company: "Kiln Labs", email: "arjun@kilnlabs.example.in", plan: "raise_kit", wouldPay: "yes", price: "₹15,000–25,000", solves: 4, valuable: 5, liked: "Pitches open on a real deal", missing: "Editable PowerPoint", raisingWhen: "Now", phone: null }],
@@ -244,5 +306,11 @@ const DEMO: Demo = {
     pmf: { very: 4, somewhat: 3, not: 1, benefits: [{ answer: "very", text: "I'd never have found Verdant Arc on my own.", company: "Kiln Labs" }] },
     feedback: [{ at: T, page: "dashboard", text: "I didn't know what to do after the first email.", email: "arjun@kilnlabs.example.in", company: "Kiln Labs" }],
     ai: { calls: 37, failed: 1, byPurpose: { match: 9, draft: 24, followup: 4 }, lastErrors: [{ at: T, purpose: "draft", error: "overloaded" }] },
+  },
+  activity: {
+    sites: [{ at: T, site: "kilnlabs.example.in", ok: true }, { at: T - 9000, site: "parked.example", ok: false }],
+    users: [{ at: T, email: "arjun@kilnlabs.example.in", company: "Kiln Labs" }],
+    emails: [{ at: T, kind: "welcome", ok: true, error: null, company: "Kiln Labs" }],
+    models: [{ model: "claude-sonnet-5-5", calls: 12, inputTokens: 48000, outputTokens: 9000 }, { model: "claude-haiku-4-5", calls: 20, inputTokens: 60000, outputTokens: 7000 }],
   },
 };

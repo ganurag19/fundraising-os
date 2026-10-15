@@ -99,7 +99,8 @@ export default function KitApp() {
   }
   if (!me) return <Navigate to="/" replace />;
   if (!me.unlocked && !preview) return <Opening />;
-  if (!kit) return <Navigate to="/dashboard" replace />; // a classic list without a kit keeps the classic dashboard
+  // A founder from the classic sign-up has a list but no kit yet: same dashboard, with "Create your deck" where the kit goes.
+  const kk = kit ?? { status: "none", brand: { primary: "#3D7BFF" } as { primary: string; logo?: string }, requested: false };
 
   const go = (t: Tab) => { setTab(t); setMore(false); remember("fos_kit_tab2", t); window.scrollTo(0, 0); };
   const sent = me.rows.filter((r) => r.status !== "new").length;
@@ -120,7 +121,7 @@ export default function KitApp() {
     <div className="dash ka">
       <aside className="dash-nav" aria-label="Sections">
         <Link className="logo dash-logo" to="/"><LogoMark /><Wordmark /></Link>
-        <CompanySwitch me={me} brand={kit.brand} onToast={setToast} />
+        <CompanySwitch me={me} brand={kk.brand} onToast={setToast} />
         <Rings sent={sent} replies={replies} fit={me.matchCount} />
         <span className="nlbl">Your raise</span>
         {RAISE.map(navItem)}
@@ -129,7 +130,7 @@ export default function KitApp() {
         <span className="nlbl">People</span>
         {PEOPLE.map(navItem)}
         <div className="side-foot">
-          {!full && <button className="ka-up" onClick={() => openUp()}>{kit.requested ? "✓ Founding access requested" : <>🔒 Unlock your full kit</>}</button>}
+          {!full && <button className="ka-up" onClick={() => openUp()}>{kk.requested ? "✓ Founding access requested" : <>🔒 Unlock your full kit</>}</button>}
           {themeBtn}
           <button className={`ka-me${tab === "settings" ? " on" : ""}`} onClick={() => go("settings")} aria-label="Your settings"><Face name={me.name} size={36} /><span><b>{me.name}</b><em>{me.gmail ?? ""}</em></span><i aria-hidden="true">⚙</i></button>
           <div className="foot-links"><FeedbackButton page="app" signedIn className="" /><button onClick={() => go("settings")}>Settings</button><button onClick={() => void signOut()}>Sign out</button></div>
@@ -144,9 +145,9 @@ export default function KitApp() {
         <div className="sheet-scrim" onClick={(e) => e.target === e.currentTarget && setMore(false)}>
           <div className="sheet more-sheet rise" role="dialog" aria-label="More">
             <div className="ws"><div><b>{me.company}</b><span>{me.stage} · {me.ask}</span></div><button className="xbtn" aria-label="Close" onClick={() => setMore(false)}>✕</button></div>
-            <CompanySwitch me={me} brand={kit.brand} onToast={setToast} compact />
+            <CompanySwitch me={me} brand={kk.brand} onToast={setToast} compact />
             {[...KIT.slice(1), ...PEOPLE].map(([k, label, icon, soon]) => <button key={k} className="more-item" data-track={soon ? `soon_tab_kit_${k}` : undefined} onClick={() => go(k)}><span className="ic" aria-hidden="true">{icon}</span>{label}{soon && <span className="soon-tag">SOON</span>}</button>)}
-            {!full && <button className="more-item" onClick={() => { setMore(false); openUp(); }}><span className="ic" aria-hidden="true">🔒</span>{kit.requested ? "Founding access requested" : "Unlock your full kit"}</button>}
+            {!full && <button className="more-item" onClick={() => { setMore(false); openUp(); }}><span className="ic" aria-hidden="true">🔒</span>{kk.requested ? "Founding access requested" : "Unlock your full kit"}</button>}
             <button className="more-item" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}><span className="ic" aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>{theme === "dark" ? "Light mode" : "Dark mode"}</button>
             <button className="more-item" onClick={() => go("settings")}><span className="ic" aria-hidden="true">⚙</span>Settings</button>
             <FeedbackButton page="app" signedIn className="more-item" />
@@ -158,8 +159,10 @@ export default function KitApp() {
       <main className="dash-main">
         <div className="dash-top"><Link className="logo" to="/"><LogoMark /><Wordmark /></Link><button className="theme-btn sm" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Switch theme">{theme === "dark" ? "☀" : "☾"}</button></div>
         {!full && (
-          <div className={`ka-band${kit.requested ? " done" : ""}`}>
-            {kit.requested
+          <div className={`ka-band${kk.requested ? " done" : ""}`}>
+            {kk.status === "none"
+              ? <><span>Your investors are here. <b>Create your deck and teaser</b> in your brand, in about 30 seconds.</span><Link className="ka-band-a" to="/build?edit=1">Create my deck →</Link></>
+              : kk.requested
               ? <span>✓ Founding access requested. We'll be in touch about {me.company}'s full kit.</span>
               : <><span>You're seeing <b>5 of {me.matchCount} investors</b> and <b>3 of 9 slides</b>.</span><button onClick={() => openUp()}>Unlock your full kit →</button></>}
           </div>
@@ -171,11 +174,11 @@ export default function KitApp() {
         {tab === "home" && <Home me={me} k={view ?? null} go={go} onUnlock={openUp} sent={sent} replies={replies} ready={ready} full={full} />}
         {tab === "outreach" && <Outreach me={me} token={token} onToast={setToast} onUnlock={() => openUp()} />}
         {tab === "plan" && <Plan me={me} go={go} />}
-        {tab === "deck" && (view ? <Deck k={view} onUnlock={() => openUp()} /> : <Pending status={kit.status} />)}
-        {tab === "teaser" && (view ? <TeaserTab k={view} onUnlock={() => openUp()} /> : <Pending status={kit.status} />)}
+        {tab === "deck" && (view ? <Deck k={view} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
+        {tab === "teaser" && (view ? <TeaserTab k={view} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
         {(tab === "qa" || tab === "market" || tab === "dataroom" || tab === "circle") && <Soon tab={tab} company={me.company} onToast={setToast} />}
         {tab === "profile" && <Profile me={me} onToast={setToast} />}
-        {tab === "plans" && <Plans onUnlock={openUp} requested={kit.requested} />}
+        {tab === "plans" && <Plans onUnlock={openUp} requested={kk.requested} />}
         {tab === "settings" && <Settings me={me} token={token} theme={theme} setTheme={setTheme} signOut={() => void signOut()} />}
       </main>
       {upgrade && <UpgradeSheet token={token} company={me.company} start={upgrade} onClose={() => setUpgrade(null)} />}
@@ -286,6 +289,7 @@ function Opening() {
   return <Shell><div className="kb-step center" role="status"><div className="spinner" /><h1 style={{ fontSize: 24 }}>Opening your kit…</h1><p className="kb-help">Signing you in and moving your kit to your account.</p></div></Shell>;
 }
 function Pending({ status }: { status: string }) {
+  if (status === "none") return <div className="empty"><b>Create your deck and teaser.</b><span>Check your facts once and we'll build your investor deck and two-page teaser in your brand, in about 30 seconds.</span><Link className="btn primary sm" to="/build?edit=1">Create my deck →</Link></div>;
   return <div className="empty"><b>{status === "failed" ? "We couldn't finish your deck." : "Your deck is still being written."}</b><span>{status === "failed" ? "Edit your facts and build it again from your Profile." : "This page updates by itself."}</span></div>;
 }
 

@@ -1377,3 +1377,5 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 /* The honest line: just a sentence, full width, under the done-for-you card */
 .k5-honest{max-width:none;width:100%;background:none;border:0;border-radius:0;padding:0;margin:20px 0 0;font-size:14.5px;color:var(--muted);text-align:center}
 .nowrap{white-space:nowrap}
+.admin-chips{display:flex;gap:6px;flex-wrap:wrap}
+.admin-sw{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0}

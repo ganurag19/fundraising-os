@@ -24,7 +24,9 @@ export default function App() {
       <Route path="/classic" element={<Landing />} />
       <Route path="/start" element={<Start />} />
       <Route path="/emails" element={<Emails />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      {/* 16 Oct: everyone uses the kit dashboard; the classic one stays at /classic-dashboard (not linked). */}
+      <Route path="/dashboard" element={<KitRedirect to="/app" />} />
+      <Route path="/classic-dashboard" element={<Dashboard />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/admin" element={<Admin />} />
@@ -42,8 +44,8 @@ export default function App() {
   );
 }
 
-/** /kit?code=X → /?code=X, so links already shared keep their code. */
-function KitRedirect() {
+/** /kit?code=X → /?code=X (and /dashboard → /app), so links already shared keep their query. */
+function KitRedirect({ to = "/" }: { to?: string }) {
   const { search } = useLocation();
-  return <Navigate to={`/${search}`} replace />;
+  return <Navigate to={`${to}${search}`} replace />;
 }
