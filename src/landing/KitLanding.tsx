@@ -93,20 +93,6 @@ export default function KitLanding() {
 
       <ProofStrip />
 
-      {/* Why us: not just an AI wrapper */}
-      <section className="k2-wide">
-        <span className="k2-k">Why FirstCheq</span>
-        <h2>Not another AI wrapper.<br /><em>Built on things AI can't make up.</em></h2>
-        <div className="k2-why">
-          {[
-            ["◉", "Our own investor research", "574 investors who back Indian startups: their deals, partners, cheque sizes and LinkedIn, researched from their own sites and deal news. Contact links checked every week."],
-            ["◎", "A real matching engine", "Every investor gets a Fit Score from their actual deals, stage, cheque size and how recently they invested. It's calculated, not guessed by a chatbot, and every reason shows its source."],
-            ["▤", "Templates from real fundraises", "Deck, teaser and pitch structures in the order seed investors read them, built from first rounds that closed. [Confirm: which raises, and who reviewed them.]"],
-            ["✓", "Checked, never invented", "Code checks every draft: your numbers stay exactly as you gave them, no figure appears that you didn't give us, and every pitch opens on a deal the investor really did."],
-          ].map(([ic, t, d]) => <div key={t} className="k2-why-card"><span className="k2-why-ic" aria-hidden="true">{ic}</span><b>{t}</b><p>{d}</p></div>)}
-        </div>
-        <p className="k2-sub" style={{ marginTop: 6 }}>And people when you want them: advisory calls with founders who've raised their first round, on the Advisors plan.</p>
-      </section>
 
       {/* 1: just your website */}
       <section className="k2-row" id="how">
@@ -171,6 +157,21 @@ export default function KitLanding() {
           <div><b>Doing it the usual way</b><ul><li>2–4 weeks making a deck and teaser</li><li>Days googling which investors might fit</li><li>Writing every email from scratch</li><li>Follow-ups you forget</li><li>An advisor at ₹50,000–2,00,000 a month</li></ul></div>
           <div className="us"><b>With FirstCheq</b><ul><li>Your deck and teaser in your brand, in minutes</li><li>Every investor who fits, ranked, with the reason</li><li>A personal pitch to each, ready to swipe</li><li>Follow-ups written and scheduled</li><li>One price, once per round</li></ul></div>
         </div>
+      </section>
+
+      {/* Why us: not just an AI wrapper */}
+      <section className="k2-wide">
+        <span className="k2-k">Why FirstCheq</span>
+        <h2>Not another AI wrapper.<br /><em>Built on things AI can't make up.</em></h2>
+        <div className="k2-why">
+          {[
+            ["◉", "Our own investor research", "574 investors who back Indian startups: their deals, partners, cheque sizes and LinkedIn, researched from their own sites and deal news. Contact links checked every week."],
+            ["◎", "A real matching engine", "Every investor gets a Fit Score from their actual deals, stage, cheque size and how recently they invested. It's calculated, not guessed by a chatbot, and every reason shows its source."],
+            ["▤", "Templates from real fundraises", "Deck, teaser and pitch structures in the order seed investors read them, built from first rounds that closed. [Confirm: which raises, and who reviewed them.]"],
+            ["✓", "Checked, never invented", "Code checks every draft: your numbers stay exactly as you gave them, no figure appears that you didn't give us, and every pitch opens on a deal the investor really did."],
+          ].map(([ic, t, d]) => <div key={t} className="k2-why-card"><span className="k2-why-ic" aria-hidden="true">{ic}</span><b>{t}</b><p>{d}</p></div>)}
+        </div>
+        <p className="k2-sub" style={{ marginTop: 6 }}>And people when you want them: advisory calls with founders who've raised their first round, on the Advisors plan.</p>
       </section>
 
       {/* Plans (no prices while it's a concept) */}
