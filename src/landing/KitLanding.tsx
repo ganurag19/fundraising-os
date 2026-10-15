@@ -93,10 +93,25 @@ export default function KitLanding() {
 
       <ProofStrip />
 
+      {/* Why us: not just an AI wrapper */}
+      <section className="k2-wide">
+        <span className="k2-k">Why FirstCheq</span>
+        <h2>Not another AI wrapper.<br /><em>Built on things AI can't make up.</em></h2>
+        <div className="k2-why">
+          {[
+            ["◉", "Our own investor research", "574 investors who back Indian startups: their deals, partners, cheque sizes and LinkedIn, researched from their own sites and deal news. Contact links checked every week."],
+            ["◎", "A real matching engine", "Every investor gets a Fit Score from their actual deals, stage, cheque size and how recently they invested. It's calculated, not guessed by a chatbot, and every reason shows its source."],
+            ["▤", "Templates from real fundraises", "Deck, teaser and pitch structures in the order seed investors read them, built from first rounds that closed. [Confirm: which raises, and who reviewed them.]"],
+            ["✓", "Checked, never invented", "Code checks every draft: your numbers stay exactly as you gave them, no figure appears that you didn't give us, and every pitch opens on a deal the investor really did."],
+          ].map(([ic, t, d]) => <div key={t} className="k2-why-card"><span className="k2-why-ic" aria-hidden="true">{ic}</span><b>{t}</b><p>{d}</p></div>)}
+        </div>
+        <p className="k2-sub" style={{ marginTop: 6 }}>And people when you want them: advisory calls with founders who've raised their first round, on the Advisors plan.</p>
+      </section>
+
       {/* 1: just your website */}
       <section className="k2-row" id="how">
         <div className="k2-visual"><HeroBuild /></div>
-        <div className="k2-copy"><span className="k2-k">Step 1</span><h2>No forms to fill.<br />Just your website.</h2><p>Paste your website and we learn what you do, who it's for and how you sound, and pick up your logo and colours. Then 5 quick questions, one tap each: traction, team, the ask.</p></div>
+        <div className="k2-copy"><span className="k2-k">Step 1</span><h2>Paste your website.<br />Get your whole raise kit.</h2><p>We read your site and 5 one-tap answers, then build your deck, two-page teaser, investor Q&A, pitch emails, LinkedIn notes and data room, in your logo, colours and voice. No forms, no blank slides.</p></div>
       </section>
 
       {/* 2: the kit */}
