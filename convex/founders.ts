@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc } from "./_generated/dataModel";
-import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS, dealToShow, scoreParts } from "./lib/match";
+import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS, dealToShow, rankMatches, scoreParts } from "./lib/match";
 import { cleanCity, cleanWebsite, domainOf, normaliseLinkedin, normaliseUrl, roundLabel, sharesHerDomain, shortUrl } from "./lib/links";
 import { withSignature } from "./lib/checks";
 import { limits } from "./limits";
@@ -389,6 +389,26 @@ export const publicStats = query({
     const live = all.filter((i) => !i.retired);
     const n = (...kinds: string[]) => live.filter((i) => kinds.includes(i.kind)).length;
     return { total: live.length, vc: n("vc", "corporate_vc"), angel: n("angel"), angelNetwork: n("angel_network"), accelerator: n("accelerator"), incubator: n("incubator"), grant: n("grant") };
+  },
+});
+
+/** Landing "raise plan" preview: how many researched investors fit a sector, stage and raise, by type. Counts only, never names. */
+export const planPreview = query({
+  args: { sectors: v.array(v.string()), stage: v.string(), ask: v.string(), year: v.number() },
+  returns: v.union(v.null(), v.object({ total: v.number(), angels: v.number(), networks: v.number(), programmes: v.number(), funds: v.number(), activeInSector: v.number(), leads: v.number() })),
+  handler: async (ctx, { sectors, stage, ask, year }) => {
+    const clean = sectors.filter((x) => x in SECTOR_KEYS).slice(0, 3);
+    if (!clean.length || !(stage in STAGE_KEYS) || !(ask in ASK_LAKH) || year < 2024 || year > 2100) return null;
+    const live = (await ctx.db.query("investors").take(3000)).filter((i) => !i.retired);
+    const fit = rankMatches(live, { sectors: clean, stage, ask }, year).map((x) => x.inv);
+    const wanted = clean.map((x) => SECTOR_KEYS[x]);
+    const k = (...kinds: string[]) => fit.filter((i) => kinds.includes(i.kind)).length;
+    return {
+      total: fit.length, angels: k("angel"), networks: k("angel_network"), programmes: k("accelerator", "incubator", "grant"),
+      funds: fit.length - k("angel") - k("angel_network") - k("accelerator", "incubator", "grant"),
+      activeInSector: fit.filter((i) => i.recent.some((r) => (r.year ?? 0) >= year - 1 && r.sector && wanted.includes(r.sector))).length,
+      leads: fit.filter((i) => i.leadsRounds).length,
+    };
   },
 });
 
