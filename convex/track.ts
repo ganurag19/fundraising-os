@@ -44,7 +44,7 @@ export const WANT_KEYS = ["competitors", "trends", "deck", "qa", "faq", "vip", "
   // "What's hardest about raising your first round?" (landing drafts)
   "pain_deck", "pain_find", "pain_write", "pain_follow", "pain_intros", "pain_qa",
   // Raise Kit dashboard: coming-soon tabs
-  "kit_qa", "kit_market", "kit_dataroom", "kit_pitchroom", "kit_intros"] as const;
+  "kit_qa", "kit_market", "kit_dataroom", "kit_pitchroom", "kit_intros", "kit_company"] as const;
 const WANTS = new Set<string>(WANT_KEYS);
 
 /** "I'm interested": remembered once per visitor and idea, with her company if she has a list. */

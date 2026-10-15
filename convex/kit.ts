@@ -226,3 +226,32 @@ export const saveLogo = internalMutation({
     return null;
   },
 });
+
+/** Owner only, from the terminal: remove a test founder and everything made for her, and give back the invite use.
+ *  npx convex run [--prod] kit:removeTestFounder '{"founderId":"...","since":<ms>}'  (since: also drop funnel steps logged after it) */
+export const removeTestFounder = internalMutation({
+  args: { founderId: v.id("founders"), since: v.optional(v.number()) },
+  returns: v.object({ removed: v.number() }),
+  handler: async (ctx, { founderId, since }) => {
+    const f = await ctx.db.get("founders", founderId);
+    if (!f) return { removed: 0 };
+    let n = 0;
+    const del = async (rows: { _id: string }[], table: "matches" | "drafts" | "kits" | "followups" | "upgradeRequests" | "notifications" | "aiCalls") => {
+      for (const r of rows) { await ctx.db.delete(table, r._id as never); n++; }
+    };
+    await del(await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId)).take(200), "matches");
+    await del(await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", founderId)).take(200), "drafts");
+    await del(await ctx.db.query("kits").withIndex("by_founderId", (q) => q.eq("founderId", founderId)).take(5), "kits");
+    await del(await ctx.db.query("followups").withIndex("by_founder_and_state", (q) => q.eq("founderId", founderId)).take(200), "followups");
+    await del(await ctx.db.query("upgradeRequests").withIndex("by_founderId", (q) => q.eq("founderId", founderId)).take(5), "upgradeRequests");
+    await del(await ctx.db.query("notifications").withIndex("by_founder", (q) => q.eq("founderId", founderId)).take(20), "notifications");
+    if (since) {
+      for (const c of await ctx.db.query("aiCalls").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).take(200)) if (!c.founderId || c.founderId === founderId) { await ctx.db.delete("aiCalls", c._id); n++; }
+      for (const s of await ctx.db.query("steps").withIndex("by_creation_time", (q) => q.gt("_creationTime", since)).take(200)) { await ctx.db.delete("steps", s._id); n++; }
+    }
+    const code = await ctx.db.query("inviteCodes").withIndex("by_code", (q) => q.eq("code", f.inviteCode)).unique();
+    if (code && code.uses > 0) await ctx.db.patch("inviteCodes", code._id, { uses: code.uses - 1 });
+    await ctx.db.delete("founders", founderId);
+    return { removed: n + 1 };
+  },
+});

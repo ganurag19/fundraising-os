@@ -14,7 +14,7 @@ const sinceFor = (r: Range, now: number) => r === "all" ? 0 : r === "today" ? Ma
 const when = (t: number) => new Date(t).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
 const WANT_LABEL: Record<string, string> = { pain_deck: "Hardest: deck and documents", pain_find: "Hardest: which investors fit", pain_write: "Hardest: emails that get replies", pain_follow: "Hardest: following up", pain_intros: "Hardest: warm intros", pain_qa: "Hardest: investor questions and DD", teaser: "Two-page teaser", readiness: "Readiness check", terms: "Term sheet and SHA", competitors: "Competitors", trends: "Funding trends", deck: "Deck review", qa: "Investor questions", faq: "Raise FAQ", vip: "VIP mentors and intros", dataroom: "Data room", inbox: "Inbox", connect: "Founders connect",
-  kit_qa: "Kit: Investor Q&A", kit_market: "Kit: Market & competition", kit_dataroom: "Kit: Data room", kit_pitchroom: "Kit: Pitch room", kit_intros: "Kit: Warm intros" };
+  kit_qa: "Kit: Investor Q&A", kit_market: "Kit: Market & competition", kit_dataroom: "Kit: Data room", kit_pitchroom: "Kit: Pitch room", kit_intros: "Kit: Warm intros", kit_company: "Kit: Add another company" };
 
 const PLAN_LABEL: Record<string, string> = { raise_kit: "Raise Kit", raise_kit_advisors: "Raise Kit + Advisors", done_for_you: "Done for you" };
 

@@ -120,7 +120,7 @@ export default function KitApp() {
     <div className="dash ka">
       <aside className="dash-nav" aria-label="Sections">
         <Link className="logo dash-logo" to="/"><LogoMark /><Wordmark /></Link>
-        <div className="ws ka-ws"><span className="ka-mark" style={{ background: kit.brand.primary }}>{kit.brand.logo ? <img src={kit.brand.logo} alt="" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : me.company.slice(0, 2).toUpperCase()}</span><div><b>{me.company}</b><span>{me.stage} · {me.ask}</span></div></div>
+        <CompanySwitch me={me} brand={kit.brand} onToast={setToast} />
         <Rings sent={sent} replies={replies} fit={me.matchCount} />
         <span className="nlbl">Your raise</span>
         {RAISE.map(navItem)}
@@ -144,6 +144,7 @@ export default function KitApp() {
         <div className="sheet-scrim" onClick={(e) => e.target === e.currentTarget && setMore(false)}>
           <div className="sheet more-sheet rise" role="dialog" aria-label="More">
             <div className="ws"><div><b>{me.company}</b><span>{me.stage} · {me.ask}</span></div><button className="xbtn" aria-label="Close" onClick={() => setMore(false)}>✕</button></div>
+            <CompanySwitch me={me} brand={kit.brand} onToast={setToast} compact />
             {[...KIT.slice(1), ...PEOPLE].map(([k, label, icon, soon]) => <button key={k} className="more-item" data-track={soon ? `soon_tab_kit_${k}` : undefined} onClick={() => go(k)}><span className="ic" aria-hidden="true">{icon}</span>{label}{soon && <span className="soon-tag">SOON</span>}</button>)}
             {!full && <button className="more-item" onClick={() => { setMore(false); openUp(); }}><span className="ic" aria-hidden="true">🔒</span>{kit.requested ? "Founding access requested" : "Unlock your full kit"}</button>}
             <button className="more-item" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}><span className="ic" aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>{theme === "dark" ? "Light mode" : "Dark mode"}</button>
@@ -487,6 +488,30 @@ function Settings({ me, token, theme, setTheme, signOut }: { me: Me; token: stri
         <p className="fg2">Nothing is ever sent for you. Files you upload are read once, then deleted. To see or delete your data, write to <a href="mailto:hello@firstcheq.ai">hello@firstcheq.ai</a>.</p>
         <p className="small"><Link to="/privacy">Privacy Policy</Link> · <Link to="/terms">Terms</Link></p>
       </section>
+    </div>
+  );
+}
+
+/** Her company, with "Add another company" (coming soon: one plan per company, switch between them here). */
+function CompanySwitch({ me, brand, onToast, compact = false }: { me: Me; brand: { primary: string; logo?: string }; onToast: (s: string) => void; compact?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const want = useMutation(api.track.want);
+  const add = () => { setOpen(false); void want({ token: visitorToken(), key: "kit_company" }); onToast("Coming soon: more companies, one plan each. We've noted you want it."); };
+  return (
+    <div className={`ka-co${compact ? " compact" : ""}`}>
+      {!compact && (
+        <button className="ws ka-ws ka-co-btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          <span className="ka-mark" style={{ background: brand.primary }}>{brand.logo ? <img src={brand.logo} alt="" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : me.company.slice(0, 2).toUpperCase()}</span>
+          <div><b>{me.company}</b><span>{me.stage} · {me.ask}</span></div>
+          <i aria-hidden="true">{open ? "▴" : "▾"}</i>
+        </button>
+      )}
+      {(open || compact) && (
+        <div className="ka-co-menu" role="menu">
+          {!compact && <div className="ka-co-row on" role="menuitem"><span className="ka-dot" style={{ background: brand.primary }} /><b>{me.company}</b><em>Current</em></div>}
+          <button className="ka-co-row add" role="menuitem" onClick={add}><span>＋</span><b>Add another company</b><span className="soon-tag">SOON</span></button>
+        </div>
+      )}
     </div>
   );
 }

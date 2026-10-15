@@ -535,3 +535,13 @@
 .ka .settings{display:flex;flex-direction:column;gap:12px;max-width:640px}
 .ka .settings-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
 .ka .settings-card h2{margin:0;font:700 17px/1.2 var(--display)} .ka .settings-card p{margin:0}
+/* Company switcher */
+.ka-co{position:relative}
+.ka-co-btn{width:100%;text-align:left;cursor:pointer;display:flex;align-items:center;gap:10px}
+.ka-co-btn>div{flex:1;min-width:0} .ka-co-btn i{font-style:normal;color:var(--muted)}
+.ka-co-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:6px;box-shadow:0 24px 50px -24px rgba(30,40,80,.45);display:flex;flex-direction:column;gap:2px}
+.ka-co.compact .ka-co-menu{position:static;box-shadow:none;margin:4px 0 8px}
+.ka-co-row{display:flex;gap:10px;align-items:center;border:0;background:none;border-radius:10px;padding:9px 10px;font-size:14px;text-align:left;width:100%;color:var(--fg)}
+.ka-co-row b{flex:1;font-weight:600} .ka-co-row em{font-style:normal;font-size:11px;color:var(--green)}
+.ka-co-row.on{background:var(--card2)} .ka-co-row.add{cursor:pointer;color:var(--blue-ink)} .ka-co-row.add:hover{background:var(--blue-soft)}
+.ka-dot{width:10px;height:10px;border-radius:50%}
