@@ -39,11 +39,12 @@ function CountUp({ n, ms = 900 }: { n: number; ms?: number }) {
 
 /* ---------- 1. The live build in the hero ---------- */
 const BUILD = [
-  { k: "Reading kilnlabs.in", v: "Kiln Labs · climate · brick kilns · Uttar Pradesh" },
-  { k: "Picking up your brand", v: "Logo, #E8673A, Inter" },
-  { k: "Building your deck", v: "10 slides, in your colours" },
-  { k: "Matching investors", v: "168 fit your sector, stage and round" },
-  { k: "Writing your pitches", v: "Top 10, each opening on a real deal" },
+  { k: "Reading kilnlabs.in", v: "What you do, who it's for, your numbers" },
+  { k: "Picking up your brand", v: "Logo, #7B5CFF, Inter" },
+  { k: "Building your deck, teaser and profile", v: "9 slides and a two-page teaser, in your brand" },
+  { k: "Researching your market and competition", v: "6 competitors mapped, with sources" },
+  { k: "Matching active investors", v: "168 back your sector, stage and round" },
+  { k: "Writing your personal pitches", v: "Each tailored to one investor, opening on their own deal" },
 ];
 export function HeroBuild() {
   const [step, setStep] = useState(() => (reduced() ? BUILD.length : 0));
@@ -126,13 +127,20 @@ export function KitShowcase() {
   const [auto, setAuto] = useState(true);
   useEffect(() => {
     if (!seen || !auto || tab !== "Deck" || reduced()) return;
-    const t = setInterval(() => setCur((c) => (c + 1) % DECK_TITLES.length), 3200);
+    const t = setInterval(() => setCur((c) => (c + 1) % DECK_TITLES.length), 2600);
     return () => clearInterval(t);
+  }, [seen, auto, tab]);
+  // Like stories: each tab fills its bar, then the next one opens, so the rest of the kit gets seen. A tap stops it.
+  const DWELL = 9000;
+  useEffect(() => {
+    if (!seen || !auto || reduced()) return;
+    const t = setTimeout(() => setTab((x) => KIT_TABS[(KIT_TABS.indexOf(x) + 1) % KIT_TABS.length]), DWELL);
+    return () => clearTimeout(t);
   }, [seen, auto, tab]);
   const pick = (i: number) => { setAuto(false); setCur(i); };
   return (
     <div ref={ref} className="kk2">
-      <div className="kk2-tabs" role="tablist">{KIT_TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}</div>
+      <div className="kk2-tabs" role="tablist">{KIT_TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => { setAuto(false); setTab(t); }}>{t}{auto && seen && tab === t && <i className="kk2-fill" key={t} style={{ animationDuration: `${DWELL}ms` }} aria-hidden="true" />}</button>)}</div>
       {tab === "Deck" && (
         <div className="kk2-viewer">
           <div className="kk2-label"><b>Sample deck</b><span>A made-up startup, built the way yours will be · {cur + 1} / {DECK_TITLES.length} · {DECK_TITLES[cur]}</span></div>
@@ -209,11 +217,11 @@ export function InvestorCards() {
 /* ---------- 5. Proof strip (real counts) ---------- */
 export function ProofStrip() {
   const s = useQuery(api.founders.publicStats, {});
-  const items: [number | undefined, string][] = [[s?.total, "investors researched"], [s?.angel, "angels"], [s ? s.incubator + s.accelerator + s.grant : undefined, "accelerators, incubators & grants"], [s?.vc, "funds"]];
+  const items: [number | undefined, string][] = [[s?.total, "active investors"], [s?.angel, "active angels"], [s ? s.incubator + s.accelerator : undefined, "accelerators & incubators"], [s?.vc, "VC funds"]];
   return (
     <div className="kproof">
       {items.map(([n, l]) => <div key={l}><b>{n === undefined ? "·" : <CountUp n={n} />}</b><span>{l}</span></div>)}
-      <div><b>Weekly</b><span>contact links checked</span></div>
+      <div><b>Daily</b><span>database updated</span></div>
     </div>
   );
 }

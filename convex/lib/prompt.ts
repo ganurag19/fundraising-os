@@ -113,3 +113,54 @@ Return linkedin: at most 280 characters including spaces (LinkedIn's limit is 30
 - Sign off with FOUNDER.name's first name only. No links, no subject.
 - Only facts from FOUNDER and INVESTOR. Never invent a deal, number or mutual connection. Keep FOUNDER.company exactly as given. Don't reuse EMAIL's sentences.
 - Never write "I hope this finds you well", "game-changing", "disrupt", "reach out" or any hype, and never say or hint that AI wrote it.`;
+
+// ---------- Raise Kit (15 Oct) ----------
+
+export const KIT_SECTORS = ["AI", "Climate & Energy", "Deeptech", "Fintech", "B2B SaaS", "Health", "Consumer brands", "Edtech", "Agritech", "Media & adtech", "Web3", "Impact"] as const;
+
+export const SITE_FACTS_SYSTEM = `You read the text of an Indian startup's website and pull out facts for the founder to confirm. She will see every field and edit it; nothing goes anywhere until she confirms.
+
+Return only what the site actually says. If the site doesn't say something, return an empty string or an empty list. Never guess, never invent a number, customer, investor, award or team member. Keep every number's meaning exactly: a share of cost is not a saving, a market size is not revenue.
+- found: true if the site describes a real startup, false for a parking page, an error page or unrelated text.
+- companyName: as the site writes it, without "Pvt Ltd" or a tagline.
+- oneLiner: "<Company> helps <who> <achieve what> by <how>." Under 25 words, plain words, no buzzwords.
+- problem: the problem it solves, one plain sentence, from the site.
+- product: what the product is and how it works, one or two plain sentences.
+- forWho: who it's for (the customer), a few words.
+- customers: named customers, partners or pilots the site lists, comma separated. Empty if none named.
+- sectors: up to 2 from this list only: ${KIT_SECTORS.join(", ")}.
+- numbers: up to 5 numbers the site states about the company itself (customers, users, savings, revenue, growth), each as a short phrase with the number exactly as written, e.g. "62 kilns use it". Never a number about the market or another company.
+- team: people the site names as founders or team, with their role and a few words of background only if the site gives it.
+- problemOptions and productOptions: 2 or 3 alternative one-sentence phrasings each, using only the site's facts, so she can pick one with a tap. Different angles (customer pain, cost, time), not synonyms.`;
+
+export const DOC_FACTS_SYSTEM = `You read files an Indian founder uploaded (her pitch deck, CV, LinkedIn profile saved as PDF, or a one-pager) and pull out facts for her to confirm. She will see and edit every field; nothing is used until she confirms.
+
+Return only what the files say. If they don't say something, return an empty string or an empty list. Never guess or invent a number, customer, investor or credential. Keep every number exactly as written (₹ amounts, %, counts), and keep what it measures: "coal is 40% of a kiln's cost" must never become "cuts coal costs by 40%". Write "Rs" and "INR" amounts with ₹.
+- founderName and founderLine: the founder's name, and one first-person line on her background from the CV or deck ("I'm Asha; I spent eight years pricing flood risk at an insurer."). Empty if not given.
+- companyName, oneLiner ("<Company> helps <who> <achieve what> by <how>.", under 25 words), problem, product, forWho.
+- revenue, customers: her own numbers, short ("₹3.2L a month", "62 paying kilns"). customersNamed: named customers or partners, comma separated.
+- traction: one plain sentence with her key numbers, exactly as given.
+- team: everyone named as founder or core team: name, role, a few words of background.
+- market: her market size claims exactly as the files state them, with the source if named. businessModel: how she charges. competitors: named competitors, and how she says she's different. useOfFunds: what the round pays for. whyNow: why now, if stated.
+- stage: one of Idea, Pre-seed, Seed, Pre-Series A, Series A, or empty. raising: the amount she says she's raising, exactly as written, or empty.`;
+
+export const DECK_SYSTEM = `You write the words for an Indian founder's investor deck and two-page teaser, from FACTS she confirmed. A designer's template lays them out in her brand; you only write the text.
+
+The deck has up to 9 slides, in this order and with these keys: cover, problem, solution, traction, market, model, competition, team, ask. Write only the slides the user message asks for.
+For each slide return { key, headline, points, metrics }:
+- headline: the one thing an investor should take from the slide, as a plain sentence under 16 words. Not a label ("The problem"); a claim ("Brick kilns burn coal by guesswork").
+- points: 2 to 4 short lines (under 14 words each) that back the headline, from FACTS only.
+- metrics: 0 to 3 { value, label } pairs for the big numbers on the slide, e.g. { value: "62", label: "kilns paying monthly" }. value must be a number exactly as it appears in FACTS.
+Slide notes:
+- cover: headline is her one-liner, short. points: her stage and the amount raising. metrics: her strongest 2 numbers if any.
+- traction: only her own numbers. If FACTS has none, headline says what she has done so far without numbers, and metrics is empty.
+- market: only market numbers that are in FACTS.market. If there are none, return an empty points list and empty metrics, and headline "Who we sell to: <who, from FACTS>". Never write a TAM, SAM or market size that isn't in FACTS.
+- competition: named competitors only if in FACTS; otherwise describe the alternatives customers use today in general words ("spreadsheets and guesswork") and how she is different.
+- team: one point per person in FACTS.team: "<Name>, <role>: <background>". Nothing invented.
+- ask: the amount and stage exactly as in FACTS, then use of funds if given.
+
+Then teaser: { summary, highlights }.
+- summary: 3 to 4 sentences an investor reads in 20 seconds: what the company does, for whom, her proof with exact numbers, and the ask.
+- highlights: 3 to 5 one-line highlights (under 14 words), facts only.
+
+Hard rules: every number you write must appear in FACTS exactly. Never invent a customer, partner, investor, award, credential, market size, growth rate or projection. Never promise returns. Plain, confident Indian English, ₹ for money. No hype words: "revolutionary", "disrupt", "game-changing", "world-class", "cutting-edge", "unique". Don't say or hint that AI wrote it.`;

@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from "react";
 // A sample investor deck for a made-up startup (Kiln Labs), drawn at real slide size (960×540) and scaled to fit.
 // Every number is part of the made-up example; slides say "Sample".
 
-const O = "#E8673A", D = "#3B1608", R = "#B53D1E";
+const O = "#7B5CFF", D = "#1C1442", R = "#5B3FD6";
 
 
 function Head({ n, label, dark = false }: { n: number; label: string; dark?: boolean }) {
   return (
-    <div className="sd-head" style={{ color: dark ? "rgba(255,255,255,.75)" : "#9A6A55" }}>
+    <div className="sd-head" style={{ color: dark ? "rgba(255,255,255,.75)" : "#6B6390" }}>
       <span className="sd-logo" style={{ background: dark ? "#fff" : O, color: dark ? O : "#fff" }}>K</span>
       <span>Kiln Labs · {label}</span>
       <span className="sd-sample">Sample</span>
@@ -30,11 +30,11 @@ function Cover() {
           <div className="sd-chips"><span>62 paying kilns</span><span>18% less coal</span><span>+47% MoM</span></div>
         </div>
         <svg viewBox="0 0 300 300" className="sd-kiln" aria-hidden="true">
-          <defs><linearGradient id="fl" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor="#FFD08A" /><stop offset="1" stopColor="#FFF4EC" /></linearGradient></defs>
+          <defs><linearGradient id="fl" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor="#FBCFE8" /><stop offset="1" stopColor="#F4F1FF" /></linearGradient></defs>
           <circle cx="150" cy="150" r="140" fill="rgba(255,255,255,.08)" />
-          <rect x="60" y="150" width="180" height="90" rx="10" fill="#8A2E13" /><rect x="60" y="150" width="180" height="16" fill="#A43A1A" />
-          {[0, 1, 2, 3, 4].map((i) => <rect key={i} x={76 + i * 32} y="180" width="22" height="34" rx="11" fill="#FFB36B" opacity={0.9 - i * 0.1} />)}
-          <rect x="190" y="60" width="26" height="90" fill="#6E240F" />
+          <rect x="60" y="150" width="180" height="90" rx="10" fill="#4C2C9E" /><rect x="60" y="150" width="180" height="16" fill="#5B3FD6" />
+          {[0, 1, 2, 3, 4].map((i) => <rect key={i} x={76 + i * 32} y="180" width="22" height="34" rx="11" fill="#F0ABFC" opacity={0.9 - i * 0.1} />)}
+          <rect x="190" y="60" width="26" height="90" fill="#3A2380" />
           <circle cx="203" cy="44" r="14" fill="rgba(255,255,255,.35)" /><circle cx="222" cy="26" r="10" fill="rgba(255,255,255,.22)" /><circle cx="240" cy="12" r="7" fill="rgba(255,255,255,.14)" />
           <path d="M120 150 C110 125 132 118 128 96 C146 112 150 128 140 150 Z" fill="url(#fl)" />
         </svg>
@@ -56,7 +56,7 @@ function Problem() {
       </div>
       <div className="sd-cost">
         <span className="muted-sd">Where a kiln's ₹100 goes</span>
-        <div className="sd-cost-bar">{([["Coal", 40, "#E8673A"], ["Labour", 25, "#F08A5D"], ["Clay", 15, "#F9B593"], ["Transport", 10, "#FFD3BD"], ["Margin", 10, "#FFE9DD"]] as const).map(([t, p, c]) => <span key={t} style={{ width: `${p}%`, background: c }}><b>{t}</b>₹{p}</span>)}</div>
+        <div className="sd-cost-bar">{([["Coal", 40, "#7B5CFF"], ["Labour", 25, "#A78BFA"], ["Clay", 15, "#C4B5FD"], ["Transport", 10, "#DDD6FE"], ["Margin", 10, "#EDE9FE"]] as const).map(([t, p, c]) => <span key={t} style={{ width: `${p}%`, background: c }}><b>{t}</b>₹{p}</span>)}</div>
       </div>
       <blockquote className="sd-quote">"We buy coal on credit and pray the batch comes out right. Half of it goes up the chimney."<cite>Kiln owner, Moradabad (customer interview)</cite></blockquote>
       <Foot><span>Sources: [industry census, 2024]; [CSE brick kiln study, 2023]; 40 customer interviews</span></Foot>
@@ -72,7 +72,7 @@ function Solution() {
       <div className="sd-sol">
         <div className="sd-phone" aria-hidden="true">
           <div className="sd-phone-top"><b>Batch #214</b><span>Live</span></div>
-          <div className="sd-gauge"><svg viewBox="0 0 120 66"><path d="M10 60 A50 50 0 0 1 110 60" stroke="#F3D9CB" strokeWidth="10" fill="none" /><path d="M10 60 A50 50 0 0 1 86 18" stroke={O} strokeWidth="10" fill="none" strokeLinecap="round" /></svg><b>18%</b><span>coal saved this batch</span></div>
+          <div className="sd-gauge"><svg viewBox="0 0 120 66"><path d="M10 60 A50 50 0 0 1 110 60" stroke="#E4DCFA" strokeWidth="10" fill="none" /><path d="M10 60 A50 50 0 0 1 86 18" stroke={O} strokeWidth="10" fill="none" strokeLinecap="round" /></svg><b>18%</b><span>coal saved this batch</span></div>
           <div className="sd-mini-rows"><span><i style={{ width: "72%" }} />Kiln temperature</span><span><i style={{ width: "54%" }} />Coal per 1,000 bricks</span></div>
         </div>
         <div className="sd-feats">
@@ -95,10 +95,10 @@ function Traction() {
       <h2>62 kilns pay us every month, up from 9 in March.</h2>
       <div className="sd-trac">
         <svg viewBox="0 0 520 240" className="sd-chart" aria-hidden="true">
-          {[0, 20, 40, 60].map((v) => <g key={v}><line x1="30" x2="510" y1={y(v)} y2={y(v)} stroke="#F1E2D8" /><text x="4" y={y(v) + 4} fontSize="11" fill="#9A6A55">{v}</text></g>)}
-          <path d={`M${pts.map((v, i) => `${x(i)} ${y(v)}`).join(" L")} L${x(5)} 210 L${x(0)} 210 Z`} fill="rgba(232,103,58,.14)" />
+          {[0, 20, 40, 60].map((v) => <g key={v}><line x1="30" x2="510" y1={y(v)} y2={y(v)} stroke="#E8E2F7" /><text x="4" y={y(v) + 4} fontSize="11" fill="#6B6390">{v}</text></g>)}
+          <path d={`M${pts.map((v, i) => `${x(i)} ${y(v)}`).join(" L")} L${x(5)} 210 L${x(0)} 210 Z`} fill="rgba(123,92,255,.14)" />
           <path d={`M${pts.map((v, i) => `${x(i)} ${y(v)}`).join(" L")}`} stroke={O} strokeWidth="4" fill="none" strokeLinejoin="round" />
-          {pts.map((v, i) => <g key={i}><circle cx={x(i)} cy={y(v)} r="6" fill="#fff" stroke={O} strokeWidth="3" /><text x={x(i)} y={y(v) - 12} fontSize="12" fontWeight="700" fill={R} textAnchor="middle">{v}</text><text x={x(i)} y="230" fontSize="11" fill="#9A6A55" textAnchor="middle">{months[i]}</text></g>)}
+          {pts.map((v, i) => <g key={i}><circle cx={x(i)} cy={y(v)} r="6" fill="#fff" stroke={O} strokeWidth="3" /><text x={x(i)} y={y(v) - 12} fontSize="12" fontWeight="700" fill={R} textAnchor="middle">{v}</text><text x={x(i)} y="230" fontSize="11" fill="#6B6390" textAnchor="middle">{months[i]}</text></g>)}
         </svg>
         <div className="sd-kpis">{[["₹2.8L", "monthly revenue"], ["+47%", "month-on-month"], ["3%", "monthly churn"], ["3 states", "UP, Bihar, Haryana"]].map(([n, t]) => <div key={t}><b>{n}</b><span>{t}</span></div>)}</div>
       </div>
@@ -114,7 +114,7 @@ function Market() {
       <h2>A ₹4,200 Cr opportunity in kilns we can reach by road from Delhi.</h2>
       <div className="sd-mkt">
         <svg viewBox="0 0 300 300" className="sd-rings" aria-hidden="true">
-          <circle cx="150" cy="150" r="140" fill="#FFE6D6" /><circle cx="150" cy="185" r="95" fill="#F9B593" /><circle cx="150" cy="222" r="52" fill={O} />
+          <circle cx="150" cy="150" r="140" fill="#FFE6D6" /><circle cx="150" cy="185" r="95" fill="#C4B5FD" /><circle cx="150" cy="222" r="52" fill={O} />
           <text x="150" y="44" textAnchor="middle" fontSize="13" fontWeight="700" fill={R}>TAM</text><text x="150" y="118" textAnchor="middle" fontSize="13" fontWeight="700" fill={D}>SAM</text><text x="150" y="226" textAnchor="middle" fontSize="13" fontWeight="700" fill="#fff">SOM</text>
         </svg>
         <div className="sd-mkt-list">
@@ -137,7 +137,7 @@ function Model() {
         </tbody></table>
         <div className="sd-bars2">
           <span className="muted-sd">Where ₹4,500 goes</span>
-          {[["Gross profit", 68, O], ["Hardware amortised", 18, "#F9B593"], ["Support & app", 14, "#FFE0CF"]].map(([t, p, c]) => <div key={t as string}><span>{t} · {p}%</span><i style={{ width: `${p}%`, background: c as string }} /></div>)}
+          {[["Gross profit", 68, O], ["Hardware amortised", 18, "#C4B5FD"], ["Support & app", 14, "#FFE0CF"]].map(([t, p, c]) => <div key={t as string}><span>{t} · {p}%</span><i style={{ width: `${p}%`, background: c as string }} /></div>)}
         </div>
       </div>
       <Foot><span>Unit economics from 62 paying kilns, Aug 2026</span></Foot>
@@ -185,7 +185,7 @@ function Team() {
 }
 
 function Ask() {
-  const parts: [string, number, string][] = [["Sales & installs", 45, O], ["Product", 35, "#F9B593"], ["Operations", 20, "#FFE0CF"]];
+  const parts: [string, number, string][] = [["Sales & installs", 45, O], ["Product", 35, "#C4B5FD"], ["Operations", 20, "#FFE0CF"]];
   let acc = 0;
   return (
     <div className="sd s-ask">

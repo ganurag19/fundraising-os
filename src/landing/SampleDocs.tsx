@@ -18,7 +18,7 @@ export function Scaled({ w, h, children }: { w: number; h: number; children: Rea
 }
 
 const Brand = ({ label, n }: { label: string; n?: string }) => (
-  <div className="dc-brand"><span className="sd-logo" style={{ background: "#E8673A", color: "#fff" }}>K</span><b>Kiln Labs</b><span className="dc-lbl">{label}</span><span className="sd-sample">Sample</span>{n && <span className="dc-pg">{n}</span>}</div>
+  <div className="dc-brand"><span className="sd-logo" style={{ background: "#7B5CFF", color: "#fff" }}>K</span><b>Kiln Labs</b><span className="dc-lbl">{label}</span><span className="sd-sample">Sample</span>{n && <span className="dc-pg">{n}</span>}</div>
 );
 
 /* ---------- Teaser: two A4 pages ---------- */
@@ -34,7 +34,7 @@ function TeaserP1() {
       </div>
       <h3>Traction</h3>
       <div className="dc-trac">
-        <svg viewBox="0 0 640 150" aria-hidden="true">{[9, 14, 22, 31, 44, 62].map((v, i) => <g key={i}><rect x={20 + i * 104} y={140 - v * 2} width="70" height={v * 2} rx="6" fill={i === 5 ? "#E8673A" : "#F9B593"} /><text x={55 + i * 104} y={132 - v * 2} fontSize="14" fontWeight="700" textAnchor="middle" fill="#B53D1E">{v}</text></g>)}</svg>
+        <svg viewBox="0 0 640 150" aria-hidden="true">{[9, 14, 22, 31, 44, 62].map((v, i) => <g key={i}><rect x={20 + i * 104} y={140 - v * 2} width="70" height={v * 2} rx="6" fill={i === 5 ? "#7B5CFF" : "#C4B5FD"} /><text x={55 + i * 104} y={132 - v * 2} fontSize="14" fontWeight="700" textAnchor="middle" fill="#5B3FD6">{v}</text></g>)}</svg>
         <div className="dc-trac-l">{["Mar", "Apr", "May", "Jun", "Jul", "Aug"].map((m) => <span key={m}>{m}</span>)}</div>
       </div>
       <div className="dc-2col">
@@ -83,7 +83,7 @@ function MarketReport() {
           </tbody></table>
           <span className="dc-src">Sources: [kiln census, 2024]; [state pollution boards, 2025]; Kiln Labs pilot data. Method: kilns × coal per kiln × price.</span>
           <h3>Funding in industrial climate, India</h3>
-          <svg viewBox="0 0 380 120" className="dc-fund" aria-hidden="true">{[["2023", 6], ["2024", 9], ["2025", 14], ["2026", 11]].map(([y, n], i) => <g key={y as string}><rect x={20 + i * 90} y={100 - (n as number) * 6} width="56" height={(n as number) * 6} rx="5" fill={i === 2 ? "#E8673A" : "#F9B593"} /><text x={48 + i * 90} y={92 - (n as number) * 6} fontSize="12" fontWeight="700" textAnchor="middle" fill="#B53D1E">{n}</text><text x={48 + i * 90} y="116" fontSize="11" textAnchor="middle" fill="#9A6A55">{y}</text></g>)}</svg>
+          <svg viewBox="0 0 380 120" className="dc-fund" aria-hidden="true">{[["2023", 6], ["2024", 9], ["2025", 14], ["2026", 11]].map(([y, n], i) => <g key={y as string}><rect x={20 + i * 90} y={100 - (n as number) * 6} width="56" height={(n as number) * 6} rx="5" fill={i === 2 ? "#7B5CFF" : "#C4B5FD"} /><text x={48 + i * 90} y={92 - (n as number) * 6} fontSize="12" fontWeight="700" textAnchor="middle" fill="#5B3FD6">{n}</text><text x={48 + i * 90} y="116" fontSize="11" textAnchor="middle" fill="#6B6390">{y}</text></g>)}</svg>
           <span className="dc-src">Seed and pre-seed deals in industrial climate. In your kit this comes from FirstCheq's own deal data.</span>
         </div>
         <div>
@@ -166,7 +166,7 @@ export function DataRoomDoc() {
   const all = ROOM.flatMap(([, xs]) => xs); const done = all.filter(([, s]) => s === "ok").length;
   return (
     <div className="dr">
-      <div className="dr-head"><Brand label="Data room" /><div className="dr-ring"><svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#F1E2D8" strokeWidth="5" /><circle cx="21" cy="21" r="16" fill="none" stroke="#1E8A4C" strokeWidth="5" strokeDasharray={`${(done / all.length) * 100.5} 100.5`} transform="rotate(-90 21 21)" strokeLinecap="round" /></svg><b>{done}/{all.length}</b><span>ready</span></div></div>
+      <div className="dr-head"><Brand label="Data room" /><div className="dr-ring"><svg viewBox="0 0 42 42"><circle cx="21" cy="21" r="16" fill="none" stroke="#E8E2F7" strokeWidth="5" /><circle cx="21" cy="21" r="16" fill="none" stroke="#1E8A4C" strokeWidth="5" strokeDasharray={`${(done / all.length) * 100.5} 100.5`} transform="rotate(-90 21 21)" strokeLinecap="round" /></svg><b>{done}/{all.length}</b><span>ready</span></div></div>
       <div className="dr-grid">
         {ROOM.map(([g, xs]) => (
           <div key={g} className="dr-group"><em>{g}</em>{xs.map(([t, s]) => <div key={t} className={`dr-row ${s}`}><span className="dr-ic" aria-hidden="true">{s === "ok" ? "✓" : s === "tpl" ? "⎘" : "○"}</span><span>{t}</span><span className="dr-st">{s === "ok" ? "Uploaded" : s === "tpl" ? "Template ready" : "To add"}</span></div>)}</div>

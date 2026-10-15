@@ -4,7 +4,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { visitorToken } from "./token";
 
-const PAGES: Record<string, string> = { "/draft": "draft_a", "/draft-full": "draft_b", "/": "landing", "/start": "start", "/emails": "emails", "/dashboard": "dashboard", "/compare/fundraising-consultant": "compare" };
+const PAGES: Record<string, string> = { "/draft": "draft_a", "/draft-full": "draft_b", "/": "landing", "/start": "start", "/emails": "emails", "/dashboard": "dashboard", "/compare/fundraising-consultant": "compare", "/kit": "kit", "/build": "build", "/app": "app" };
 
 /** The owner's own browser isn't counted once she has opened /admin. */
 function noTrack() {

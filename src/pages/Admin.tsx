@@ -13,13 +13,17 @@ const RANGES: [Range, string][] = [["today", "Today"], ["7d", "7 days"], ["30d",
 const sinceFor = (r: Range, now: number) => r === "all" ? 0 : r === "today" ? Math.floor((now + IST) / DAY) * DAY - IST : now - (r === "7d" ? 7 : 30) * DAY;
 const when = (t: number) => new Date(t).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-const WANT_LABEL: Record<string, string> = { pain_deck: "Hardest: deck and documents", pain_find: "Hardest: which investors fit", pain_write: "Hardest: emails that get replies", pain_follow: "Hardest: following up", pain_intros: "Hardest: warm intros", pain_qa: "Hardest: investor questions and DD", teaser: "Two-page teaser", readiness: "Readiness check", terms: "Term sheet and SHA", competitors: "Competitors", trends: "Funding trends", deck: "Deck review", qa: "Investor questions", faq: "Raise FAQ", vip: "VIP mentors and intros", dataroom: "Data room", inbox: "Inbox", connect: "Founders connect" };
+const WANT_LABEL: Record<string, string> = { pain_deck: "Hardest: deck and documents", pain_find: "Hardest: which investors fit", pain_write: "Hardest: emails that get replies", pain_follow: "Hardest: following up", pain_intros: "Hardest: warm intros", pain_qa: "Hardest: investor questions and DD", teaser: "Two-page teaser", readiness: "Readiness check", terms: "Term sheet and SHA", competitors: "Competitors", trends: "Funding trends", deck: "Deck review", qa: "Investor questions", faq: "Raise FAQ", vip: "VIP mentors and intros", dataroom: "Data room", inbox: "Inbox", connect: "Founders connect",
+  kit_qa: "Kit: Investor Q&A", kit_market: "Kit: Market & competition", kit_dataroom: "Kit: Data room", kit_pitchroom: "Kit: Pitch room", kit_intros: "Kit: Warm intros" };
+
+const PLAN_LABEL: Record<string, string> = { raise_kit: "Raise Kit", raise_kit_advisors: "Raise Kit + Advisors", done_for_you: "Done for you" };
 
 const CLICKS: [string, string][] = [
   ["visit_draft_a", "Draft A (simple): visits"], ["click_go_draft_a", "Draft A: Find my investors"], ["visit_draft_b", "Draft B (full stack): visits"], ["click_go_draft_b", "Draft B: Find my investors"],
   ["visit_compare", "Opened the consultant comparison"], ["click_go", "Find my investors"], ["click_code", "I have a code"], ["click_request", "Request invite"],
   ["click_unlock", "Unlock all (Google)"], ["click_gmail", "Open in Gmail"], ["click_copy", "Copy email"],
   ["click_write", "Write email"], ["click_linkedin", "Open / find on LinkedIn"], ["click_copy_note", "Copy LinkedIn note"], ["click_write_note", "Write LinkedIn note"], ["click_upgrade", "Upgrade: Request access / call"], ["click_feedback", "Opened Send feedback"],
+  ["visit_kit", "Raise Kit page: visits"], ["visit_build", "Build: started"], ["visit_app", "Kit dashboard: visits"], ["click_swipe_send", "Kit: Send (swipe or button)"], ["click_swipe_skip", "Kit: Later"], ["click_upgrade_kit", "Kit: Request full access sent"],
   ["soon_competitors", "Soon card: competitors"], ["soon_trends", "Soon card: funding trends"], ["soon_deck", "Soon card: deck review"], ["soon_qa", "Soon card: investor questions"], ["soon_faq", "Soon card: raise FAQ"], ["soon_vip", "Soon card: VIP mentors and intros"], ["soon_dataroom", "Interested: Data room"], ["soon_inbox", "Interested: Inbox"], ["soon_connect", "Interested: Founders connect"],
   ["soon_tab_competition", "Soon page: Competition"], ["soon_tab_qa", "Soon page: Investor Q&A"], ["soon_tab_dataroom", "Soon page: Data room"], ["soon_tab_inbox", "Soon page: Inbox"], ["soon_tab_connect", "Soon page: Founders connect"],
 ];
@@ -150,6 +154,17 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
         {forms.invites.length === 0 ? <p className="muted small">None yet.</p> : (
           <div className="admin-table">{forms.invites.map((w) => <div className="admin-tr wide" key={w.at + w.email}><span><b>{w.name}</b> · {w.company} · {w.stage}</span><a href={`mailto:${w.email}`}>{w.email}</a><span className="muted small">{when(w.at)}</span></div>)}</div>
         )}
+        <h3 className="admin-h3">Raise Kit: full access requests ({forms.upgrades.length})</h3>
+        {forms.upgrades.length === 0 ? <p className="muted small">None yet.</p> : (
+          <div className="admin-table">{forms.upgrades.map((u) => (
+            <div className="admin-tr wide" key={u.at}>
+              <span><b>{u.company}</b> · {PLAN_LABEL[u.plan] ?? u.plan} · would pay: <b>{u.wouldPay}</b>{u.price ? ` (${u.price})` : ""} · solves {u.solves}/5 · valuable {u.valuable}/5{u.raisingWhen ? ` · raising ${u.raisingWhen.toLowerCase()}` : ""}
+                {u.liked && <><br /><span className="muted small">Liked: {u.liked}</span></>}{u.missing && <><br /><span className="muted small">Missing: {u.missing}</span></>}</span>
+              <span>{u.email ? <a href={`mailto:${u.email}`}>{u.email}</a> : null}{u.phone ? <span className="muted small"> · {u.phone}</span> : null}</span>
+              <span className="muted small">{when(u.at)}</span>
+            </div>
+          ))}</div>
+        )}
         <h3 className="admin-h3">Upgrade / know more ({forms.interest.length})</h3>
         {forms.interest.length === 0 ? <p className="muted small">None yet.</p> : (
           <div className="admin-table">{forms.interest.map((p) => <div className="admin-tr wide" key={p.at + p.email}><span><b>{p.name}</b> · {p.plan === "round_pass" ? "Round Pass" : "Custom call"}{p.note ? ` · ${p.note}` : ""}</span><a href={`mailto:${p.email}`}>{p.email}</a><span className="muted small">{when(p.at)}</span></div>)}</div>
@@ -221,6 +236,7 @@ const DEMO: Demo = {
     { at: T - 7200000, company: "Paniwala Labs", name: "Priya Menon", sectors: ["Agritech"], stage: "Pre-seed", ask: "₹25–50L", website: null, linkedin: null, code: "TEST-TWO", emails: "writing", signedIn: null, sent: 0, plan: false },
   ],
   forms: {
+    upgrades: [{ at: T - 2000000, company: "Kiln Labs", email: "arjun@kilnlabs.example.in", plan: "raise_kit", wouldPay: "yes", price: "₹15,000–25,000", solves: 4, valuable: 5, liked: "Pitches open on a real deal", missing: "Editable PowerPoint", raisingWhen: "Now", phone: null }],
     invites: [{ at: T, name: "Kabir Shah", email: "kabir@example.test", company: "Stackwise", stage: "Seed", status: "waiting" }],
     interest: [{ at: T - 5000000, name: "Arjun Rao", email: "arjun@kilnlabs.example.in", plan: "round_pass", note: null }],
     codes: [{ code: "TEST-ONE", label: "colleagues", uses: 6, maxUses: 20 }, { code: "TEST-TWO", label: "GrowthX", uses: 2, maxUses: 50 }],

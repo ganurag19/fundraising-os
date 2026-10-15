@@ -10,6 +10,8 @@ import { withSignature } from "./lib/checks";
 import { limits } from "./limits";
 
 const TOKEN = /^[a-f0-9]{48}$/;
+/** Her top picks, open before sign-in with their emails written: 5 on the Raise Kit, 3 on the classic sign-up. */
+export const KIT_TOP = 5;
 const normaliseCode = (code: string) => code.trim().toUpperCase().replace(/\s+/g, "");
 const short = (s: string | undefined, max: number) => (s ?? "").trim().slice(0, max);
 /** "anurag rao" → "Anurag Rao"; leaves "DeVries" or "iCAN" alone. */
@@ -143,6 +145,10 @@ export const myToken = query({
   },
 });
 
+/** "Gray Matters Capital" → "Gr•• Ma••••• Capital": enough to tease, not enough to look up. Firm words stay. */
+const FIRM_WORDS = new Set(["capital", "ventures", "venture", "partners", "fund", "funds", "angels", "angel", "network", "networks", "investments", "labs", "accelerator", "incubator", "foundation", "advisors", "seed", "vc", "group", "holdings", "the", "of", "and", "&"]);
+export const maskName = (n: string) => n.split(/\s+/).map((w) => (FIRM_WORDS.has(w.toLowerCase()) ? w : w.slice(0, 2) + "•".repeat(Math.max(2, Math.min(6, w.length - 2))))).join(" ");
+
 /** Signed in, and the list is hers. Until then the names and emails beyond her top 3 stay on the server. */
 export async function isUnlocked(ctx: QueryCtx | MutationCtx, f: Doc<"founders">) {
   if (!f.userId) return false;
@@ -168,6 +174,8 @@ const rowV = v.object({
   // Programmes and form-only funds: an application link instead of an email
   applyUrl: v.union(v.string(), v.null()), applyDeadline: v.union(v.string(), v.null()), hasEmail: v.boolean(),
   status: v.union(v.literal("new"), v.literal("sent"), v.literal("replied"), v.literal("meeting"), v.literal("passed")),
+  logo: v.union(v.string(), v.null()), // from the fund's own site, when found
+  locked: v.boolean(), // Raise Kit, free: beyond her top 5 the name is part-hidden and there's no email or link until full access
   followups: v.array(v.object({ id: v.id("followups"), n: v.number(), state: v.string(), dueAt: v.number(), subject: v.union(v.string(), v.null()), body: v.union(v.string(), v.null()) })),
 });
 
@@ -192,6 +200,9 @@ export const me = query({
     const f = await founderByToken(ctx, token);
     if (!f) return null;
     const unlocked = await isUnlocked(ctx, f);
+    const hasKit = !!(await ctx.db.query("kits").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first());
+    const TOP_OPEN = hasKit ? KIT_TOP : 3;
+    const kitFree = hasKit && f.plan !== "round_pass";
     // Free: her best 20. Round Pass: up to 100 (we always keep 100 ranked).
     const matches = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(f.plan === "round_pass" ? 100 : 20);
     const rows = [];
@@ -200,14 +211,15 @@ export const me = query({
       const inv = await ctx.db.get("investors", m.investorId);
       if (!inv) continue;
       if (sharesHerDomain(f.website, inv)) continue; // her own company's fund or team: never shown as her investor
-      // Before sign-in her top 3 are open to her browser; once the list is claimed, only to the signed-in owner.
-      const open = unlocked || (m.rank < 3 && !f.userId);
+      // Before sign-in her top picks (3 classic, 5 on the Raise Kit) are open to her browser; once the list is claimed, only to the signed-in owner.
+      const locked = kitFree && m.rank >= KIT_TOP;
+      const open = !locked && (unlocked || (m.rank < TOP_OPEN && !f.userId));
       const d = open ? await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", f._id).eq("investorId", inv._id)).first() : null;
       rows.push({
         rank: m.rank, score: m.score, kind: inv.kind, city: cleanCity(inv.city),
         chequeMinLakh: inv.chequeMinLakh ?? null, chequeMaxLakh: inv.chequeMaxLakh ?? null, sentAt: m.sentAt ?? null,
         // Beyond her top 3, an email address is only revealed once she asks for that investor's email ("Write email", capped daily).
-        displayName: open ? inv.displayName : null, person: open ? inv.person ?? null : null, email: m.rank < 3 || d ? inv.email ?? null : null,
+        displayName: open ? inv.displayName : locked ? maskName(inv.displayName) : null, locked, logo: open && !inv.retired ? inv.logo ?? null : null, person: open ? inv.person ?? null : null, email: m.rank < TOP_OPEN || d ? inv.email ?? null : null,
         // A retired investor keeps its place on her list, but its links are gone: a dead or taken-over site must never open from here.
         website: open && !inv.retired ? cleanWebsite(inv.website) : null, lastChecked: inv.lastChecked ?? null, sourceUrls: open && !inv.retired ? inv.sourceUrls : [],
         linkedin: open && !inv.retired ? inv.linkedin ?? null : null, retired: !!inv.retired, title: open ? inv.title ?? null : null,
@@ -256,7 +268,8 @@ export const rowForDrafting = internalQuery({
     if (!m) return null;
     const inv = await ctx.db.get("investors", m.investorId);
     const existing = inv ? await ctx.db.query("drafts").withIndex("by_founder_and_investor", (q) => q.eq("founderId", f._id).eq("investorId", inv._id)).first() : null;
-    return inv ? { founder: f, investor: inv, hasDraft: !!existing } : null;
+    const hasKit = !!(await ctx.db.query("kits").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first());
+    return inv ? { founder: f, investor: inv, hasDraft: !!existing, locked: hasKit && f.plan !== "round_pass" && rank >= KIT_TOP } : null;
   },
 });
 
@@ -311,12 +324,12 @@ export const saveReasons = internalMutation({
 
 /** The investors on her list that still need a one-line reason. */
 export const forReasons = internalQuery({
-  args: { founderId: v.id("founders") },
+  args: { founderId: v.id("founders"), from: v.optional(v.number()) }, // ranks below `from` have their own email (3 classic, 5 on the Raise Kit)
   returns: v.any(),
-  handler: async (ctx, { founderId }) => {
+  handler: async (ctx, { founderId, from }) => {
     const f = await ctx.db.get("founders", founderId);
     const visible = f?.plan === "round_pass" ? 100 : 20;
-    const matches = (await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId).gte("rank", 3)).take(visible)).filter((m) => m.rank < visible);
+    const matches = (await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", founderId).gte("rank", from ?? 3)).take(visible)).filter((m) => m.rank < visible);
     const out = [];
     for (const m of matches) if (!m.reason) { const inv = await ctx.db.get("investors", m.investorId); if (inv) out.push({ rank: m.rank, investor: inv }); }
     return out;

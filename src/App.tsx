@@ -10,6 +10,8 @@ import CompareConsultant from "./pages/CompareConsultant";
 import LandingDraft from "./landing/LandingDraft";
 import LandingFull from "./landing/LandingFull";
 import KitLanding from "./landing/KitLanding";
+import Build from "./kit/Build";
+import KitApp from "./kit/KitApp";
 import Tracker from "./lib/Tracker";
 
 export default function App() {
@@ -28,6 +30,9 @@ export default function App() {
       <Route path="/draft-full" element={<LandingFull />} />
       {/* Hidden concept page (noindex, not linked), for feedback. */}
       <Route path="/kit" element={<KitLanding />} />
+      {/* The Raise Kit flow (15 Oct): build your kit, then the kit dashboard after Google sign-in. */}
+      <Route path="/build" element={<Build />} />
+      <Route path="/app" element={<KitApp />} />
       <Route path="/compare/fundraising-consultant" element={<CompareConsultant />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

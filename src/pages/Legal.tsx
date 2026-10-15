@@ -4,7 +4,7 @@ import { LogoMark, Wordmark } from "../components/Brand";
 // Privacy Policy and Terms. Plain words, matching what the app actually stores (convex/schema.ts).
 // Draft written for the beta; have a lawyer review before paid ads or payments.
 
-const UPDATED = "14 October 2026";
+const UPDATED = "16 October 2026";
 const CONTACT = "hello@firstcheq.ai";
 
 function Doc({ title, children }: { title: string; children: React.ReactNode }) {
@@ -27,7 +27,10 @@ export function Privacy() {
       <h2>What we collect from founders</h2>
       <ul>
         <li><b>Your sign-up answers:</b> your startup's name, your name, sector, stage, how much you're raising, your website and LinkedIn link, your one-liner, a line about you, your vision, and any revenue or customer numbers you choose to give.</li>
-        <li><b>What we make for you:</b> your matched investors, the emails we draft, any edits, and whether you marked an email as sent.</li>
+        <li><b>For your Raise Kit:</b> the facts you confirm (problem, product, customers, team, market, business model, competitors, use of funds) and your brand (main colour, logo link and font from your website).</li>
+        <li><b>Files you upload</b> (an old deck, your CV, your LinkedIn profile as a PDF): read once to suggest your facts, then deleted straight away. We keep only the facts you confirm, never the file.</li>
+        <li><b>What we make for you:</b> your matched investors, the emails we draft, your deck and teaser text, any edits, and whether you marked an email as sent.</li>
+        <li><b>If you request full access:</b> the plan you picked, your answers (would you pay, your ratings, what you liked and what's missing, when you're raising) and your phone number if you give it.</li>
         <li><b>When you sign in with Google:</b> your name, email address and profile picture link, from Google.</li>
         <li><b>A random code in your browser</b> that keeps your list yours before you sign in. It isn't used to track you anywhere else.</li>
         <li><b>If you ask for an invite:</b> your name, email, startup's name and stage.</li>
@@ -38,7 +41,8 @@ export function Privacy() {
       <h2>How we use it</h2>
       <ul>
         <li>To match you with investors and draft your emails. That is the whole product.</li>
-        <li>To read your website once, when you give it, to suggest your one-liner.</li>
+        <li>To read your website once, when you give it, to suggest your one-liner, your facts and your brand colours.</li>
+        <li>To write your deck and teaser from the facts you confirmed. Every number in them is one you gave us.</li>
         <li>To improve the quality of drafts. We keep a log of what went into and came out of each AI draft and review it to fix mistakes.</li>
         <li>To contact you about your account or your invite. No marketing emails without your consent.</li>
       </ul>
@@ -47,7 +51,7 @@ export function Privacy() {
       <h2>Who processes it for us</h2>
       <ul>
         <li><b>Convex</b> stores the data and runs the app. Its servers for FirstCheq are in Australia, so your data is stored outside India.</li>
-        <li><b>Anthropic</b> (Claude) drafts the text. We send it only what a draft needs: your sign-up answers and the investor's researched details. We use Anthropic's commercial API.</li>
+        <li><b>Anthropic</b> (Claude) drafts the text. We send it only what a draft needs: your sign-up answers, your confirmed facts, any file you upload (to read it once) and the investor's researched details. We use Anthropic's commercial API.</li>
         <li><b>Google</b> handles sign-in, if you choose it.</li>
         <li><b>Resend</b> delivers our emails to you (your welcome and follow-up reminders). It gets your email address and that message only. You can turn reminders off in Settings.</li>
       </ul>

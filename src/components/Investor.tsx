@@ -6,6 +6,7 @@ import { Badges, Dial, Face, Logo, Medal } from "./Art";
 import type { BadgeKey } from "../lib/badges";
 import { cheque, soonFor } from "../lib/investor";
 import { visitorToken } from "../lib/token";
+import { copyOut, openInGmail } from "../lib/send";
 
 // Shared by the reveal page and the dashboard: one investor, their email, and the buttons around it.
 
@@ -16,26 +17,6 @@ type Mail = { subject: string; body: string };
 type Toast = (s: string) => void;
 
 const site = (u: string) => u.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/$/, "").toLowerCase();
-const enc = encodeURIComponent;
-const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-const isAndroid = () => /Android/i.test(navigator.userAgent);
-const mailto = (to: string, d: Mail) => `mailto:${to}?subject=${enc(d.subject)}&body=${enc(d.body)}`;
-/** Laptop: Gmail's compose window in her signed-in account. Phones ignore that link, so they get the app instead. */
-const gmailWeb = (to: string, d: Mail, account: string | null) =>
-  `https://mail.google.com/mail/${account ? `?authuser=${enc(account)}&` : "?"}view=cm&fs=1&to=${enc(to)}&su=${enc(d.subject)}&body=${enc(d.body)}`;
-
-function openInGmail(to: string, d: Mail, account: string | null) {
-  if (isIOS()) {
-    // Gmail app if it's installed; if the page is still showing a moment later, her default mail app
-    const fallback = setTimeout(() => { if (!document.hidden) window.location.href = mailto(to, d); }, 1200);
-    document.addEventListener("visibilitychange", () => clearTimeout(fallback), { once: true });
-    window.location.href = `googlegmail:///co?to=${enc(to)}&subject=${enc(d.subject)}&body=${enc(d.body)}`;
-  } else if (isAndroid()) {
-    window.location.href = mailto(to, d); // opens Gmail, the default mail app on most Android phones
-  } else {
-    window.open(gmailWeb(to, d, account), "_blank", "noopener");
-  }
-}
 
 /** Badges she can trust: each comes from a field in the investor's record. */
 function earnedBadges(r: Row, year: number): BadgeKey[] {
@@ -77,24 +58,6 @@ export function PickCard({ r, token, onToast }: { r: Row; token: string; onToast
       ) : <div className="warn">We couldn't write this one. Try again in a few minutes.</div>}
     </article>
   );
-}
-
-function copyText(text: string): boolean {
-  // navigator.clipboard only exists on https and localhost; the hidden-textarea copy works everywhere else
-  const ta = document.createElement("textarea");
-  ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
-  document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
-  const ok = document.execCommand("copy");
-  ta.remove();
-  return ok;
-}
-
-async function copyOut(text: string, onToast: Toast, done: string) {
-  try {
-    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
-    else if (!copyText(text)) throw new Error("copy failed");
-    onToast(done);
-  } catch { onToast("Couldn't copy. Select the text and copy it."); }
 }
 
 const CopyIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>;

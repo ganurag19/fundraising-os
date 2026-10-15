@@ -50,6 +50,8 @@ export default defineSchema({
     sourceDate: v.optional(v.string()),
     lastChecked: v.optional(v.string()),
     linkedin: v.optional(v.string()), // public LinkedIn profile of the person (or the firm), from the research; never guessed
+    logo: v.optional(v.string()), // the fund's logo from its own site (touch icon, icon or social image), found once for a founder's top picks
+    logoChecked: v.optional(v.number()), // when we last looked, so a site without one isn't fetched again
     retired: v.optional(v.boolean()), // dropped from the research (stopped investing, failed checks): kept for existing lists, never matched again
   }).index("by_seedId", ["seedId"]),
 
@@ -180,4 +182,37 @@ export default defineSchema({
 
   // The owner's /admin unlocks: Google sign-in as ADMIN_EMAIL plus ADMIN_PIN. Each one is deleted when it expires.
   adminSessions: defineTable({ key: v.string(), userId: v.id("users") }).index("by_key", ["key"]),
+
+  // The Raise Kit (15 Oct): her brand, the extra facts she confirmed, and the deck and teaser written from them.
+  kits: defineTable({
+    founderId: v.id("founders"),
+    status: v.union(v.literal("building"), v.literal("ready"), v.literal("failed")),
+    brand: v.object({ primary: v.string(), accent: v.optional(v.string()), logo: v.optional(v.string()), font: v.optional(v.string()) }),
+    facts: v.object({
+      problem: v.optional(v.string()), product: v.optional(v.string()), forWho: v.optional(v.string()),
+      customers: v.optional(v.string()), // named customers or partners, her words
+      market: v.optional(v.string()), businessModel: v.optional(v.string()), competitors: v.optional(v.string()),
+      useOfFunds: v.optional(v.string()), whyNow: v.optional(v.string()),
+      team: v.array(v.object({ name: v.string(), role: v.string(), line: v.string() })),
+    }),
+    // 9 slides in a fixed order (cover … ask). Every number in them is one she gave us (checked in code).
+    deck: v.optional(v.array(v.object({ key: v.string(), headline: v.string(), points: v.array(v.string()), metrics: v.array(v.object({ value: v.string(), label: v.string() })) }))),
+    teaser: v.optional(v.object({ summary: v.string(), highlights: v.array(v.string()) })),
+    uploads: v.number(), // how many files she gave us (read once, then deleted)
+  }).index("by_founderId", ["founderId"]),
+
+  // "Request full access" from the kit dashboard: the plan she wants and her answers. No payment.
+  upgradeRequests: defineTable({
+    founderId: v.id("founders"),
+    email: v.optional(v.string()),
+    plan: v.string(),
+    wouldPay: v.string(), // yes · maybe · no
+    price: v.optional(v.string()),
+    liked: v.optional(v.string()),
+    missing: v.optional(v.string()),
+    solves: v.number(), // 1–5: does this solve your problem?
+    valuable: v.number(), // 1–5: how valuable is this?
+    raisingWhen: v.optional(v.string()),
+    phone: v.optional(v.string()),
+  }).index("by_founderId", ["founderId"]),
 });

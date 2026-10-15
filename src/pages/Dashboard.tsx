@@ -43,6 +43,7 @@ function Opening() {
 export default function Dashboard() {
   const token = useMemo(() => visitorToken(), []);
   const me = useQuery(api.founders.me, { token });
+  const kit = useQuery(api.kit.mine, { token }); // a Raise Kit founder uses /app
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { signOut: authSignOut } = useAuthActions();
   // Signing out leaves this browser as a new visitor; her list stays with her account.
@@ -86,6 +87,7 @@ export default function Dashboard() {
 
   // Dev build only: ?preview shows the layout without Google sign-in (names beyond the top 3 stay hidden). Not in the live build.
   const preview = import.meta.env.DEV && new URLSearchParams(location.search).has("preview");
+  if (kit) return <Navigate to="/app" replace />;
   if (isLoading || me === undefined || switching || (isAuthenticated && !me && mine === undefined)) return <Opening />;
   // Signed out: a list still waiting to be claimed goes to its reveal; anyone else to the home page, invite box open.
   if (!isAuthenticated && !preview) return <Navigate to={me && me.emailsStatus === "ready" && !me.claimed ? "/emails" : "/?code"} replace />;

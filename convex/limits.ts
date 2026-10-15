@@ -21,5 +21,8 @@ export const limits = new RateLimiter(components.rateLimiter, {
   notesPerFounder: { kind: "fixed window", rate: 20, period: 24 * HOUR }, // LinkedIn notes for emails written before notes existed
   feedbackPerVisitor: { kind: "fixed window", rate: 5, period: HOUR },
   feedbackGlobal: { kind: "token bucket", rate: 200, period: HOUR },
+  uploadsPerVisitor: { kind: "fixed window", rate: 10, period: 24 * HOUR }, // Raise Kit: her deck, CV or LinkedIn PDF
+  logoLooksPerVisitor: { kind: "fixed window", rate: 5, period: 24 * HOUR }, // her top 5 investors' logos, from their own sites
+  docReadsPerVisitor: { kind: "fixed window", rate: 4, period: 24 * HOUR }, // reading those files once
   adminPinTries: { kind: "fixed window", rate: 5, period: HOUR }, // the owner's PIN, per account and app-wide
 });

@@ -51,47 +51,52 @@ function investorFacts(i: Doc<"investors">) {
 export const writeFirstEmails = action({
   args: { token: v.string() },
   returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
-  handler: async (ctx, { token }): Promise<{ ok: true } | { ok: false; error: string }> => {
-    const data: { founder: Doc<"founders">; investors: Doc<"investors">[]; hasSent: boolean } | null = await ctx.runQuery(internal.founders.forDrafting, { token });
-    if (!data) return { ok: false as const, error: "Please start again from the first step." };
-    const f = data.founder;
-    if (!(f.oneLiner || f.forWho) || !f.founderLine) return { ok: false as const, error: "Please fill in the short profile first." };
-    if (f.emailsStatus === "writing") return { ok: true as const };
-    if (data.hasSent) return { ok: false as const, error: "You've started sending, so your list is kept as it is." };
-
-    // Match first (no AI, no cost): if nothing fits, say so plainly, before using one of her runs.
-    const year = new Date().getFullYear();
-    const ranked = rankMatches(data.investors, f, year);
-    const matchCount = ranked.length;
-    const activeCount = ranked.filter((x) => x.inv.recent.some((r) => (r.year ?? 0) >= year - 1)).length;
-    const leadCount = ranked.filter((x) => x.inv.leadsRounds).length;
-    const list: { inv: Doc<"investors">; score: number }[] = topMatches(data.investors, f, year, 100); // free sees 20, Round Pass 100
-    const top = list.slice(0, 3);
-    if (!top.length) {
-      const space = f.sectors.join(" and ");
-      return { ok: false as const, error: `No investors in our research back ${space} at ${f.stage.toLowerCase()} for ${f.ask} yet. Try another stage or raise size, or add a second sector. We add investors as we research them.` };
-    }
-
-    const run = await limits.limit(ctx, "runsPerVisitor", { key: f._id });
-    if (!run.ok) return { ok: false as const, error: "You've used today's 3 runs. Come back tomorrow." };
-    const calls = await limits.limit(ctx, "aiCallsGlobal", { count: 4 }); // 3 emails + 1 call for the other reasons
-    if (!calls.ok) return { ok: false as const, error: BUSY };
-
-    await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: "writing" });
-    await ctx.runMutation(internal.founders.saveMatches, { founderId: f._id, matchCount, activeCount, leadCount, picks: list.map((t) => ({ investorId: t.inv._id, score: t.score })) });
-
-    const founder = briefOf(f);
-    const client = new Anthropic();
-    const [results] = await Promise.all([
-      Promise.all(top.map((t) => writeOne(ctx, client, f._id, founder, t.inv))) as Promise<boolean[]>,
-      writeReasons(ctx, client, f._id, founder),
-    ]);
-    const ok: number = results.filter(Boolean).length;
-    await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: ok ? "ready" : "failed" });
-    if (ok) await ctx.runMutation(internal.founders.logStep, { step: "emails_ready" });
-    return ok ? { ok: true as const } : { ok: false as const, error: BUSY };
-  },
+  handler: async (ctx, { token }): Promise<{ ok: true } | { ok: false; error: string }> => await firstEmails(ctx, token, 3),
 });
+
+/** Match her, save her ranked list, and write the first emails for her top `n` (3 on the classic sign-up, 5 on the Raise Kit).
+ *  `extraCalls` reserves AI calls the caller makes alongside (the kit's deck). */
+export async function firstEmails(ctx: ActionCtx, token: string, n: number, extraCalls = 0, alongside?: () => Promise<unknown>): Promise<{ ok: true } | { ok: false; error: string }> {
+  const data: { founder: Doc<"founders">; investors: Doc<"investors">[]; hasSent: boolean } | null = await ctx.runQuery(internal.founders.forDrafting, { token });
+  if (!data) return { ok: false as const, error: "Please start again from the first step." };
+  const f = data.founder;
+  if (!(f.oneLiner || f.forWho) || !f.founderLine) return { ok: false as const, error: "Please fill in the short profile first." };
+  if (f.emailsStatus === "writing") return { ok: true as const };
+  if (data.hasSent) return { ok: false as const, error: "You've started sending, so your list is kept as it is." };
+
+  // Match first (no AI, no cost): if nothing fits, say so plainly, before using one of her runs.
+  const year = new Date().getFullYear();
+  const ranked = rankMatches(data.investors, f, year);
+  const matchCount = ranked.length;
+  const activeCount = ranked.filter((x) => x.inv.recent.some((r) => (r.year ?? 0) >= year - 1)).length;
+  const leadCount = ranked.filter((x) => x.inv.leadsRounds).length;
+  const list: { inv: Doc<"investors">; score: number }[] = topMatches(data.investors, f, year, 100); // free sees 20, Round Pass 100
+  const top = list.slice(0, n);
+  if (!top.length) {
+    const space = f.sectors.join(" and ");
+    return { ok: false as const, error: `No investors in our research back ${space} at ${f.stage.toLowerCase()} for ${f.ask} yet. Try another stage or raise size, or add a second sector. We add investors as we research them.` };
+  }
+
+  const run = await limits.limit(ctx, "runsPerVisitor", { key: f._id });
+  if (!run.ok) return { ok: false as const, error: "You've used today's 3 runs. Come back tomorrow." };
+  const calls = await limits.limit(ctx, "aiCallsGlobal", { count: top.length + 1 + extraCalls }); // the emails + 1 call for the other reasons
+  if (!calls.ok) return { ok: false as const, error: BUSY };
+
+  await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: "writing" });
+  await ctx.runMutation(internal.founders.saveMatches, { founderId: f._id, matchCount, activeCount, leadCount, picks: list.map((t) => ({ investorId: t.inv._id, score: t.score })) });
+
+  const founder = briefOf(f);
+  const client = new Anthropic();
+  const [results] = await Promise.all([
+    Promise.all(top.map((t) => writeOne(ctx, client, f._id, founder, t.inv))) as Promise<boolean[]>,
+    writeReasons(ctx, client, f._id, founder, n),
+    alongside?.(),
+  ]);
+  const ok: number = results.filter(Boolean).length;
+  await ctx.runMutation(internal.founders.setStatus, { founderId: f._id, status: ok ? "ready" : "failed" });
+  if (ok) await ctx.runMutation(internal.founders.logStep, { step: "emails_ready" });
+  return ok ? { ok: true as const } : { ok: false as const, error: BUSY };
+}
 
 /** One line on why each of the other investors fits. Fills in reasons for older lists too (the dashboard asks once). */
 export const explainRest = action({
@@ -109,8 +114,8 @@ export const explainRest = action({
 
 const ReasonsOut = z.object({ reasons: z.array(z.object({ i: z.number(), reason: z.string() })) });
 
-async function writeReasons(ctx: ActionCtx, client: Anthropic, founderId: Id<"founders">, founder: FounderBrief): Promise<void> {
-  const all: { rank: number; investor: Doc<"investors"> }[] = await ctx.runQuery(internal.founders.forReasons, { founderId });
+async function writeReasons(ctx: ActionCtx, client: Anthropic, founderId: Id<"founders">, founder: FounderBrief, from = 3): Promise<void> {
+  const all: { rank: number; investor: Doc<"investors"> }[] = await ctx.runQuery(internal.founders.forReasons, { founderId, from });
   // at most 20 records per call (AGENTS.md section 4); Round Pass lists need several calls
   for (let i = 0; i < all.length; i += 20) await writeReasonBatch(ctx, client, founderId, founder, all.slice(i, i + 20));
 }
@@ -146,8 +151,9 @@ export const writeMore = action({
   handler: async (ctx, { token, rank }): Promise<{ ok: true } | { ok: false; error: string }> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return { ok: false as const, error: "Please sign in to write more emails." };
-    const row: { founder: Doc<"founders">; investor: Doc<"investors">; hasDraft: boolean } | null = await ctx.runQuery(internal.founders.rowForDrafting, { token, rank, userId });
+    const row: { founder: Doc<"founders">; investor: Doc<"investors">; hasDraft: boolean; locked: boolean } | null = await ctx.runQuery(internal.founders.rowForDrafting, { token, rank, userId });
     if (!row) return { ok: false as const, error: "We couldn't find that investor on your list." };
+    if (row.locked) return { ok: false as const, error: "Unlock your full kit to write to every investor who fits." };
     if (row.hasDraft) return { ok: true as const };
     if (row.investor.retired) return { ok: false as const, error: "This investor is no longer active, so we won't write to them." };
     if (sharesHerDomain(row.founder.website, row.investor)) return { ok: false as const, error: "This one shares your company's domain, so we left it out." };

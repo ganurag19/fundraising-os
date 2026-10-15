@@ -143,6 +143,8 @@ export const forms = query({
     wants: v.array(v.object({ key: v.string(), n: v.number(), companies: v.array(v.string()) })),
     pmf: v.object({ very: v.number(), somewhat: v.number(), not: v.number(), benefits: v.array(v.object({ answer: v.string(), text: v.string(), company: v.string() })) }),
     ai: v.object({ calls: v.number(), failed: v.number(), byPurpose: v.record(v.string(), v.number()), lastErrors: v.array(v.object({ at: v.number(), purpose: v.string(), error: v.string() })) }),
+    // Raise Kit "Request full access" (15 Oct): the plan and her answers
+    upgrades: v.array(v.object({ at: v.number(), company: v.string(), email: v.union(v.string(), v.null()), plan: v.string(), wouldPay: v.string(), price: v.union(v.string(), v.null()), solves: v.number(), valuable: v.number(), liked: v.union(v.string(), v.null()), missing: v.union(v.string(), v.null()), raisingWhen: v.union(v.string(), v.null()), phone: v.union(v.string(), v.null()) })),
   })),
   handler: async (ctx, { key, since }) => {
     if (!(await ownerFromKey(ctx, key))) return null;
@@ -156,7 +158,12 @@ export const forms = query({
     const byPurpose = new Map<string, number>();
     for (const c of calls) count(byPurpose, c.purpose);
     const failed = calls.filter((c) => c.error);
+    const ups = await ctx.db.query("upgradeRequests").order("desc").take(200); // all time: there are few
     return {
+      upgrades: await Promise.all(ups.map(async (u) => ({
+        at: u._creationTime, company: (await ctx.db.get("founders", u.founderId))?.company ?? "", email: u.email ?? null, plan: u.plan, wouldPay: u.wouldPay, price: u.price ?? null,
+        solves: u.solves, valuable: u.valuable, liked: u.liked ?? null, missing: u.missing ?? null, raisingWhen: u.raisingWhen ?? null, phone: u.phone ?? null,
+      }))),
       invites: invites.map((w) => ({ at: w._creationTime, name: w.name, email: w.email, company: w.company, stage: w.stage, status: w.status })),
       interest: interest.map((p) => ({ at: p._creationTime, name: p.name, email: p.email, plan: p.plan, note: p.note ?? null })),
       codes: codes.map((c) => ({ code: c.code, label: c.label, uses: c.uses, maxUses: c.maxUses })),

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { visitorToken } from "../lib/token";
@@ -26,7 +27,8 @@ function FeedbackSheet({ page, signedIn, onClose }: { page: string; signedIn: bo
     const r = await send({ token: visitorToken(), page, text, email: signedIn ? undefined : email || undefined }).catch(() => ({ ok: false as const, error: "Couldn't send. Check your connection." }));
     if (r.ok) setState("sent"); else { setState("idle"); setError(r.error); }
   };
-  return (
+  // On the page body, so no card or sidebar can sit above it.
+  return createPortal(
     <div className="sheet-scrim" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="sheet rise" role="dialog" aria-modal="true" aria-label="Send feedback">
         <button className="xbtn" style={{ alignSelf: "flex-end" }} onClick={onClose} aria-label="Close">✕</button>
@@ -47,6 +49,7 @@ function FeedbackSheet({ page, signedIn, onClose }: { page: string; signedIn: bo
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

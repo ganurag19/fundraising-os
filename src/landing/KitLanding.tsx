@@ -5,39 +5,37 @@ import InviteSheet from "./InviteSheet";
 import type { SheetMode } from "./InviteSheet";
 import { savedInviteCode, savePrefill } from "../lib/token";
 import { HeroBuild, InvestorCards, KitShowcase, PlanPicker, ProofStrip } from "./KitParts";
+import { COMPARE, PLANS } from "./plans";
 
 // DRAFT (dev only, /kit): the Raise Kit landing, on Relay Studio's skeleton: one input, the product working on screen,
 // alternating "visual + one promise" sections, calm light theme. Example founder and investors are made up.
 
+const WHY: ["data" | "engine" | "templates" | "circle", string, string][] = [
+  ["data", "Proprietary investor data", "574 active investors who back Indian startups, mapped by hand from their own sites, deal news and announcements: deals, partners, cheque sizes. Updated daily as new deals land, not a scraped list."],
+  ["engine", "An AI matching engine on real deals", "Every investor gets a Fit Score from what they actually did: recent deals, activity and announcements, stage and cheque size. Calculated, then explained, with sources."],
+  ["templates", "Proven templates from real fundraises", "Deck, teaser and pitch structures in the order seed investors read them, built from first rounds that closed."],
+  ["circle", "A circle that's been there", "Founders who closed their first round and investors who back them: honest feedback, clarity when you're stuck, warm doors when you're ready. On the Advisors plan."],
+];
+
+/** Small moving icons for "Why FirstCheq". */
+function WhyIcon({ k }: { k: "data" | "engine" | "templates" | "circle" }) {
+  return (
+    <span className={`k5-ic ${k}`} aria-hidden="true">
+      {k === "data" && <svg viewBox="0 0 32 32"><ellipse cx="16" cy="8" rx="10" ry="4" /><path d="M6 8v8c0 2.2 4.5 4 10 4s10-1.8 10-4V8" /><path className="k5-ic-mv" d="M6 16v8c0 2.2 4.5 4 10 4s10-1.8 10-4v-8" /></svg>}
+      {k === "engine" && <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11" /><circle cx="16" cy="16" r="6" /><path className="k5-ic-spin" d="M16 16 L16 5" /><circle className="k5-ic-dot" cx="22" cy="11" r="2" /></svg>}
+      {k === "templates" && <svg viewBox="0 0 32 32"><rect x="9" y="5" width="16" height="20" rx="3" /><rect className="k5-ic-mv" x="6" y="8" width="16" height="20" rx="3" /><path d="M10 15h8M10 19h8M10 23h5" /></svg>}
+      {k === "circle" && <svg viewBox="0 0 32 32"><circle cx="16" cy="9" r="4" /><circle cx="7" cy="22" r="4" /><circle cx="25" cy="22" r="4" /><path className="k5-ic-dash" d="M13 12 L9 19 M19 12 L23 19 M11 22 H21" /></svg>}
+    </span>
+  );
+}
+
 const FAQ: [string, string][] = [
-  ["What do I need to start?", "Your website (or a few lines about your startup), your stage and how much you're raising. Then 5 quick questions. About 5 minutes."],
+  ["What do I need to start?", "Your website, or a few lines about your startup. Add an old deck or your CV if you have one, check the facts we found, and your kit is built. About 5 minutes."],
   ["Is the deck really in my brand?", "Yes. We take your logo, colours and fonts from your website and build the deck from our templates. You can edit every slide."],
   ["Do you make up numbers?", "Never. The kit uses your numbers. Market size and competition come with sources; anything we can't source is marked for you to fill in."],
   ["Do you send emails for me?", "Only when you swipe or press send. They go from your own Gmail, so replies come straight to you. LinkedIn notes you send yourself."],
   ["Who are the investors?", "574 investors who back Indian startups: angels, angel networks, accelerators, incubators, grants and seed funds, researched from their own sites and deal news, checked every week."],
-  ["Can you guarantee funding?", "No one honestly can. We make sure your first pitches go to investors who fit, with a kit they'll take seriously, in days instead of weeks."],
-];
-
-type Plan = { name: string; icon: string; line: string; tag: string; badge?: string; rec?: boolean; groups: [string, string[]][]; best: string; cta: string };
-const PLANS: Plan[] = [
-  { name: "Preview", icon: "◔", line: "See your kit before you decide", tag: "Free", cta: "Start free", best: "Seeing if FirstCheq fits you",
-    groups: [["Plan", ["Your raise plan: who to approach, in order"]], ["Kit", ["Deck cover and 2 slides, in your brand"]], ["Outreach", ["Top 3 investors, each with a pitch", "Swipe to send on those 3"]]] },
-  { name: "Raise Kit", icon: "◆", line: "Everything you need to go out and raise", tag: "Founding access", badge: "Most founders", rec: true, cta: "Get founding access", best: "Founders ready to raise in the next 3 months",
-    groups: [["Kit, in your brand", ["10-slide investor-ready deck (PowerPoint, Google Slides, PDF)", "Two-page teaser", "The 20 investor questions, answers drafted", "Market size and competition, with sources", "Funding trends in your sector", "Data room checklist and templates"]], ["Investors", ["Everyone who fits (up to 100), ranked, with the reason"]], ["Outreach", ["A pitch, LinkedIn note and intro blurb for each", "Swipe to send and schedule from your Gmail", "Follow-ups on day 3 and day 10"]], ["Support", ["3 rounds of revisions"]]] },
-  { name: "Raise Kit + Advisors", icon: "✦", line: "Learn from founders who've already raised", tag: "Founding access", badge: "For a faster round", cta: "Request access", best: "Founders who want a second pair of eyes and warm doors",
-    groups: [["Everything in Raise Kit, plus", ["Advisory calls with founders who've raised their first round", "Your deck and story pressure-tested before you send", "Warm connects through our founders' networks, when you're ready", "Mock investor Q&A before your first meetings"]], ["Support", ["Priority help while you raise"]]] },
-];
-const COMPARE: [string, string, string, string, string][] = [
-  ["Raise plan and sequence", "✓", "✓", "✓", "✓"],
-  ["Deck and teaser in your brand", "Cover + 2", "✓", "✓", "✓"],
-  ["Investor Q&A, market, competition", "–", "✓", "✓", "✓"],
-  ["Investors who fit, with reasons", "Top 3", "Up to 100", "Up to 100", "Up to 100"],
-  ["Personal pitches and follow-ups", "3", "✓", "✓", "✓"],
-  ["Swipe to send from Gmail", "3", "✓", "✓", "✓"],
-  ["Advisory calls with funded founders", "–", "–", "✓", "✓"],
-  ["Warm connects", "–", "–", "✓", "✓"],
-  ["Outreach run with you, day to day", "–", "–", "–", "✓"],
-  ["Meeting prep and term-sheet support", "–", "–", "Q&A prep", "✓"],
+  ["Can you guarantee funding?", "No one honestly can. A round depends on many things, from your traction to the market. Our job is to raise your odds and your speed: the right investors, a kit they take seriously, and a system that keeps you moving."],
 ];
 
 export default function KitLanding() {
@@ -46,7 +44,15 @@ export default function KitLanding() {
   const [sheet, setSheet] = useState<SheetMode | null>(null);
   const [soon, setSoon] = useState(false);
   // Concept page: every button explains that the full flow is coming, and offers what's live today.
-  const start = (e?: React.FormEvent) => { e?.preventDefault(); setSoon(true); };
+  // The Raise Kit is live for the friends test: every "Get started" opens /build with her site (and the link's code, if any).
+  const start = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const q = new URLSearchParams();
+    if (site.trim()) q.set("site", site.trim());
+    const code = new URLSearchParams(location.search).get("code");
+    if (code) q.set("code", code);
+    navigate(`/build${q.toString() ? `?${q}` : ""}`);
+  };
   const tryLive = () => {
     setSoon(false);
     if (site.trim()) savePrefill({ first: site.trim(), sectors: [], stage: "", ask: "" });
@@ -59,37 +65,39 @@ export default function KitLanding() {
     return () => m.remove();
   }, []);
   const cup = <svg className="k3-cup" viewBox="0 0 40 40" aria-hidden="true"><path className="st s1" d="M15 9c-2 2 2 3 0 6" /><path className="st s2" d="M21 7c-2 2 2 3 0 6" /><path className="st s3" d="M27 9c-2 2 2 3 0 6" /><path d="M8 18h24v6a10 10 0 0 1-10 10h-4A10 10 0 0 1 8 24z" fill="currentColor" /><path d="M32 20h2a4 4 0 0 1 0 8h-3" stroke="currentColor" strokeWidth="2.5" fill="none" /></svg>;
+  // The brewing cup after "coffee": bigger, with three wisps of steam.
+  const brew = <svg className="k5-brew" viewBox="0 0 40 40" aria-hidden="true"><path className="st s1" d="M15 10c-2.5 2.5 2.5 4 0 7.5" /><path className="st s2" d="M21 7c-2.5 2.5 2.5 4 0 7.5" /><path className="st s3" d="M27 10c-2.5 2.5 2.5 4 0 7.5" /><path d="M8 19h24v6a10 10 0 0 1-10 10h-4A10 10 0 0 1 8 25z" fill="currentColor" /><path d="M32 21h2a4 4 0 0 1 0 8h-3" stroke="currentColor" strokeWidth="2.5" fill="none" /></svg>;
   const input = (cls = "") => (
     <form className={`k2-input ${cls}`} onSubmit={start}>
       <span className="k2-www" aria-hidden="true">www.</span>
       <input value={site} onChange={(e) => setSite(e.target.value)} placeholder="yourstartup.in" aria-label="Your website" autoCapitalize="none" inputMode="url" />
-      <button className="btn primary" type="submit">Get started</button>
+      <button className="btn primary" type="submit">Get started, free</button>
     </form>
   );
 
   return (
     <div className="theme-light k2">
-      <div className="draft-bar">Concept preview · the Raise Kit is being built · feedback welcome</div>
+      <div className="draft-bar">Early preview · for friends and colleagues · feedback welcome</div>
       <header className="k2-nav">
         <a className="logo" href="/" aria-label="FirstCheq home"><LogoMark /><Wordmark /></a>
-        <nav><a href="#how">How it works</a><a href="#plans">Plans</a><button className="btn primary sm" onClick={() => setSoon(true)}>Get started</button></nav>
+        <nav><a href="#how">How it works</a><a href="#plans">Plans</a><button className="btn primary sm" onClick={() => start()}>Get started, free</button></nav>
       </header>
 
       {/* Hero */}
       <section className="k2-hero">
         <h1>Your first round,<br /><em>ready in 5 minutes.</em></h1>
-        <p>Your investor deck and collateral, fully branded. Every active investor who backs startups like yours, with a pitch written to each. Then just swipe to send.</p>
+        <p className="k5-sub">Your investor deck and collateral, fully branded. Every active investor backing startups like yours, with a personal pitch to each. Swipe right to send, track and follow up.</p>
         {input("big")}
         <span className="k4-coffee">{cup}All the heavy lifting of your first round, done over a cup of coffee.</span>
-        <span className="k2-alt">No website yet? <button className="text-link" onClick={() => setSoon(true)}>Tell us about your startup</button></span>
-        <div className="k2-fan" aria-hidden="true">
-          <div className="f1 k2-mini deck"><b>Kiln Labs</b><span>Seed · ₹3 Cr</span></div>
-          <div className="f2 k2-mini"><em>Fit 95</em><b>Verdant Arc</b><span>Backed GridLeaf at seed</span></div>
-          <div className="f3 k2-mini mail"><b>After GridLeaf, kilns are next</b><span>Hi Meera, you backed GridLeaf…</span></div>
-          <div className="f4 k2-mini plan"><b>168</b><span>investors fit you</span></div>
-          <div className="f5 k2-mini"><em>Fit 90</em><b>Northlight Seed</b><span>Smeltwise is in their portfolio</span></div>
-          <div className="f6 k2-mini teaser"><b>Two-page teaser</b><span>Ready to attach</span></div>
-          <div className="f7 k2-mini mail"><b>Your FurnaceIQ cheque, and kilns</b><span>Hi Anjali…</span></div>
+        <span className="k2-alt">No website yet? <button className="text-link" onClick={() => start()}>Tell us about your startup</button></span>
+        <div className="k2-fan k5-fan" aria-hidden="true">
+          <div className="f1 k2-mini deck"><span className="k5-tag">Deck · 9 slides</span><b>Kiln Labs</b><span>Seed · ₹3 Cr · in your brand</span></div>
+          <div className="f2 k2-mini"><em>Fit 95</em><b>Verdant Arc</b><span>Backed GridLeaf at seed, 2025</span><span className="k5-src">Source: their portfolio page</span></div>
+          <div className="f3 k2-mini mail"><span className="k5-tag blue">Pitch ready</span><b>After GridLeaf, kilns are next</b><span>Hi Meera, you backed GridLeaf when few funds would…</span></div>
+          <div className="f4 k2-mini plan"><b>168</b><span>active investors fit you</span><i className="k5-pulse" /></div>
+          <div className="f5 k2-mini live"><span className="k5-tag green">● Live</span><b>Northlight Seed opened your deck</b><span>Read 6 of 9 slides · 2 min ago</span></div>
+          <div className="f6 k2-mini teaser"><span className="k5-tag">Teaser</span><b>Two pages, ready to attach</b><span>Problem, proof, team, the ask</span></div>
+          <div className="f7 k2-mini mail"><span className="k5-tag amber">Follow-up · day 3</span><b>Re: Your FurnaceIQ cheque</b><span>Written and scheduled for you</span></div>
         </div>
       </section>
 
@@ -99,13 +107,13 @@ export default function KitLanding() {
       {/* 1: just your website */}
       <section className="k2-row" id="how">
         <div className="k2-visual"><HeroBuild /></div>
-        <div className="k2-copy"><span className="k2-k">Step 1</span><h2>Paste your website.<br />Get your whole raise kit.</h2><p>We read your site and 5 one-tap answers, then build your deck, two-page teaser, investor Q&A, pitch emails, LinkedIn notes and data room, in your logo, colours and voice. No forms, no blank slides.</p></div>
+        <div className="k2-copy"><span className="k2-k">Step 1</span><h2>Paste your website.<br />Get your whole raise kit.</h2><p>We read your site (and your old deck or CV, if you add one), then build your deck, teaser and profile in your brand, research your market and competition, match you with active investors, and write a pitch tailored to each one. No forms, no blank slides.</p></div>
       </section>
 
       {/* 2: the kit */}
       <section className="k2-row flip">
         <div className="k2-visual"><KitShowcase /></div>
-        <div className="k2-copy"><span className="k2-k">Step 2</span><h2>The kit investors ask for,<br />made for you.</h2><p>A 10-slide deck in your brand, a two-page teaser, the 20 questions investors will ask with your answers drafted, and a data room checklist. Your numbers only; gaps are marked, never made up.</p></div>
+        <div className="k2-copy"><span className="k2-k">Step 2</span><h2>The kit investors ask for,<br />made for you.</h2><p>A 9-slide deck in your brand, a two-page teaser, the 20 questions investors will ask with your answers drafted, and a data room checklist. Your numbers only; gaps are marked, never made up.</p></div>
       </section>
 
       {/* 3: who's investing in you */}
@@ -136,44 +144,66 @@ export default function KitLanding() {
             </div>
           </div>
         </div>
-        <div className="k2-copy"><span className="k2-k">Step 5</span><h2>Scheduled for you.<br />Sent from your Gmail.</h2><p>Connect Gmail once. We spread your pitches across working days, so they land well and your inbox stays healthy, then write each follow-up on day 3 and day 10. Replies come straight to you.</p></div>
+        <div className="k2-copy"><span className="k2-k">Step 5</span><h2>Scheduled, sent from your Gmail,<br />and followed up.</h2><p>Connect Gmail once. We spread your pitches across working days, so they land well and your inbox stays healthy, then write each follow-up on day 3 and day 10. Replies come straight to you.</p></div>
       </section>
 
-      {/* 6: replies */}
+      {/* 6: replies, and who checked you out */}
       <section className="k2-row">
         <div className="k2-visual">
-          <div className="k2-pipe">
-            {[["Sent", 10, ""], ["Opened the deck", 6, ""], ["Replied", 3, "g"], ["Meetings", 2, "g"]].map(([t, n, c]) => (
-              <div key={t as string} className={`k2-pipe-row ${c}`}><span>{t}</span><span className="k2-pipe-bar"><i style={{ width: `${((n as number) / 10) * 100}%` }} /></span><b>{n}</b></div>
-            ))}
-            <p className="muted small">Example numbers, made up. "Opened" needs the deck link, coming with the kit.</p>
+          <div className="k5-room">
+            <div className="k5-room-h"><b>Your pitch profile</b><span>firstcheq.ai/p/kilnlabs · private</span></div>
+            <div className="k5-room-stats">{[["128", "views"], ["34", "investors"], ["19", "deck opens"], ["6", "asked to meet"]].map(([n, l]) => <div key={l}><b>{n}</b><span>{l}</span></div>)}</div>
+            <div className="k5-feed">
+              <div className="hot"><i>●</i><span><b>Verdant Arc</b> asked to meet</span><em>Reply today</em></div>
+              <div><i>●</i><span><b>Northlight Seed</b> read 6 of 9 slides, twice</span><em>Warm: follow up</em></div>
+              <div><i>●</i><span><b>Kestrel Ridge Angels</b> asked for access</span><em>Approve</em></div>
+              <div className="quiet"><i>●</i><span><b>Monsoon Ventures</b> hasn't opened yet</span><em>Day 3 nudge</em></div>
+            </div>
+            <p className="muted small">Example numbers and made-up investors.</p>
           </div>
         </div>
-        <div className="k2-copy"><span className="k2-k">Step 6</span><h2>See who replied,<br />and what to do next.</h2><p>Every investor in one pipeline: waiting, replied, meeting, passed. When someone replies, the follow-ups stop, and your next move is on top.</p></div>
+        <div className="k2-copy"><span className="k2-k">Step 6</span><h2>See who replied, who checked you out,<br />and what to do next.</h2><p>Your private pitch profile shows who opened your deck, which slides they read, and who asked to meet. Every investor sits in one pipeline: waiting, replied, meeting, passed. When someone replies, follow-ups stop, and your next move is on top.</p></div>
       </section>
 
       {/* Compare */}
       <section className="k2-wide">
-        <h2>Weeks of work and ₹50,000 a month,<br /><em>or one evening.</em></h2>
-        <div className="k2-vs">
-          <div><b>Doing it the usual way</b><ul><li>2–4 weeks making a deck and teaser</li><li>Days googling which investors might fit</li><li>Writing every email from scratch</li><li>Follow-ups you forget</li><li>An advisor at ₹50,000–2,00,000 a month</li></ul></div>
-          <div className="us"><b>With FirstCheq</b><ul><li>Your deck and teaser in your brand, in minutes</li><li>Every investor who fits, ranked, with the reason</li><li>A personal pitch to each, ready to swipe</li><li>Follow-ups written and scheduled</li><li>One price, once per round</li></ul></div>
+        <h2>Weeks of anxiety, <span className="nowrap">₹50K–1L</span> a month or <span className="nowrap">1–6%</span> of your company.<br /><em>Or one evening, over a cup of coffee.</em>{brew}</h2>
+        <div className="k2-vs k5-vs">
+          <div>
+            <span className="k5-vs-k">The usual way</span><b>Why most first raises stall</b>
+            <ul className="k5-pain">
+              <li>Weeks stuck on the deck and teaser, never quite ready</li>
+              <li>Days googling which investors might fit</li>
+              <li>Spray and pray: one generic email to the wrong investors</li>
+              <li>No system: lost threads and forgotten follow-ups</li>
+              <li>Hanging on two or three investors, then getting ghosted</li>
+              <li>Anxiety, burnout, and many give up</li>
+              <li>Advisors at ₹50K–1L a month, or 1–6% of your equity</li>
+            </ul>
+          </div>
+          <div className="us">
+            <span className="k5-vs-k">With FirstCheq</span><b>Founders who raise follow a system</b>
+            <ul className="k5-gain">
+              <li>Your deck, teaser and profile in your brand, tonight</li>
+              <li>Every active investor who fits, ranked, with the reason</li>
+              <li>A personal pitch to each, ready to swipe</li>
+              <li>Follow-ups written and scheduled, so momentum builds every week</li>
+              <li>You see who's warm, and what to do next</li>
+              <li>One price per round. No equity.</li>
+            </ul>
+          </div>
         </div>
+        <p className="k5-hope">Hope is not a strategy. <em>A system is.</em></p>
       </section>
 
       {/* Why us: not just an AI wrapper */}
       <section className="k2-wide">
         <span className="k2-k">Why FirstCheq</span>
-        <h2>Not another AI wrapper.<br /><em>Built on things AI can't make up.</em></h2>
+        <h2>Not another AI wrapper.<br /><em>Built on data, people and networks AI can't make up (yet).</em></h2>
         <div className="k2-why">
-          {[
-            ["◉", "Our own investor research", "574 investors who back Indian startups: their deals, partners, cheque sizes and LinkedIn, researched from their own sites and deal news. Contact links checked every week."],
-            ["◎", "A real matching engine", "Every investor gets a Fit Score from their actual deals, stage, cheque size and how recently they invested. It's calculated, not guessed by a chatbot, and every reason shows its source."],
-            ["▤", "Templates from real fundraises", "Deck, teaser and pitch structures in the order seed investors read them, built from first rounds that closed. [Confirm: which raises, and who reviewed them.]"],
-            ["✓", "Checked, never invented", "Code checks every draft: your numbers stay exactly as you gave them, no figure appears that you didn't give us, and every pitch opens on a deal the investor really did."],
-          ].map(([ic, t, d]) => <div key={t} className="k2-why-card"><span className="k2-why-ic" aria-hidden="true">{ic}</span><b>{t}</b><p>{d}</p></div>)}
+          {WHY.map(([ic, t, d]) => <div key={t} className="k2-why-card"><WhyIcon k={ic} /><b>{t}</b><p>{d}</p></div>)}
         </div>
-        <p className="k2-sub" style={{ marginTop: 6 }}>And people when you want them: advisory calls with founders who've raised their first round, on the Advisors plan.</p>
+        <p className="k2-sub" style={{ marginTop: 6 }}>And nothing in your kit is made up: every number is one you gave us.</p>
       </section>
 
       {/* Plans (no prices while it's a concept) */}
@@ -190,11 +220,12 @@ export default function KitLanding() {
                 <div key={g} className="k3-group"><em>{g}</em><ul>{items.map((x) => <li key={x}>{x}</li>)}</ul></div>
               ))}
               <span className="k3-best"><b>Best for:</b> {p.best}</span>
-              <button className={`btn ${p.rec ? "primary" : "ghost"}`} onClick={() => setSoon(true)}>{p.cta}</button>
+              <button className={`btn ${p.rec ? "primary" : "ghost"}`} onClick={() => start()}>{p.cta}</button>
             </div>
           ))}
         </div>
 
+        <h3 className="k5-table-h">Compare plans</h3>
         <div className="k3-compare" role="table" aria-label="What each plan includes">
           <div className="k3-row head" role="row"><span /><span>Preview</span><span>Raise Kit</span><span>+ Advisors</span><span>Done for you</span></div>
           {COMPARE.map(([label, ...cells]) => (
@@ -210,6 +241,7 @@ export default function KitLanding() {
             {[["Week 1", "Raise strategy, target list and your full kit, reviewed with you"], ["Weeks 2–6", "Outreach run together every working day, with follow-ups"], ["Throughout", "Warm connects from our network of founders and investors"], ["Every meeting", "Prep before each investor call, notes and next steps after"], ["Term sheet", "What to ask, what to push back on, and partner lawyers when you need one"]].map(([w, d]) => <li key={w}><b>{w}</b><span>{d}</span></li>)}
           </ol>
         </div>
+        <p className="k5-honest">No one can guarantee funding: a round depends on many things, from your traction to the market. Our job is to raise your odds and your speed, and to equip you as fully as we can.</p>
       </section>
 
       {/* FAQ */}
@@ -221,7 +253,7 @@ export default function KitLanding() {
       <section className="k2-end">
         <h2>Get your round<br /><em>ready tonight.</em></h2>
         {input("big")}
-        <span className="k2-alt">Free preview · About 5 minutes · For first-time founders in India</span>
+        <span className="k2-alt">Free to start · About 5 minutes · For first-time founders in India</span>
       </section>
 
       <footer className="k2-foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Nothing is sent without your swipe · Example founder and investors on this page are made up · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span></footer>

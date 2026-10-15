@@ -83,3 +83,46 @@ export function withSignature(body: string, f: { name: string; company: string; 
   if (body.toLowerCase().includes(`founder, ${f.company.toLowerCase()}`)) return body;
   return [body.trimEnd(), "", f.name, `Founder, ${f.company}`, f.website, f.linkedin].filter((x) => x !== undefined && x !== null).join("\n");
 }
+
+// ---------- Raise Kit deck (15 Oct): every number on a slide must be one she gave us ----------
+
+export type Slide = { key: string; headline: string; points: string[]; metrics: { value: string; label: string }[] };
+const HYPE = ["revolutionary", "revolutionis", "revolutioniz", "disrupt", "game-changing", "game changing", "world-class", "cutting-edge", "as an ai", "guarantee"];
+
+// A number on a slide, and whether it must be one she gave: anything with two digits or more, and any single digit
+// with money or a unit on it ("₹2 Cr", "3x", "5%"). A bare single digit ("3 steps") is fine to write.
+const deckNumbers = (s: string) => [...s.matchAll(/(₹|\$|rs\.?\s?)?(\d[\d,.]*)\s?(%|x\b|cr\b|crore|l\b|lakh|k\b|mn?\b|bn?\b)?/gi)]
+  .map((m) => ({ n: m[2].replace(/,/g, "").replace(/\.$/, ""), strict: !!(m[1] || m[3]) || m[2].replace(/[,.]/g, "").length > 1 }));
+const badNumber = (s: string, ok: Set<string>) => deckNumbers(s).find((x) => x.strict && !ok.has(x.n))?.n;
+
+/** Numbers in the deck that aren't in her facts, and hype words. Empty means the deck passes. */
+export function deckProblems(slides: Slide[], teaser: { summary: string; highlights: string[] }, factsText: string, allowed: string[] = []): string[] {
+  const ok = new Set([...numbers(factsText), ...allowed]);
+  const problems: string[] = [];
+  const check = (where: string, s: string) => {
+    const bad = badNumber(s, ok);
+    if (bad) problems.push(`${where} has a number she didn't give: "${bad}"`);
+    const low = s.toLowerCase();
+    for (const h of HYPE) if (low.includes(h)) problems.push(`${where} uses a word we never use: "${h}"`);
+  };
+  for (const sl of slides) {
+    check(`Slide ${sl.key} headline`, sl.headline);
+    sl.points.forEach((p) => check(`Slide ${sl.key}`, p));
+    sl.metrics.forEach((m) => check(`Slide ${sl.key} metric`, `${m.value} ${m.label}`));
+  }
+  check("Teaser summary", teaser.summary);
+  teaser.highlights.forEach((h) => check("Teaser highlight", h));
+  return problems;
+}
+
+/** Last line of defence: drop any line or metric with a number she didn't give (a headline falls back to its first clean point). */
+export function cleanDeck(slides: Slide[], teaser: { summary: string; highlights: string[] }, factsText: string, allowed: string[] = []) {
+  const ok = new Set([...numbers(factsText), ...allowed]);
+  const clean = (s: string) => !badNumber(s, ok) && !HYPE.some((h) => s.toLowerCase().includes(h));
+  const out = slides.map((sl) => {
+    const points = sl.points.filter(clean).slice(0, 4);
+    return { key: sl.key, headline: clean(sl.headline) ? sl.headline : points[0] ?? "", points, metrics: sl.metrics.filter((m) => clean(`${m.value} ${m.label}`)).slice(0, 3) };
+  });
+  const sentences = teaser.summary.split(/(?<=[.!?])\s+/).filter(clean);
+  return { slides: out, teaser: { summary: sentences.join(" "), highlights: teaser.highlights.filter(clean).slice(0, 5) } };
+}

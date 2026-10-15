@@ -44,11 +44,12 @@ Before I share the link: I open it on my phone, logged out, on mobile data, and 
 
 ## 4. The AI call
 
-Model: Claude Haiku 4.5 for matching, follow-ups, the website one-liner and "Write email" beyond her top 3; Claude Sonnet 5.5 for each founder's first three drafts. Thinking: low or off.
+Model: Claude Haiku 4.5 for matching, follow-ups, reading her website and files, and "Write email" beyond her top picks; Claude Sonnet 5.5 for her top picks' drafts (3 classic, 5 on the Raise Kit) and her deck and teaser text. Thinking: low or off.
 What goes in, and its limit: the founder's four fields and profile (length-limited) and only the filtered shortlist of investor records, never the whole list; at most 20 records per call.
 Where it runs: a Convex action. Never in the interface.
 Key: ANTHROPIC_API_KEY in Convex environment variables, dev and prod.
-Reply cap: max_tokens 1500 (match), 1000 (draft: the email plus its reason, "why they fit" and "watch out" in one structured reply), 400 (follow-up).
+Reply cap: max_tokens 1500 (match, website facts), 1000 (draft: the email plus its reason, "why they fit" and "watch out" in one structured reply), 400 (follow-up), 2000 (reading her files), 3000 (deck and teaser).
+Raise Kit (15 Oct): /kit → /build (website read once, optional PDFs read once then deleted, she confirms every fact) → /app after Google sign-in. Every number on a slide must be one she gave (code check in convex/lib/checks.ts); a missing fact shows "To add", never invented. Links without a code use the KIT invite code.
 Calls cap: at most 200 AI calls an hour across the app (raised from 40 on 14 Oct; about 6 calls per sign-up) and 3 runs per visitor a day, checked in the kitchen (Convex rate limiter). A visitor is a long random token made on first visit and kept in her browser.
 Provider limit: a hard monthly limit of $25, set by me in the Claude Console.
 When a cap is hit or the call fails: show "Busy right now. Try again in a few minutes." and keep her details on screen.
