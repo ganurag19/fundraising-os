@@ -13,10 +13,10 @@ import { COMPARE, PLANS } from "./plans";
 // alternating "visual + one promise" sections, calm light theme. Example founder and investors are made up.
 
 const WHY: ["data" | "engine" | "templates" | "circle", string, string][] = [
-  ["data", "Proprietary investor data", "574 active investors who back Indian startups, mapped by hand from their own sites, deal news and announcements: deals, partners, cheque sizes. Updated daily as new deals land, not a scraped list."],
-  ["engine", "An AI matching engine on real deals", "Every investor gets a Fit Score from what they actually did: recent deals, activity and announcements, stage and cheque size. Calculated, then explained, with sources."],
-  ["templates", "Proven templates from real fundraises", "Deck, teaser and pitch structures in the order seed investors read them, built from first rounds that closed."],
-  ["circle", "A circle that's been there", "Founders who closed their first round and investors who back them: honest feedback, clarity when you're stuck, warm doors when you're ready. On the Advisors plan."],
+  ["data", "Our own investor data", "574 active investors who back Indian startups, mapped by hand and updated daily."],
+  ["engine", "Matching on real deals", "A Fit Score from what each investor actually did, explained with sources."],
+  ["templates", "Proven templates", "Deck, teaser and pitch structures from first rounds that closed."],
+  ["circle", "A circle that's been there", "Founders who've raised, in your corner. On the Advisors plan."],
 ];
 
 /** Small moving icons for "Why FirstCheq". */
@@ -106,13 +106,13 @@ export default function KitLanding() {
       {/* 1: just your website */}
       <section className="k2-row" id="how">
         <div className="k2-visual"><HeroBuild /></div>
-        <div className="k2-copy"><span className="k2-k">Step 1</span><h2>Paste your website.<br />Get your whole raise kit.</h2><p>We read your site (and your old deck or CV, if you add one), then build your deck, teaser and profile in your brand, research your market and competition, match you with active investors, and write a pitch tailored to each one. No forms, no blank slides.</p></div>
+        <div className="k2-copy"><span className="k2-k">Step 1</span><h2>Give us your website.<br />You're in the game.</h2><p>We read your site (and your old deck or CV, if you add one), then build your deck, teaser and profile in your brand, research your market and competition, match you with active investors, and write a pitch tailored to each one. No forms, no blank slides.</p></div>
       </section>
 
       {/* 2: the kit */}
       <section className="k2-row flip">
         <div className="k2-visual"><KitShowcase /></div>
-        <div className="k2-copy"><span className="k2-k">Step 2</span><h2>The kit investors ask for,<br />made for you.</h2><p>A 9-slide deck in your brand, a two-page teaser, the 20 questions investors will ask with your answers drafted, and a data room checklist. Your numbers only; gaps are marked, never made up.</p></div>
+        <div className="k2-copy"><span className="k2-k">Step 2</span><h2>Everything an investor will ask for.<br />Made for you, in minutes.</h2><p>A 9-slide deck in your brand, a two-page teaser, the 20 questions investors will ask with your answers drafted, and a data room checklist. Your numbers only; gaps are marked, never made up.</p></div>
       </section>
 
       {/* 3: who's investing in you */}
@@ -126,7 +126,7 @@ export default function KitLanding() {
       {/* 4: swipe */}
       <section className="k2-row">
         <div className="k2-visual"><InvestorCards /></div>
-        <div className="k2-copy"><span className="k2-k">Step 4</span><h2>All you do<br />is swipe.</h2><p>One investor at a time: why they fit, with the source, and your pitch, written to them. Swipe right to send, left to pass. Change the words first if you want. You decide what goes out.</p></div>
+        <div className="k2-copy"><span className="k2-k">Step 4</span><h2>Swipe right on<br />investors who fit.</h2><p>One investor at a time: why they fit, with the source, and your pitch, written to them. Swipe right to send, left to pass. Change the words first if you want. You decide what goes out.</p></div>
       </section>
 
       {/* 5: scheduled */}
@@ -143,7 +143,7 @@ export default function KitLanding() {
             </div>
           </div>
         </div>
-        <div className="k2-copy"><span className="k2-k">Step 5</span><h2>Scheduled, sent from your Gmail,<br />and followed up.</h2><p>Connect Gmail once. We spread your pitches across working days, so they land well and your inbox stays healthy, then write each follow-up on day 3 and day 10. Replies come straight to you.</p></div>
+        <div className="k2-copy"><span className="k2-k">Step 5</span><h2>Sent, scheduled, followed up.<br />In one swipe.</h2><p>Connect Gmail once. We spread your pitches across working days, so they land well and your inbox stays healthy, then write each follow-up on day 3 and day 10. Replies come straight to you.</p></div>
       </section>
 
       {/* 6: replies, and who checked you out */}

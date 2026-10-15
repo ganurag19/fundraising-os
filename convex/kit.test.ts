@@ -181,3 +181,18 @@ describe("Pitch room", () => {
     expect(await stranger.query(api.room.mine, { token: tokenA })).toBeNull();
   });
 });
+
+describe("Pitch room link in every pitch", () => {
+  const room = "https://www.firstcheq.ai/p/kiln-labs";
+  test("goes just above her sign-off, once", async () => {
+    const { withRoomLink, noteWithRoom } = await import("./founders");
+    const body = "Hi Meera,\n\nWe're raising ₹3 Cr at seed.\n\nArjun Rao\nFounder, Kiln Labs";
+    const out = withRoomLink(body, room, "Arjun Rao");
+    expect(out).toBe("Hi Meera,\n\nWe're raising ₹3 Cr at seed.\n\nDeck and teaser: https://www.firstcheq.ai/p/kiln-labs\n\nArjun Rao\nFounder, Kiln Labs");
+    expect(withRoomLink(out, room, "Arjun Rao")).toBe(out);
+    expect(withRoomLink(body, null, "Arjun Rao")).toBe(body);
+    expect(noteWithRoom("Hi Meera, may I share our deck? Arjun", room)).toBe("Hi Meera, may I share our deck? Arjun\nDeck: firstcheq.ai/p/kiln-labs");
+    const long = "x".repeat(280);
+    expect(noteWithRoom(long, room)).toBe(long); // would pass LinkedIn's 300 characters: left as it is
+  });
+});

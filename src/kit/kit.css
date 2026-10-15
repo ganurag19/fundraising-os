@@ -579,3 +579,10 @@
 .kpr-req.declined{opacity:.6}
 .kpr-act{font-size:12.5px;color:var(--fg2)} .kpr-meet{color:var(--green)}
 .kpr-reqs a{color:var(--blue-ink)}
+.kr-owner{display:flex;flex-direction:column;gap:2px;background:linear-gradient(90deg,#2F6BFF,#7B5CFF);color:#fff;border-radius:16px;padding:12px 16px;font-size:14px}
+.kr-owner span{opacity:.9;font-size:13px} .kr-owner a{color:#fff;font-weight:700;margin-top:4px}
+.kr-chips{display:flex;flex-wrap:wrap;gap:8px} .kr-chips span{font-size:13px;border:1px solid var(--line2);border-radius:999px;padding:6px 12px;color:var(--fg2);background:var(--card2)}
+.kr-traction{margin:0;font-size:16px;font-weight:600}
+.kr-team{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px} .kr-team div{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px} .kr-team span{font-size:13px;color:var(--blue-ink);font-weight:600} .kr-team em{font-style:normal;font-size:13px;color:var(--fg2)}
+.kr-soon{display:flex;flex-direction:column;gap:10px} .kr-soon>div{display:flex;gap:12px;align-items:flex-start} .kr-soon>div>div{display:flex;flex-direction:column;gap:2px} .kr-soon span:not(.soon-tag):not(.kr-soon-ic){font-size:13.5px;color:var(--fg2)}
+.kr-soon-ic{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#7B5CFF,#C04FD8);color:#fff}

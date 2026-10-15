@@ -1382,3 +1382,7 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .k2-nav .k5-signin{border:1px solid var(--line2);background:#fff;color:var(--fg);border-radius:999px;padding:7px 14px;font:600 13px/1 var(--body);text-decoration:none;cursor:pointer;white-space:nowrap}
 .k2-nav .k5-signin:hover{border-color:var(--fg2)}
 @media (max-width:640px){.k2-nav nav a[href^="#"]{display:none}.k2-nav nav{gap:8px}.k2-nav .k5-signin{padding:7px 11px}}
+/* Why FirstCheq: short and airy */
+.k2-why-card{padding:28px 24px;gap:14px}
+.k2-why-card b{font-size:20px}
+.k2-why-card p{font-size:16px;line-height:1.6}

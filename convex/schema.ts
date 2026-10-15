@@ -122,7 +122,7 @@ export default defineSchema({
   // Emails we sent to the founder herself (never to investors): welcome and follow-up reminders.
   notifications: defineTable({
     founderId: v.id("founders"),
-    kind: v.union(v.literal("welcome"), v.literal("followups_due"), v.literal("room_request")),
+    kind: v.union(v.literal("welcome"), v.literal("followups_due"), v.literal("room_request"), v.literal("upgrade_nudge")),
     ok: v.boolean(),
     error: v.optional(v.string()),
   }).index("by_founder", ["founderId"]),

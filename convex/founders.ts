@@ -145,6 +145,20 @@ export const myToken = query({
   },
 });
 
+/** Adds "Deck and teaser: <her room>" just above her sign-off (or at the end), once. */
+export function withRoomLink(body: string, room: string | null, name: string) {
+  if (!room || body.includes(room)) return body;
+  const line = `Deck and teaser: ${room}`;
+  const at = body.lastIndexOf(`\n${name}\n`);
+  return at > 0 ? `${body.slice(0, at).trimEnd()}\n\n${line}\n${body.slice(at)}` : `${body.trimEnd()}\n\n${line}`;
+}
+/** The LinkedIn note gets the link too, only if it still fits LinkedIn's 300 characters. */
+export function noteWithRoom(note: string | null, room: string | null) {
+  if (!note || !room || note.includes(room)) return note;
+  const withLink = `${note.trimEnd()}\nDeck: ${room.replace(/^https?:\/\/(www\.)?/, "")}`;
+  return withLink.length <= 300 ? withLink : note;
+}
+
 /** "Gray Matters Capital" → "Gr•• Ma••••• Capital": enough to tease, not enough to look up. Firm words stay. */
 const FIRM_WORDS = new Set(["capital", "ventures", "venture", "partners", "fund", "funds", "angels", "angel", "network", "networks", "investments", "labs", "accelerator", "incubator", "foundation", "advisors", "seed", "vc", "group", "holdings", "the", "of", "and", "&"]);
 export const maskName = (n: string) => n.split(/\s+/).map((w) => (FIRM_WORDS.has(w.toLowerCase()) ? w : w.slice(0, 2) + "•".repeat(Math.max(2, Math.min(6, w.length - 2))))).join(" ");
@@ -200,8 +214,11 @@ export const me = query({
     const f = await founderByToken(ctx, token);
     if (!f) return null;
     const unlocked = await isUnlocked(ctx, f);
-    const hasKit = !!(await ctx.db.query("kits").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first());
+    const kitDoc = await ctx.db.query("kits").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first();
+    const hasKit = !!kitDoc;
     const TOP_OPEN = hasKit ? KIT_TOP : 3;
+    // Her pitch room's link goes into every pitch and LinkedIn note (16 Oct).
+    const room = kitDoc?.slug ? `${(process.env.SITE_URL ?? "https://www.firstcheq.ai").replace(/\/$/, "")}/p/${kitDoc.slug}` : null;
     const kitFree = hasKit && f.plan !== "round_pass";
     // Free: her best 20. Round Pass: up to 100 (we always keep 100 ranked).
     const matches = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id)).take(f.plan === "round_pass" ? 100 : 20);
@@ -232,7 +249,7 @@ export const me = query({
         followups: open ? (await ctx.db.query("followups").withIndex("by_match_and_n", (q) => q.eq("matchId", m._id)).take(4))
           .filter((x) => x.state !== "cancelled")
           .map((x) => ({ id: x._id, n: x.n, state: x.state, dueAt: x.dueAt, subject: x.subject ?? null, body: x.body ?? null })) : [],
-        draft: d ? { reason: d.reason, whyFit: d.whyFit, watchOut: d.watchOut, hook: d.hook ?? null, subject: d.editedSubject ?? d.subject, body: d.editedBody ?? withSignature(d.body, sig), warnings: d.warnings, linkedin: d.linkedin ?? null } : null,
+        draft: d ? { reason: d.reason, whyFit: d.whyFit, watchOut: d.watchOut, hook: d.hook ?? null, subject: d.editedSubject ?? d.subject, body: withRoomLink(d.editedBody ?? withSignature(d.body, sig), room, f.name), warnings: d.warnings, linkedin: noteWithRoom(d.linkedin ?? null, room) } : null,
       });
     }
     return {

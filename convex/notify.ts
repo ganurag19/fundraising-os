@@ -32,7 +32,7 @@ export async function send(to: string, subject: string, lines: string[], cta: { 
 const istDate = (t = Date.now()) => new Date(t + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 export const log = internalMutation({
-  args: { founderId: v.id("founders"), kind: v.union(v.literal("welcome"), v.literal("followups_due"), v.literal("room_request")), error: v.union(v.string(), v.null()), remindedOn: v.optional(v.string()) },
+  args: { founderId: v.id("founders"), kind: v.union(v.literal("welcome"), v.literal("followups_due"), v.literal("room_request"), v.literal("upgrade_nudge")), error: v.union(v.string(), v.null()), remindedOn: v.optional(v.string()) },
   returns: v.null(),
   handler: async (ctx, { founderId, kind, error, remindedOn }) => {
     await ctx.db.insert("notifications", { founderId, kind, ok: !error, error: error ?? undefined });
@@ -64,8 +64,8 @@ export const welcome = internalAction({
     const first = d.name.split(" ")[0];
     const error = await send(d.email, `Your investor list for ${d.company} is ready`, [
       `Hi ${first},`,
-      `${d.matchCount} investors fit ${d.company}. Your 3 top picks have emails ready to send, and you can write to any of the others in one tap.`,
-      "When you send one, tap \"I sent it\". We'll write your follow-ups and remind you here when one is due.",
+      `${d.matchCount} investors fit ${d.company}. Your top picks have a personal pitch ready to send, each opening on something that investor actually did.`,
+      "Send them from your own Gmail. We'll write your follow-ups and remind you here when one is due.",
     ], { label: "Open my dashboard", url: `${site()}/dashboard` });
     await ctx.runMutation(internal.notify.log, { founderId, kind: "welcome", error });
     return null;
@@ -125,5 +125,48 @@ export const setReminders = mutation({
     if (!f || !(await isUnlocked(ctx, f))) return null;
     await ctx.db.patch("founders", f._id, { emailReminders: on });
     return null;
+  },
+});
+
+/* ---------- Free kit, signed in, not upgraded: at most two short nudges (day 1 and day 4). Only to her. ---------- */
+
+const DAY = 24 * 60 * 60 * 1000;
+export const forUpgradeNudges = internalQuery({
+  args: { now: v.number() },
+  returns: v.any(),
+  handler: async (ctx, { now }) => {
+    const out = [];
+    for (const kit of await ctx.db.query("kits").take(1000)) {
+      if (kit.status !== "ready" || !kit.deck) continue;
+      const f = await ctx.db.get("founders", kit.founderId);
+      if (!f || !f.userId || f.plan === "round_pass" || f.emailReminders === false) continue;
+      if (await ctx.db.query("upgradeRequests").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first()) continue;
+      const sent = (await ctx.db.query("notifications").withIndex("by_founder", (q) => q.eq("founderId", f._id)).take(50)).filter((n) => n.kind === "upgrade_nudge" && n.ok);
+      const age = now - kit._creationTime;
+      const n = sent.length === 0 && age >= DAY ? 1 : sent.length === 1 && age >= 4 * DAY && now - sent[0]._creationTime >= 2 * DAY ? 2 : 0;
+      if (!n) continue;
+      const user = await ctx.db.get("users", f.userId);
+      if (!user?.email) continue;
+      out.push({ founderId: f._id, email: user.email, name: f.name, company: f.company, more: Math.max(0, (f.matchCount ?? 0) - 5), active: f.activeCount ?? 0, n });
+    }
+    return out;
+  },
+});
+
+/** Every morning (10 AM India). */
+export const sendUpgradeNudges = internalAction({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    const due: { founderId: Id<"founders">; email: string; name: string; company: string; more: number; active: number; n: number }[] = await ctx.runQuery(internal.notify.forUpgradeNudges, { now: Date.now() });
+    for (const d of due) {
+      const first = d.name.split(" ")[0];
+      const lines = d.n === 1
+        ? [`Hi ${first},`, `${d.more} more investors fit ${d.company} beyond your top 5, and ${d.active} of your list invested this year or last. They're writing cheques now.`, "Your full kit opens all of them, each with a personal pitch, plus the rest of your deck and your teaser."]
+        : [`Hi ${first},`, `Your top 5 pitches are a strong start. A first round usually takes many conversations, so the rest of your list is where it adds up.`, `Ask for founding access and tell us what you'd change: ${d.company}'s full kit, at founding prices.`];
+      const error = await send(d.email, d.n === 1 ? `${d.more} more investors fit ${d.company}` : `${d.company}'s full kit is waiting`, lines, { label: d.n === 1 ? "See who they are" : "Unlock my full kit", url: `${site()}/app` });
+      await ctx.runMutation(internal.notify.log, { founderId: d.founderId, kind: "upgrade_nudge", error });
+    }
+    return due.length;
   },
 });

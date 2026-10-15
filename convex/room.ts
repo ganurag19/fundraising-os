@@ -2,6 +2,7 @@ import { internalAction, internalMutation, internalQuery, mutation, query } from
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { founderByToken, isUnlocked } from "./founders";
 import { freeSlug } from "./kit";
 import { send } from "./notify";
@@ -24,7 +25,7 @@ export const page = query({
   args: { slug: v.string(), viewer: v.string() },
   returns: v.union(v.null(), v.object({
     company: v.string(), founder: v.string(), oneLiner: v.string(), stage: v.string(), ask: v.string(), website: v.union(v.string(), v.null()), brand: brandV,
-    state: v.union(v.literal("none"), v.literal("pending"), v.literal("approved"), v.literal("declined")),
+    state: v.union(v.literal("none"), v.literal("pending"), v.literal("approved"), v.literal("declined"), v.literal("owner")), // owner: she's looking at her own room
     content: v.union(v.null(), v.object({
       slides: v.array(slideV), teaser: v.union(v.null(), v.object({ summary: v.string(), highlights: v.array(v.string()) })),
       team: v.array(v.object({ name: v.string(), role: v.string(), line: v.string() })), traction: v.union(v.string(), v.null()), met: v.boolean(),
@@ -35,11 +36,13 @@ export const page = query({
     if (!kit) return null;
     const f = await ctx.db.get("founders", kit.founderId);
     if (!f) return null;
-    const req = VIEWER.test(viewer) ? await ctx.db.query("roomRequests").withIndex("by_viewer_and_kitId", (q) => q.eq("viewer", viewer).eq("kitId", kit._id)).first() : null;
-    const state = req?.status ?? ("none" as const);
+    const userId = await getAuthUserId(ctx);
+    const owner = !!userId && f.userId === userId;
+    const req = !owner && VIEWER.test(viewer) ? await ctx.db.query("roomRequests").withIndex("by_viewer_and_kitId", (q) => q.eq("viewer", viewer).eq("kitId", kit._id)).first() : null;
+    const state = owner ? ("owner" as const) : req?.status ?? ("none" as const);
     let content = null;
-    if (req && req.status === "approved") {
-      const met = !!(await ctx.db.query("roomEvents").withIndex("by_requestId", (q) => q.eq("requestId", req._id)).take(200)).find((e) => e.kind === "meet");
+    if (owner || (req && req.status === "approved")) {
+      const met = req ? !!(await ctx.db.query("roomEvents").withIndex("by_requestId", (q) => q.eq("requestId", req._id)).take(200)).find((e) => e.kind === "meet") : false;
       content = { slides: kit.deck ?? [], teaser: kit.teaser ?? null, team: kit.facts.team, traction: f.traction ?? null, met };
     }
     return {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -39,17 +39,19 @@ export default function Room() {
 
   if (room === undefined) return <Frame><div className="spinner" /></Frame>;
   if (room === null) return <Frame><div className="kr-card"><h1>This room doesn't exist.</h1><p className="kb-help">Check the link with the founder who shared it.</p></div></Frame>;
+  const owner = room.state === "owner";
   return (
     <Frame>
+      {owner && <div className="kr-owner"><b>You're viewing your own pitch room, as the founder.</b><span>Investors see the request form first, then this once you approve them. Your visits aren't counted.</span><a href="/app">Back to my dashboard</a></div>}
       <header className="kr-head" style={brandVars(room.brand)}>
         <span className="kr-mark">{room.brand.logo ? <img src={room.brand.logo} alt="" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : room.company.slice(0, 2).toUpperCase()}</span>
         <div><span className="kr-k">Pitch room · private</span><h1>{room.company}</h1><p>{room.oneLiner}</p>
           <span className="kr-meta">{room.stage} · raising {room.ask}{room.website ? <> · <a href={/^https?:/.test(room.website) ? room.website : `https://${room.website}`} target="_blank" rel="noreferrer noopener">{site(room.website)} ↗</a></> : null}</span></div>
       </header>
-      {room.state === "none" && <Ask slug={slug} viewer={viewer} founder={room.founder} company={room.company} />}
+      {room.state === "none" && <><Ask slug={slug} viewer={viewer} founder={room.founder} company={room.company} /><Inside /></>}
       {room.state === "pending" && <div className="kr-card kr-wait"><span className="kr-pulse" aria-hidden="true" /><h2>Request sent.</h2><p>{room.founder.split(" ")[0]} will approve you. This page opens by itself, so you can keep it open or come back to this link later.</p></div>}
       {room.state === "declined" && <div className="kr-card"><h2>Not available right now.</h2><p className="kb-help">{room.founder.split(" ")[0]} isn't sharing this room with you at the moment. You can write to them directly.</p></div>}
-      {room.state === "approved" && room.content && <Open slug={slug} viewer={viewer} room={room} content={room.content} />}
+      {(room.state === "approved" || owner) && room.content && <Open slug={slug} viewer={viewer} room={room} content={room.content} owner={owner} />}
     </Frame>
   );
 }
@@ -90,8 +92,10 @@ function Ask({ slug, viewer, founder, company }: { slug: string; viewer: string;
 }
 
 type RoomData = NonNullable<FunctionReturnType<typeof api.room.page>>;
-function Open({ slug, viewer, room, content }: { slug: string; viewer: string; room: RoomData; content: NonNullable<RoomData["content"]> }) {
-  const track = useMutation(api.room.track);
+function Open({ slug, viewer, room, content, owner }: { slug: string; viewer: string; room: RoomData; content: NonNullable<RoomData["content"]>; owner: boolean }) {
+  const trackRaw = useMutation(api.room.track);
+  // Her own visits are never counted (the server ignores them too: she has no approved request).
+  const track = useCallback((a: Parameters<typeof trackRaw>[0]) => (owner ? Promise.resolve(null) : trackRaw(a)), [owner, trackRaw]);
   const [cur, setCur] = useState(0);
   const [met, setMet] = useState(content.met);
   const seen = useRef(new Set<number>());
@@ -120,9 +124,43 @@ function Open({ slug, viewer, room, content }: { slug: string; viewer: string; r
           <div className="kb-teaser"><BrandTeaser k={k} page={1} /></div>
         </details>
       )}
+      {(content.traction || content.team.length > 0) && (
+        <section className="kr-card">
+          <h2>Team and traction</h2>
+          {content.traction && <p className="kr-traction">{content.traction}</p>}
+          {content.team.length > 0 && <div className="kr-team">{content.team.map((m) => <div key={m.name}><b>{m.name}</b><span>{m.role}</span><em>{m.line}</em></div>)}</div>}
+        </section>
+      )}
+      <Soon owner={owner} />
       <section className="kr-card kr-meet" style={brandVars(room.brand)}>
-        {met ? <><h2>We've let {room.founder.split(" ")[0]} know.</h2><p>They'll write to you at the email you gave.</p></> : <><h2>Interested?</h2><p>Let {room.founder.split(" ")[0]} know you'd like to talk. They'll email you directly.</p><button className="btn primary" onClick={meet}>Ask to meet</button></>}
+        {owner ? <><h2>Investors can ask to meet here.</h2><p>When they do, we email you and show it in your dashboard.</p></> : met ? <><h2>We've let {room.founder.split(" ")[0]} know.</h2><p>They'll write to you at the email you gave.</p></> : <><h2>Interested?</h2><p>Let {room.founder.split(" ")[0]} know you'd like to talk. They'll email you directly.</p><button className="btn primary" onClick={meet}>Ask to meet</button></>}
       </section>
     </>
+  );
+}
+
+/** What's inside, shown before access. */
+function Inside() {
+  return (
+    <section className="kr-card kr-inside">
+      <h2>Inside this room</h2>
+      <div className="kr-chips">{["Investor deck", "Two-page teaser", "Team and traction", "Founder intro video", "Market and competition", "Data room"].map((x) => <span key={x}>🔒 {x}</span>)}</div>
+    </section>
+  );
+}
+
+/** Sections coming to every room. */
+function Soon({ owner }: { owner: boolean }) {
+  const items: [string, string, string][] = [
+    ["▶", "Founder intro video", "Two minutes on why this team, why now."],
+    ["⚔", "Market and competition", "Market size with sources, who else is building, and how this team is different."],
+    ["▦", "Data room", "Incorporation, cap table, financials and customer references, shared on request."],
+  ];
+  return (
+    <section className="kr-card">
+      <h2>Coming to this room</h2>
+      <div className="kr-soon">{items.map(([ic, t, d]) => <div key={t}><span className="kr-soon-ic" aria-hidden="true">{ic}</span><div><b>{t} <span className="soon-tag">SOON</span></b><span>{d}</span></div></div>)}</div>
+      {owner && <p className="kb-dim">You'll add these from your dashboard when they open.</p>}
+    </section>
   );
 }
