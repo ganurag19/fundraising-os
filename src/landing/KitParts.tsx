@@ -114,57 +114,78 @@ export function PlanPicker() {
   );
 }
 
-/* ---------- 3. The investor kit: deck assembling + tabs ---------- */
-const SLIDES: [string, string, string][] = [
-  ["Kiln Labs", "Cutting coal in India's brick kilns", "cover"],
-  ["The problem", "India's 1,40,000 brick kilns burn coal by hand. Fuel is 40% of their cost.", ""],
-  ["Our solution", "A retrofit burner and a fuel app. 18% less coal from month one.", ""],
-  ["Traction", "62 kilns pay monthly, up from 9 in March.", "chart"],
-  ["Market", "[Your market size, with source]", "gap"],
-  ["Business model", "₹4,500 per kiln per month. Pays back in 9 weeks.", ""],
-  ["Team", "Arjun Rao: 6 years running his family's kiln.", ""],
-  ["The ask", "₹3 Cr seed to reach 400 kilns in 18 months.", "ask"],
+/* ---------- 3. The investor kit: a slide viewer + the rest of the kit ---------- */
+type Slide = { t: string; kind: "cover" | "problem" | "solution" | "traction" | "market" | "model" | "comp" | "team" | "ask" };
+const DECK: Slide[] = [
+  { t: "Kiln Labs", kind: "cover" }, { t: "The problem", kind: "problem" }, { t: "Our solution", kind: "solution" }, { t: "Traction", kind: "traction" },
+  { t: "Market", kind: "market" }, { t: "Business model", kind: "model" }, { t: "Competition", kind: "comp" }, { t: "Team", kind: "team" }, { t: "The ask", kind: "ask" },
 ];
-const TABS = ["Deck", "Teaser", "Investor Q&A", "Data room"] as const;
+function SlideBody({ s }: { s: Slide }) {
+  switch (s.kind) {
+    case "cover": return <><i className="kd-dot" /><b className="sl-h">Kiln Labs</b><span className="sl-sub">Cutting coal in India's brick kilns</span><em className="sl-foot">Seed round · ₹3 Cr · 2026</em></>;
+    case "problem": return <><b className="sl-h">The problem</b><div className="sl-stat"><b>1,40,000</b><span>brick kilns in India burn coal by hand</span></div><div className="sl-stat"><b>40%</b><span>of a kiln's cost is fuel</span></div></>;
+    case "solution": return <><b className="sl-h">Our solution</b><div className="sl-cols"><div><b>Retrofit burner</b><span>Fits any kiln in a day</span></div><div><b>Fuel app</b><span>Tracks coal per batch</span></div></div><span className="sl-pill">18% less coal from month one</span></>;
+    case "traction": return <><b className="sl-h">Traction</b><div className="sl-chart">{[9, 14, 22, 31, 44, 62].map((h, i) => <i key={i} style={{ height: `${(h / 62) * 100}%` }}><em>{h}</em></i>)}</div><span className="sl-sub">Paying kilns, Mar → Aug</span></>;
+    case "market": return <><b className="sl-h">Market</b><div className="sl-rings"><span className="r1">TAM</span><span className="r2">SAM</span><span className="r3">SOM</span></div><span className="sl-gap">[Your numbers, with sources]</span></>;
+    case "model": return <><b className="sl-h">Business model</b><div className="sl-cols"><div><b>₹4,500</b><span>per kiln, per month</span></div><div><b>9 weeks</b><span>payback for the kiln</span></div></div></>;
+    case "comp": return <><b className="sl-h">Competition</b><div className="sl-grid2"><span className="q">Hardware only</span><span className="q">Software only</span><span className="q us">Kiln Labs: both</span><span className="q">Do nothing</span></div></>;
+    case "team": return <><b className="sl-h">Team</b><div className="sl-team"><div><i>AR</i><b>Arjun Rao</b><span>Founder · 6 years running a kiln</span></div><div><i>+</i><b>Your team</b><span>From your answers</span></div></div></>;
+    case "ask": return <><b className="sl-h">The ask</b><div className="sl-stat"><b>₹3 Cr</b><span>seed, to reach 400 kilns in 18 months</span></div><div className="sl-bars"><span style={{ width: "45%" }}>Sales 45%</span><span style={{ width: "35%" }}>Product 35%</span><span style={{ width: "20%" }}>Ops 20%</span></div></>;
+  }
+}
+const KIT_TABS = ["Deck", "Teaser", "Investor Q&A", "Market & competition", "Data room"] as const;
 export function KitShowcase() {
   const [ref, seen] = useSeen<HTMLDivElement>(0.25);
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Deck");
-  const [zoom, setZoom] = useState<number | null>(null);
+  const [tab, setTab] = useState<(typeof KIT_TABS)[number]>("Deck");
+  const [cur, setCur] = useState(0);
+  const [auto, setAuto] = useState(true);
+  useEffect(() => {
+    if (!seen || !auto || tab !== "Deck" || reduced()) return;
+    const t = setInterval(() => setCur((c) => (c + 1) % DECK.length), 2200);
+    return () => clearInterval(t);
+  }, [seen, auto, tab]);
+  const pick = (i: number) => { setAuto(false); setCur(i); };
   return (
-    <div ref={ref} className="kk">
-      <div className="kk-tabs" role="tablist">{TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}</div>
+    <div ref={ref} className="kk2">
+      <div className="kk2-tabs" role="tablist">{KIT_TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}</div>
       {tab === "Deck" && (
-        <>
-          <div className={`kk-deck${seen ? " go" : ""}`}>
-            {SLIDES.map(([t, b, kind], i) => (
-              <button key={t} className={`kk-slide ${kind}`} style={{ transitionDelay: `${i * 0.12}s` }} onClick={() => setZoom(i)} aria-label={`Slide ${i + 1}: ${t}. Tap to enlarge`}>
-                <span className="kk-n">{i + 1}</span>
-                <b>{t}</b><span>{b}</span>
-                {kind === "chart" && <span className="kk-chart" aria-hidden="true">{[9, 18, 27, 41, 53, 62].map((h, j) => <i key={j} style={{ height: `${h}%` }} />)}</span>}
-              </button>
-            ))}
-          </div>
-          <p className="muted small">In your logo, colours and fonts, from our templates. Gaps are marked for your numbers, never filled with made-up ones. Tap a slide.</p>
-        </>
+        <div className="kk2-viewer">
+          <div className={`kk2-slide big ${DECK[cur].kind}`} key={cur}><SlideBody s={DECK[cur]} /><span className="sl-n">{cur + 1} / {DECK.length}</span></div>
+          <div className="kk2-thumbs">{DECK.map((sl, i) => <button key={sl.t} className={`kk2-thumb ${sl.kind}${i === cur ? " on" : ""}`} onClick={() => pick(i)} aria-label={`Slide ${i + 1}: ${sl.t}`}><span>{sl.t}</span></button>)}</div>
+          <div className="kk2-meta"><span>✓ In your logo, colours and fonts</span><span>✓ PowerPoint, Google Slides, PDF</span><span>✓ Gaps marked, never made up</span></div>
+        </div>
       )}
       {tab === "Teaser" && (
-        <div className="kk-doc"><b>Kiln Labs · two-page teaser</b><p><b>What we do.</b> A retrofit burner and fuel app that cuts coal use in brick kilns by 18%.</p><p><b>Traction.</b> 62 paying kilns, up from 9 in March. ₹4,500 per kiln per month.</p><p><b>Why now.</b> [Your why-now, from your answers]</p><p><b>Team.</b> Arjun Rao, founder: 6 years running a kiln.</p><p><b>The round.</b> ₹3 Cr seed, to reach 400 kilns.</p></div>
+        <div className="kk2-doc">
+          <div className="kk2-doc-h"><i className="kd-dot" /><b>Kiln Labs</b><span>Investor teaser · 2 pages</span></div>
+          <div className="kk2-doc-grid">
+            <div><em>What we do</em><p>A retrofit burner and fuel app that cuts coal use in brick kilns by 18%.</p></div>
+            <div><em>Traction</em><p>62 paying kilns, up from 9 in March. ₹4,500 per kiln per month.</p></div>
+            <div><em>Why now</em><p className="sl-gap">[From your answers]</p></div>
+            <div><em>The round</em><p>₹3 Cr seed, to reach 400 kilns in 18 months.</p></div>
+          </div>
+        </div>
       )}
       {tab === "Investor Q&A" && (
-        <div className="kk-doc"><b>The 20 questions investors will ask you</b>
-          {[["What's your CAC and payback?", "Drafted from your numbers: ₹4,500/month per kiln; payback in 9 weeks."], ["Why won't kilns switch back?", "Drafted from your answers: savings show on the first fuel bill."], ["What's your burn and runway?", "⚠ You haven't told us yet. Add it before you send."]].map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
-          <p className="muted small">+17 more, each with a draft answer and a gap check.</p></div>
+        <div className="kk2-doc">
+          <div className="kk2-doc-h"><b>The 20 questions investors will ask you</b><span>Answers drafted from your numbers · gaps flagged</span></div>
+          {[["What's your CAC and payback?", "₹4,500/month per kiln; the kiln saves its cost back in 9 weeks.", ""], ["Why won't kilns switch back?", "The saving shows on their first fuel bill, and the burner stays fitted.", ""], ["What's your burn and runway?", "You haven't told us yet. Add it before you send.", "gap"], ["Who else is trying this?", "Drafted from your competitors, with sources.", ""]].map(([q, a, g]) => <details key={q}><summary>{q}</summary><p className={g ? "sl-gap" : ""}>{g ? "⚠ " : ""}{a}</p></details>)}
+          <span className="muted small">+16 more questions</span>
+        </div>
+      )}
+      {tab === "Market & competition" && (
+        <div className="kk2-doc">
+          <div className="kk2-doc-h"><b>Market & competition</b><span>Researched, with a source for every number</span></div>
+          <div className="kk2-mkt">{[["TAM", "All brick kilns in India", "[source]"], ["SAM", "Coal-fired kilns in North India", "[source]"], ["SOM", "Reachable in 3 years", "[your plan]"]].map(([k, d, src]) => <div key={k}><b>{k}</b><span>{d}</span><em>{src}</em></div>)}</div>
+          <div className="kk2-comp"><span>Funding in your sector, from our deal data</span><b>Who backed startups like yours in the last 2 years, at what stage and cheque size</b></div>
+        </div>
       )}
       {tab === "Data room" && (
-        <div className="kk-doc"><b>Data room checklist</b><ul className="kk-check">{["Certificate of incorporation", "DPIIT recognition", "Cap table", "Founders' agreement", "ESOP pool (if any)", "Last 12 months' financials", "Key customer contracts", "GST registration"].map((x, i) => <li key={x} className={i < 3 ? "ok" : ""}>{x}</li>)}</ul><p className="muted small">With templates where you need one. Information, not legal advice.</p></div>
-      )}
-      {zoom !== null && (
-        <div className="sheet-scrim" onClick={() => setZoom(null)}>
-          <div className={`kk-zoom ${SLIDES[zoom][2]}`} role="dialog" aria-label={`Slide ${zoom + 1}`} onClick={(e) => e.stopPropagation()}>
-            <span className="kk-n">{zoom + 1} / {SLIDES.length}</span>
-            <b>{SLIDES[zoom][0]}</b><span>{SLIDES[zoom][1]}</span>
-            <div className="kk-zoom-nav"><button className="btn ghost sm" onClick={() => setZoom((z) => (z! + SLIDES.length - 1) % SLIDES.length)}>← Prev</button><button className="btn ghost sm" onClick={() => setZoom(null)}>Close</button><button className="btn ghost sm" onClick={() => setZoom((z) => (z! + 1) % SLIDES.length)}>Next →</button></div>
-          </div>
+        <div className="kk2-doc">
+          <div className="kk2-doc-h"><b>Data room</b><span>A checklist, templates, and one link to share</span></div>
+          <ul className="kk2-check">{[["Certificate of incorporation", 1], ["DPIIT recognition", 1], ["Cap table", 1], ["Founders' agreement", 0], ["ESOP pool", 0], ["12 months of financials", 0], ["Customer contracts", 0], ["GST registration", 1]].map(([x, ok]) => <li key={x as string} className={ok ? "ok" : ""}>{x}</li>)}</ul>
+          <div className="kk2-progress"><i style={{ width: "50%" }} /><span>4 of 8 ready</span></div>
+          <span className="muted small">Templates where you need them. Information, not legal advice.</span>
         </div>
       )}
     </div>

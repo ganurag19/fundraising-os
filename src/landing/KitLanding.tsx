@@ -18,6 +18,28 @@ const FAQ: [string, string][] = [
   ["Can you guarantee funding?", "No one honestly can. We make sure your first pitches go to investors who fit, with a kit they'll take seriously, in days instead of weeks."],
 ];
 
+type Plan = { name: string; icon: string; line: string; tag: string; badge?: string; rec?: boolean; groups: [string, string[]][]; best: string; cta: string };
+const PLANS: Plan[] = [
+  { name: "Preview", icon: "◔", line: "See your kit before you decide", tag: "Free", cta: "Start free", best: "Seeing if FirstCheq fits you",
+    groups: [["Plan", ["Your raise plan: who to approach, in order"]], ["Kit", ["Deck cover and 2 slides, in your brand"]], ["Outreach", ["Top 3 investors, each with a pitch", "Swipe to send on those 3"]]] },
+  { name: "Raise Kit", icon: "◆", line: "Everything you need to go out and raise", tag: "Founding access", badge: "Most founders", rec: true, cta: "Get founding access", best: "Founders ready to raise in the next 3 months",
+    groups: [["Kit, in your brand", ["10-slide investor-ready deck (PowerPoint, Google Slides, PDF)", "Two-page teaser", "The 20 investor questions, answers drafted", "Market size and competition, with sources", "Funding trends in your sector", "Data room checklist and templates"]], ["Investors", ["Everyone who fits (up to 100), ranked, with the reason"]], ["Outreach", ["A pitch, LinkedIn note and intro blurb for each", "Swipe to send and schedule from your Gmail", "Follow-ups on day 3 and day 10"]], ["Support", ["3 rounds of revisions"]]] },
+  { name: "Raise Kit + Advisors", icon: "✦", line: "Learn from founders who've already raised", tag: "Founding access", badge: "For a faster round", cta: "Request access", best: "Founders who want a second pair of eyes and warm doors",
+    groups: [["Everything in Raise Kit, plus", ["Advisory calls with founders who've raised their first round", "Your deck and story pressure-tested before you send", "Warm connects through our founders' networks, when you're ready", "Mock investor Q&A before your first meetings"]], ["Support", ["Priority help while you raise"]]] },
+];
+const COMPARE: [string, string, string, string, string][] = [
+  ["Raise plan and sequence", "✓", "✓", "✓", "✓"],
+  ["Deck and teaser in your brand", "Cover + 2", "✓", "✓", "✓"],
+  ["Investor Q&A, market, competition", "–", "✓", "✓", "✓"],
+  ["Investors who fit, with reasons", "Top 3", "Up to 100", "Up to 100", "Up to 100"],
+  ["Personal pitches and follow-ups", "3", "✓", "✓", "✓"],
+  ["Swipe to send from Gmail", "3", "✓", "✓", "✓"],
+  ["Advisory calls with funded founders", "–", "–", "✓", "✓"],
+  ["Warm connects", "–", "–", "✓", "✓"],
+  ["Outreach run with you, day to day", "–", "–", "–", "✓"],
+  ["Meeting prep and term-sheet support", "–", "–", "Q&A prep", "✓"],
+];
+
 export default function KitLanding() {
   const navigate = useNavigate();
   const [site, setSite] = useState("");
@@ -55,7 +77,7 @@ export default function KitLanding() {
       {/* Hero */}
       <section className="k2-hero">
         <h1>Your first round,<br /><em>ready in 5 minutes.</em></h1>
-        <p>Your investor-ready deck and collateral, in your brand. Every investor who backs startups like yours, with a pitch written to each. Swipe to send, and start your round over a cup of coffee.</p>
+        <p>Your investor-ready deck and collateral, in your brand. Every investor who backs startups like yours, with a pitch written to each. Swipe to send. All the heavy lifting of your first round, done over a cup of coffee.</p>
         {input("big")}
         <span className="k2-alt">No website yet? <button className="text-link" onClick={() => setSoon(true)}>Tell us about your startup</button></span>
         <div className="k2-fan" aria-hidden="true">
@@ -140,22 +162,35 @@ export default function KitLanding() {
       <section className="k2-wide" id="plans">
         <h2>Pick how much help<br /><em>you want.</em></h2>
         <p className="k2-sub">One payment per round. No subscription. Founding access for the first founders.</p>
-        <div className="k2-plans">
-          <div className="k2-plan"><b>Preview</b><span className="k2-tag">Free</span><span className="muted small">See your kit before you decide</span>
-            <ul><li>Your raise plan: who to approach, and in what order</li><li>Your deck cover and 2 slides, in your brand</li><li>Your top 3 investors, each with a pitch</li><li>Swipe to send on those 3</li></ul>
-            <button className="btn ghost" onClick={() => setSoon(true)}>Start free</button></div>
-          <div className="k2-plan rec"><span className="k2-rec">Most founders</span><b>Raise Kit</b><span className="k2-tag gold">Founding access</span><span className="muted small">Everything you need to go out and raise</span>
-            <ul><li>A 10-slide investor-ready deck in your brand (PowerPoint, Google Slides, PDF)</li><li>A two-page teaser to attach to every pitch</li><li>The 20 questions investors ask, with your answers drafted</li><li>Market size and competition, with sources</li><li>Funding trends in your sector, from our deal data</li><li>Data room checklist and templates</li><li>Every investor who fits (up to 100), ranked, with the reason</li><li>A pitch, LinkedIn note and intro blurb for each</li><li>Swipe to send and schedule from your Gmail, with follow-ups on day 3 and day 10</li><li>3 rounds of revisions</li></ul>
-            <button className="btn primary" onClick={() => setSoon(true)}>Get founding access</button></div>
-          <div className="k2-plan"><span className="k2-rec dark">For a faster round</span><b>Raise Kit + Advisors</b><span className="k2-tag">Founding access</span><span className="muted small">Learn from founders who've already raised</span>
-            <ul><li>Everything in Raise Kit</li><li>Advisory calls with founders who've raised their first round</li><li>Your deck and story pressure-tested before you send</li><li>Warm connects: introductions to investors in our founders' networks, when you're ready</li><li>Mock investor Q&A before your first meetings</li><li>Priority support while you raise</li></ul>
-            <button className="btn ghost" onClick={() => setSoon(true)}>Request access</button></div>
+        <div className="k3-plans">
+          {PLANS.map((p) => (
+            <div key={p.name} className={`k3-plan${p.rec ? " rec" : ""}`}>
+              {p.badge && <span className={`k3-badge${p.rec ? "" : " dark"}`}>{p.badge}</span>}
+              <div className="k3-top"><span className="k3-ic" aria-hidden="true">{p.icon}</span><div><b>{p.name}</b><span>{p.line}</span></div></div>
+              <span className={`k3-tag${p.rec ? " gold" : ""}`}>{p.tag}</span>
+              {p.groups.map(([g, items]) => (
+                <div key={g} className="k3-group"><em>{g}</em><ul>{items.map((x) => <li key={x}>{x}</li>)}</ul></div>
+              ))}
+              <span className="k3-best"><b>Best for:</b> {p.best}</span>
+              <button className={`btn ${p.rec ? "primary" : "ghost"}`} onClick={() => setSoon(true)}>{p.cta}</button>
+            </div>
+          ))}
         </div>
-        <p className="muted small k2-credits">Need more later? Top up with credits for more revisions, more investors, or your next round.</p>
-        <div className="k2-managed">
-          <div><span className="k2-k light">Done for you</span><b>We run your raise with you.</b><p>A small team works on your round from day one to term sheet: plan, kit, outreach, follow-ups, meetings. You stay in every decision and send every email.</p></div>
-          <ul><li><b>Week 1:</b> raise strategy, target list and your full kit, reviewed with you</li><li><b>Weeks 2–6:</b> outreach run together every working day, with follow-ups</li><li><b>Warm connects</b> from our network of founders and investors</li><li><b>Meeting prep</b> before every investor call, and notes after</li><li><b>Term sheet support:</b> what to ask, and partner lawyers when you need one</li></ul>
-          <button className="btn primary" onClick={() => setSoon(true)}>Book a call</button>
+
+        <div className="k3-compare" role="table" aria-label="What each plan includes">
+          <div className="k3-row head" role="row"><span /><span>Preview</span><span>Raise Kit</span><span>+ Advisors</span><span>Done for you</span></div>
+          {COMPARE.map(([label, ...cells]) => (
+            <div className="k3-row" role="row" key={label}><span>{label}</span>{cells.map((c, k) => <span key={k} className={c === "✓" ? "y" : c === "–" ? "n" : ""}>{c}</span>)}</div>
+          ))}
+        </div>
+
+        <div className="k3-credits"><span className="k3-ic" aria-hidden="true">＋</span><div><b>Credits for later</b><span>More revisions, more investors, or a fresh kit for your next round. Top up any time.</span></div></div>
+
+        <div className="k3-dfy">
+          <div className="k3-dfy-h"><span className="k2-k light">Done for you</span><b>We run your raise with you.</b><p>A small team works on your round from day one to term sheet. You stay in every decision and send every email.</p><button className="btn white" onClick={() => setSoon(true)}>Book a call</button></div>
+          <ol className="k3-timeline">
+            {[["Week 1", "Raise strategy, target list and your full kit, reviewed with you"], ["Weeks 2–6", "Outreach run together every working day, with follow-ups"], ["Throughout", "Warm connects from our network of founders and investors"], ["Every meeting", "Prep before each investor call, notes and next steps after"], ["Term sheet", "What to ask, what to push back on, and partner lawyers when you need one"]].map(([w, d]) => <li key={w}><b>{w}</b><span>{d}</span></li>)}
+          </ol>
         </div>
       </section>
 
