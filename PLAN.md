@@ -55,7 +55,18 @@ Before milestone 1: GitHub repo, Convex project, Claude keys and caps (the setup
 2. **Output:** (a) **Raise plan:** investor types, how many fit each, sequence (angels and networks → accelerators and grants → micro-VCs), timeline. (b) **Investor kit in her brand** (logo, colours, fonts from her site): deck from Anurag's templates, two-page teaser, investor Q&A, business model, roadmap, team, funding trends in her sector (from our data), competition and market sizing (web research, every claim sourced or marked), compliance and data-room checklist and templates. Paid sections shown as locked previews. (c) **Outreach cards:** one investor at a time, why them, the personalised pitch; edit, swipe left to skip, swipe right to send. Plus LinkedIn note (copy and open profile), forwardable intro blurb, build-in-public post templates and their sequence. No X tagging.
 3. **Sending:** Saturday: swipe right opens Gmail with the email ready. Next: optional "Connect Gmail" (gmail.send; Google's sensitive-scope review, up to 100 listed testers meanwhile): swipe right sends or schedules from her Gmail, spaced 10–15 a day in IST business hours. Rule: nothing is sent without her explicit swipe, send or schedule. LinkedIn never automated.
 4. **Price:** free preview (strategy snapshot, deck cover + 2 slides, top 3 with pitches) → **Raise Kit ₹24,999** (3 revisions included) → add-ons (deck and story review call +₹10–15k, done-with-you sprint +₹25k, warm-intro help +₹5k) → credits (₹2,500 for 10).
-5. **Saturday slice (Build Sprint):** brand extraction; 8–10 slide deck (PDF) and teaser; strategy snapshot from real data; outreach cards with swipe right → Gmail; locked previews + unlock → founding list.
+5. **Test-and-fly slice (15 Oct, final; ~4 build days, non-stop):** the real flow from /kit to "I want to pay", with the full kit locked.
+   - **Entry:** /kit "Get started" (no pop-up). Links carry their own code (`?code=META1`), applied automatically and tracked per channel; no invite wall from ads.
+   - **Step 1, Reading your website:** live findings, Relay-style (what you do, who it's for, numbers found, logo, colours, fonts). Fallback: pick your colour.
+   - **Step 2, Enrich (optional, encouraged):** upload an existing pitch deck (PDF), founder CV or LinkedIn's "Save to PDF", any one-pager; or answer quick fields instead. We read them once to pull out team, traction, product, customers and partners, use of funds.
+   - **Step 3, Confirm your facts:** one screen, pre-filled from the site and uploads, every field editable, missing ones marked. Only confirmed facts go into the kit (her numbers, never invented).
+   - **Step 4, Building your kit:** progress.
+   - **Step 5, The reveal:** raise plan (real counts, order), her deck in her brand (cover + 2 slides open, rest blurred), teaser preview, top 3 investors as swipe cards with her personalised pitch (swipe right → Gmail).
+   - **Step 6, Get founding access:** plan (Raise Kit / + Advisors / Done for you), when she's raising, name, email, phone (optional). Shown on /admin. Payment by hand for now.
+   - Sign-in: wow first; Google sign-in at "Get founding access" (and to keep her kit).
+   - Uploads: PDF only, ≤15 MB, private (her list's token), sent to Claude only to read facts, deleted on request; Privacy updated.
+   - /admin funnel: kit started → enriched → facts confirmed → reveal seen → access requested, per channel code.
+   - Build order: Day 1 entry + code-in-link + website reading + brand; Day 2 uploads + facts screen; Day 3 deck content (checked) on the sample layouts in her brand + teaser; Day 4 reveal + access form + /admin + privacy + quality check on 5 real startups, then deploy.
 6. **Next week:** Connect Gmail (send, schedule; review submitted), competition and market research with sources, investor Q&A, editable PowerPoint, payments; then the tracking and readiness milestones below fold into this.
 Needs from Anurag: deck and teaser templates.
 
