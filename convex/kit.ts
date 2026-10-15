@@ -1,4 +1,5 @@
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS } from "./lib/match";
@@ -13,10 +14,20 @@ const TOKEN = /^[a-f0-9]{48}$/;
 const HEX = /^#[0-9a-f]{6}$/i;
 const short = (s: string | undefined, max: number) => (s ?? "").trim().slice(0, max);
 const normaliseCode = (code: string) => code.trim().toUpperCase().replace(/\s+/g, "");
+/** "Kiln Labs" → "kiln-labs" (then "kiln-labs-2" if taken): her pitch room's address. */
+export async function freeSlug(ctx: MutationCtx, company: string) {
+  const base = company.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "startup";
+  for (let i = 1; i < 50; i++) {
+    const slug = i === 1 ? base : `${base}-${i}`;
+    if (!(await ctx.db.query("kits").withIndex("by_slug", (q) => q.eq("slug", slug)).first())) return slug;
+  }
+  return `${base}-${Date.now().toString(36)}`;
+}
+
 /** The code a /kit link uses when it carries none (friends and colleagues test). */
 export const KIT_CODE = "KIT";
 
-const brandV = v.object({ primary: v.string(), accent: v.optional(v.string()), logo: v.optional(v.string()), font: v.optional(v.string()) });
+const brandV = v.object({ primary: v.string(), accent: v.optional(v.string()), logo: v.optional(v.string()), font: v.optional(v.string()), fontCss: v.optional(v.string()) });
 const teamV = v.array(v.object({ name: v.string(), role: v.string(), line: v.string() }));
 const factsV = v.object({
   problem: v.optional(v.string()), product: v.optional(v.string()), forWho: v.optional(v.string()), customers: v.optional(v.string()),
@@ -69,6 +80,8 @@ export const confirm = mutation({
       accent: a.brand.accent && HEX.test(a.brand.accent) ? a.brand.accent : undefined,
       logo: a.brand.logo && /^https:\/\/[^\s"'<>]{4,500}$/.test(a.brand.logo) ? a.brand.logo : undefined,
       font: a.brand.font && /^[A-Za-z0-9 ]{2,40}$/.test(a.brand.font) ? a.brand.font : undefined,
+      // her site's own Google Fonts link, so the deck gets exactly the weights her site uses
+      fontCss: a.brand.fontCss && /^https:\/\/fonts\.googleapis\.com\/css2?\?[\w\-+:;,@.&=%]{3,400}$/.test(a.brand.fontCss) ? a.brand.fontCss : undefined,
     };
     const f8 = (s?: string, max = 300) => short(s, max) || undefined;
     const facts = {
@@ -95,8 +108,8 @@ export const confirm = mutation({
     }
     if (!f) return { ok: false as const, error: "Please reload the page and try again." };
     const kit = await ctx.db.query("kits").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first();
-    if (kit) await ctx.db.patch("kits", kit._id, { brand, facts, uploads: Math.max(kit.uploads, a.uploads) });
-    else await ctx.db.insert("kits", { founderId: f._id, status: "building", brand, facts, uploads: a.uploads });
+    if (kit) await ctx.db.patch("kits", kit._id, { brand, facts, uploads: Math.max(kit.uploads, a.uploads), slug: kit.slug ?? (await freeSlug(ctx, company)) });
+    else await ctx.db.insert("kits", { founderId: f._id, status: "building", brand, facts, uploads: a.uploads, slug: await freeSlug(ctx, company) });
     await ctx.db.insert("steps", { step: "kit_facts_confirmed" });
     return { ok: true as const };
   },

@@ -111,7 +111,7 @@ function SlideBody({ k, s, n }: { k: KitView; s: Slide; n: number }) {
 }
 
 export function BrandSlide({ k, i }: { k: KitView; i: number }) {
-  useEffect(() => loadBrandFont(k.brand.font), [k.brand.font]);
+  useEffect(() => loadBrandFont(k.brand.font, k.brand.fontCss), [k.brand.font, k.brand.fontCss]);
   const s = k.slides[i];
   if (!s) return null;
   return <Scaled w={960} h={540}><div className="bd-wrap" style={brandVars(k.brand)}><SlideBody k={k} s={s} n={i + 1} /></div></Scaled>;
@@ -119,7 +119,7 @@ export function BrandSlide({ k, i }: { k: KitView; i: number }) {
 
 /** The two-page teaser. Page 2 is what the full kit opens. */
 export function BrandTeaser({ k, page }: { k: KitView; page: 1 | 2 }) {
-  useEffect(() => loadBrandFont(k.brand.font), [k.brand.font]);
+  useEffect(() => loadBrandFont(k.brand.font, k.brand.fontCss), [k.brand.font, k.brand.fontCss]);
   const t = k.teaser;
   const slide = (key: string) => k.slides.find((s) => s.key === key);
   const traction = slide("traction")?.metrics ?? [];

@@ -30,6 +30,7 @@ export function Privacy() {
         <li><b>For your Raise Kit:</b> the facts you confirm (problem, product, customers, team, market, business model, competitors, use of funds) and your brand (main colour, logo link and font from your website).</li>
         <li><b>Files you upload</b> (an old deck, your CV, your LinkedIn profile as a PDF): read once to suggest your facts, then deleted straight away. We keep only the facts you confirm, never the file.</li>
         <li><b>What we make for you:</b> your matched investors, the emails we draft, your deck and teaser text, any edits, and whether you marked an email as sent.</li>
+        <li><b>Your pitch room:</b> if you share your room's link, people who ask for access give their name, email and firm; you see them and decide. Once you approve someone, we count their views, the slides they read and whether they ask to meet, and show that only to you.</li>
         <li><b>If you request full access:</b> the plan you picked, your answers (would you pay, your ratings, what you liked and what's missing, when you're raising) and your phone number if you give it.</li>
         <li><b>When you sign in with Google:</b> your name, email address and profile picture link, from Google.</li>
         <li><b>A random code in your browser</b> that keeps your list yours before you sign in. It isn't used to track you anywhere else.</li>

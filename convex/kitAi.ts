@@ -71,7 +71,7 @@ const longHex = (h: string) => (h.length === 4 ? `#${h[1]}${h[1]}${h[2]}${h[2]}$
 const GENERIC_FONTS = new Set(["inherit", "initial", "sans-serif", "serif", "monospace", "system-ui", "-apple-system", "blinkmacsystemfont", "segoe ui", "roboto", "helvetica", "helvetica neue", "arial", "ui-sans-serif", "ui-serif", "apple color emoji", "segoe ui emoji", "noto color emoji", "times new roman", "var", "cursive"]);
 
 /** Her logo, colours and font, from the page and its first stylesheets. Everything is a guess she confirms. */
-export async function brandFrom(html: string, base: string): Promise<{ palette: string[]; logo: string | null; font: string | null }> {
+export async function brandFrom(html: string, base: string): Promise<{ palette: string[]; logo: string | null; font: string | null; fontCss: string | null }> {
   const tags = html.match(/<(meta|link|img)\b[^>]*>/gi) ?? [];
   const metaColor = tags.map((t) => (/name=["']theme-color["']/i.test(t) ? attr(t, "content") : null)).find(Boolean);
   // Logo: an <img> that says "logo", then the touch icon, then a large icon, then the social image.
@@ -93,8 +93,11 @@ export async function brandFrom(html: string, base: string): Promise<{ palette: 
   if (metaColor && /^#[0-9a-f]{3,6}$/i.test(metaColor)) add(metaColor, 12);
   const palette = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([h]) => h).slice(0, 5);
 
-  const gf = html.match(/fonts\.googleapis\.com\/css2?\?family=([^&"':]+)/i)?.[1];
-  let font = gf ? decodeURIComponent(gf.replace(/\+/g, " ")).trim() : null;
+  // Her site's own Google Fonts link (exact families and weights). The font that's used most in her CSS wins.
+  const gfHref = html.match(/https:\/\/fonts\.googleapis\.com\/css2?\?[^"'\s>]+/i)?.[0]?.replace(/&amp;/g, "&") ?? null;
+  const gfFamilies = gfHref ? [...gfHref.matchAll(/family=([^&:]+)/g)].map((m) => decodeURIComponent(m[1].replace(/\+/g, " ")).trim()) : [];
+  const usage = (f: string) => (css.match(new RegExp(`font-family\\s*:\\s*["']?${f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "gi")) ?? []).length;
+  let font = gfFamilies.sort((a, b) => usage(b) - usage(a))[0] ?? null;
   if (!font) {
     const fams = new Map<string, number>();
     for (const m of css.matchAll(/font-family\s*:\s*([^;}{]+)/gi)) {
@@ -103,16 +106,16 @@ export async function brandFrom(html: string, base: string): Promise<{ palette: 
     }
     font = [...fams.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
   }
-  return { palette, logo, font };
+  return { palette, logo, font, fontCss: gfHref && /^https:\/\/fonts\.googleapis\.com\/css2?\?[\w\-+:;,@.&=%]{3,400}$/.test(gfHref) ? gfHref : null };
 }
 
 const siteOut = v.object({
   ok: v.literal(true), companyName: v.string(), oneLiner: v.string(), problem: v.string(), product: v.string(), forWho: v.string(), customers: v.string(),
   sectors: v.array(v.string()), numbers: v.array(v.string()), team: v.array(v.object({ name: v.string(), role: v.string(), line: v.string() })),
   problemOptions: v.array(v.string()), productOptions: v.array(v.string()),
-  brand: v.object({ palette: v.array(v.string()), logo: v.union(v.string(), v.null()), font: v.union(v.string(), v.null()) }),
+  brand: v.object({ palette: v.array(v.string()), logo: v.union(v.string(), v.null()), font: v.union(v.string(), v.null()), fontCss: v.union(v.string(), v.null()) }),
 });
-type SiteOut = { ok: true; companyName: string; oneLiner: string; problem: string; product: string; forWho: string; customers: string; sectors: string[]; numbers: string[]; team: { name: string; role: string; line: string }[]; problemOptions: string[]; productOptions: string[]; brand: { palette: string[]; logo: string | null; font: string | null } };
+type SiteOut = { ok: true; companyName: string; oneLiner: string; problem: string; product: string; forWho: string; customers: string; sectors: string[]; numbers: string[]; team: { name: string; role: string; line: string }[]; problemOptions: string[]; productOptions: string[]; brand: { palette: string[]; logo: string | null; font: string | null; fontCss: string | null } };
 
 /** Step 1 of /build, before she has a record: read her site once. Limited per visitor token. */
 export const readSite = action({

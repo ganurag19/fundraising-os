@@ -1,6 +1,6 @@
 // Her brand on the kit: colours from her site (she confirms them), her logo, and her font when Google Fonts has it.
 
-export type Brand = { primary: string; accent?: string; logo?: string; font?: string };
+export type Brand = { primary: string; accent?: string; logo?: string; font?: string; fontCss?: string };
 
 const clamp = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
 const rgb = (hex: string) => { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
@@ -28,11 +28,12 @@ export function brandVars(b: Brand): React.CSSProperties {
 
 const loaded = new Set<string>();
 /** Loads her font from Google Fonts once; if Google doesn't have it, the deck falls back to our heading font. */
-export function loadBrandFont(font?: string) {
+export function loadBrandFont(font?: string, fontCss?: string) {
   if (!font || loaded.has(font) || typeof document === "undefined" || !/^[A-Za-z0-9 ]{2,40}$/.test(font)) return;
   loaded.add(font);
   const l = document.createElement("link");
   l.rel = "stylesheet";
-  l.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font).replace(/%20/g, "+")}:wght@400;600;700;800&display=swap`;
+  // Her site's own Google Fonts link has the weights that exist; asking for one that doesn't makes Google return nothing.
+  l.href = fontCss && /^https:\/\/fonts\.googleapis\.com\//.test(fontCss) ? fontCss : `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font).replace(/%20/g, "+")}&display=swap`;
   document.head.appendChild(l);
 }

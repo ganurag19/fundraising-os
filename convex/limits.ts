@@ -23,6 +23,9 @@ export const limits = new RateLimiter(components.rateLimiter, {
   feedbackGlobal: { kind: "token bucket", rate: 200, period: HOUR },
   uploadsPerVisitor: { kind: "fixed window", rate: 10, period: 24 * HOUR }, // Raise Kit: her deck, CV or LinkedIn PDF
   logoLooksPerVisitor: { kind: "fixed window", rate: 5, period: 24 * HOUR }, // her top 5 investors' logos, from their own sites
+  roomRequestsPerViewer: { kind: "fixed window", rate: 10, period: HOUR }, // pitch room: access requests from one browser
+  roomRequestsGlobal: { kind: "token bucket", rate: 300, period: HOUR },
+  roomEventsPerViewer: { kind: "fixed window", rate: 400, period: HOUR }, // views and slides counted for her
   docReadsPerVisitor: { kind: "fixed window", rate: 4, period: 24 * HOUR }, // reading those files once
   adminPinTries: { kind: "fixed window", rate: 5, period: HOUR }, // the owner's PIN, per account and app-wide
 });

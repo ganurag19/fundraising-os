@@ -140,3 +140,44 @@ describe("Raise Kit: the free kit keeps investors beyond the top 5 locked", () =
     }
   });
 });
+
+describe("Pitch room", () => {
+  const viewer = "c".repeat(48), other = "d".repeat(48);
+  async function withRoom() {
+    const t = await setup();
+    await t.mutation(api.kit.confirm, { ...arjun, token: tokenA });
+    await t.run(async (ctx) => { const k = (await ctx.db.query("kits").collect())[0]; await ctx.db.patch("kits", k._id, { status: "ready", deck: [{ key: "cover", headline: "Kiln Labs cuts coal", points: [], metrics: [] }] }); });
+    const { userId, otherId } = await t.run(async (ctx) => ({ userId: await ctx.db.insert("users", { email: "arjun@kilnlabs.example.in" }), otherId: await ctx.db.insert("users", { email: "someone@else.example" }) }));
+    const owner = t.withIdentity({ subject: `${userId}|s1` });
+    await owner.mutation(api.founders.claim, { token: tokenA });
+    return { t, owner, stranger: t.withIdentity({ subject: `${otherId}|s2` }) };
+  }
+  test("a visitor sees the name, not the deck, until she approves; then views are counted for her", async () => {
+    const { t, owner, stranger } = await withRoom();
+    const before = await t.query(api.room.page, { slug: "kiln-labs", viewer });
+    expect([before?.company, before?.state, before?.content]).toEqual(["Kiln Labs", "none", null]);
+    expect((await t.mutation(api.room.ask, { slug: "kiln-labs", viewer, name: "Meera", email: "not-an-email", firm: "" })).ok).toBe(false);
+    expect(await t.mutation(api.room.ask, { slug: "kiln-labs", viewer, name: "Meera Iyer", email: "meera@verdantarc.example", firm: "Verdant Arc" })).toEqual({ ok: true });
+    expect((await t.query(api.room.page, { slug: "kiln-labs", viewer }))?.state).toBe("pending");
+    // views before approval aren't counted; another browser can't see it
+    await t.mutation(api.room.track, { slug: "kiln-labs", viewer, kind: "view" });
+    const room = await owner.query(api.room.mine, { token: tokenA });
+    expect(room?.stats.pending).toBe(1);
+    const id = room!.requests[0].id;
+    // only the owner can decide
+    expect((await stranger.mutation(api.room.decide, { token: tokenA, id, status: "approved" })).ok).toBe(false);
+    expect(await owner.mutation(api.room.decide, { token: tokenA, id, status: "approved" })).toEqual({ ok: true });
+    const open = await t.query(api.room.page, { slug: "kiln-labs", viewer });
+    expect(open?.content?.slides[0].headline).toBe("Kiln Labs cuts coal");
+    expect((await t.query(api.room.page, { slug: "kiln-labs", viewer: other }))?.content).toBeNull();
+    await t.mutation(api.room.track, { slug: "kiln-labs", viewer, kind: "view" });
+    await t.mutation(api.room.track, { slug: "kiln-labs", viewer, kind: "slide", slide: 0 });
+    await t.mutation(api.room.track, { slug: "kiln-labs", viewer, kind: "meet" });
+    await t.mutation(api.room.track, { slug: "kiln-labs", viewer: other, kind: "view" }); // not approved: ignored
+    const after = await owner.query(api.room.mine, { token: tokenA });
+    expect(after?.stats).toEqual({ views: 1, viewers: 1, slides: 1, meets: 1, pending: 0 });
+    expect(after?.requests[0]).toMatchObject({ name: "Meera Iyer", firm: "Verdant Arc", status: "approved", views: 1, slidesSeen: 1, meet: true });
+    // a stranger can't read her requests
+    expect(await stranger.query(api.room.mine, { token: tokenA })).toBeNull();
+  });
+});

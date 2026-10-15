@@ -122,7 +122,7 @@ export default defineSchema({
   // Emails we sent to the founder herself (never to investors): welcome and follow-up reminders.
   notifications: defineTable({
     founderId: v.id("founders"),
-    kind: v.union(v.literal("welcome"), v.literal("followups_due")),
+    kind: v.union(v.literal("welcome"), v.literal("followups_due"), v.literal("room_request")),
     ok: v.boolean(),
     error: v.optional(v.string()),
   }).index("by_founder", ["founderId"]),
@@ -187,7 +187,8 @@ export default defineSchema({
   kits: defineTable({
     founderId: v.id("founders"),
     status: v.union(v.literal("building"), v.literal("ready"), v.literal("failed")),
-    brand: v.object({ primary: v.string(), accent: v.optional(v.string()), logo: v.optional(v.string()), font: v.optional(v.string()) }),
+    brand: v.object({ primary: v.string(), accent: v.optional(v.string()), logo: v.optional(v.string()), font: v.optional(v.string()), fontCss: v.optional(v.string()) }),
+    slug: v.optional(v.string()), // her pitch room: firstcheq.ai/p/<slug>
     facts: v.object({
       problem: v.optional(v.string()), product: v.optional(v.string()), forWho: v.optional(v.string()),
       customers: v.optional(v.string()), // named customers or partners, her words
@@ -199,7 +200,27 @@ export default defineSchema({
     deck: v.optional(v.array(v.object({ key: v.string(), headline: v.string(), points: v.array(v.string()), metrics: v.array(v.object({ value: v.string(), label: v.string() })) }))),
     teaser: v.optional(v.object({ summary: v.string(), highlights: v.array(v.string()) })),
     uploads: v.number(), // how many files she gave us (read once, then deleted)
-  }).index("by_founderId", ["founderId"]),
+  }).index("by_founderId", ["founderId"]).index("by_slug", ["slug"]),
+
+  // Her pitch room (16 Oct): an investor asks for access with name and email; she approves or declines.
+  // viewer is a long random code kept in the investor's browser, so only that browser sees the room once approved.
+  roomRequests: defineTable({
+    kitId: v.id("kits"),
+    viewer: v.string(),
+    name: v.string(),
+    email: v.string(),
+    firm: v.optional(v.string()),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("declined")),
+    decidedAt: v.optional(v.number()),
+  }).index("by_kitId", ["kitId"]).index("by_viewer_and_kitId", ["viewer", "kitId"]),
+
+  // What an approved investor did in her room: opened it, read a slide, opened the teaser, asked to meet.
+  roomEvents: defineTable({
+    kitId: v.id("kits"),
+    requestId: v.id("roomRequests"),
+    kind: v.union(v.literal("view"), v.literal("slide"), v.literal("teaser"), v.literal("meet")),
+    slide: v.optional(v.number()),
+  }).index("by_kitId", ["kitId"]).index("by_requestId", ["requestId"]),
 
   // "Request full access" from the kit dashboard: the plan she wants and her answers. No payment.
   upgradeRequests: defineTable({

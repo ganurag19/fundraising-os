@@ -7,6 +7,8 @@ import { LogoMark, Wordmark } from "../components/Brand";
 import { Dial, Face } from "../components/Art";
 import { FeedbackButton } from "../components/Feedback";
 import { WantButton } from "../components/Investor";
+import { copyOut } from "../lib/send";
+import type { Id } from "../../convex/_generated/dataModel";
 import type { Me } from "../components/Investor";
 import { applyTheme } from "../lib/theme";
 import type { Theme } from "../lib/theme";
@@ -37,6 +39,7 @@ const TITLES: Record<Tab, [string, string]> = {
   qa: ["They will ask.", "Be ready."], market: ["Know your", "market."], dataroom: ["Your", "data room."], circle: ["Founders who've", "been there."], profile: ["Your", "pitch profile."], plans: ["Pick how much help", "you want."], settings: ["Your", "settings."],
 };
 const FREE_SLIDES = 3; // cover, problem, solution open; the rest with full access
+const nowMs = () => Date.now();
 const remember = (k: string, v?: string): string | null => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { /* private mode */ } return null; };
 
 export default function KitApp() {
@@ -180,7 +183,7 @@ export default function KitApp() {
         {tab === "deck" && (view ? <Deck k={view} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
         {tab === "teaser" && (view ? <TeaserTab k={view} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
         {(tab === "qa" || tab === "market" || tab === "dataroom" || tab === "circle") && <Soon tab={tab} company={me.company} onToast={setToast} />}
-        {tab === "profile" && <Profile me={me} onToast={setToast} />}
+        {tab === "profile" && <Profile me={me} token={token} hasKit={!!kit} onToast={setToast} />}
         {tab === "plans" && <Plans onUnlock={openUp} requested={kk.requested} />}
         {tab === "settings" && <Settings me={me} token={token} theme={theme} setTheme={setTheme} signOut={() => void signOut()} />}
       </main>
@@ -266,7 +269,7 @@ function Home({ me, k, go, onUnlock, sent, replies, ready, full }: { me: Me; k: 
       </div>
 
       <GlassPreview
-        badge="Coming soon · Pitch profile"
+        badge="Live · Pitch profile (beta)"
         title={<>See who opened <em>your pitch.</em></>}
         sub={`One private link for ${me.company}. Each investor gets their own link and asks for access; you approve. Then you see every view, slide by slide, and who's warm.`}
         stats={[["👁", "128", "Views"], ["◎", "34", "Investors"], ["▭", "19", "Deck opens"], ["✓", "6", "Asked to meet"]]}
@@ -275,9 +278,9 @@ function Home({ me, k, go, onUnlock, sent, replies, ready, full }: { me: Me; k: 
           { name: "Northlight Seed", meta: "Read 6 of 9 slides, twice", tags: ["Warm"] },
           { name: "Kestrel Ridge Angels", meta: "Asked for access · today", tags: [], quiet: "Approve · Decline" },
         ]}
-        note="Example numbers and made-up investors, to show how it will look."
-        cta={full ? "Coming soon" : "Get it with full access"}
-        onCta={() => onUnlock()}
+        note="Example numbers and made-up investors, to show how it looks once investors open your room."
+        cta="Open my pitch room →"
+        onCta={() => go("profile")}
       />
 
       {!full && <><h2 className="dash-h">Pick how much help you want</h2><Plans onUnlock={onUnlock} requested={false} compact /></>}
@@ -389,27 +392,47 @@ function Soon({ tab, company, onToast }: { tab: "qa" | "market" | "dataroom" | "
 }
 
 /* ---------- Profile: her private pitch room (coming), and her facts ---------- */
-function Profile({ me, onToast }: { me: Me; onToast: (s: string) => void }) {
+function Profile({ me, token, hasKit, onToast }: { me: Me; token: string; hasKit: boolean; onToast: (s: string) => void }) {
   const navigate = useNavigate();
-  const want = useMutation(api.track.want);
-  const slug = me.company.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const ask = () => { void want({ token: visitorToken(), key: "kit_pitchroom" }); onToast("Noted. We'll tell you when your pitch room opens."); };
+  const room = useQuery(api.room.mine, hasKit ? { token } : "skip");
+  const ensure = useMutation(api.room.ensureSlug);
+  const decide = useMutation(api.room.decide);
+  const asked = useRef(false);
+  useEffect(() => { if (room && !room.slug && !asked.current) { asked.current = true; void ensure({ token }); } }, [room, ensure, token]);
+  const link = room?.slug ? `${location.origin}/p/${room.slug}` : "";
+  const copy = () => void copyOut(link, onToast, "Link copied. Paste it into your pitch emails and LinkedIn notes.");
+  const [now] = useState(nowMs);
+  const ago = (t: number) => { const m = Math.round((now - t) / 60000); return m < 60 ? `${Math.max(1, m)} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`; };
+  const set = async (id: Id<"roomRequests">, status: "approved" | "declined") => {
+    const r = await decide({ token, id, status }).catch(() => ({ ok: false as const, error: "Couldn't save that." }));
+    onToast(r.ok ? (status === "approved" ? "Approved. They can open your room now." : "Declined.") : r.error);
+  };
   return (
     <div className="kpr">
-      <GlassPreview
-        badge="Coming soon · Pitch room"
-        title={<>See who opened <em>your pitch.</em></>}
-        sub={`One private link for ${me.company}: firstcheq.ai/p/${slug}. Each investor gets their own link, asks to see your deck with their email, and you approve. Then you see every view, slide by slide.`}
-        stats={[["👁", "128", "Views"], ["◎", "34", "Investors"], ["▭", "19", "Deck opens"], ["✓", "6", "Asked to meet"]]}
-        rows={[
-          { name: "Verdant Arc Capital", meta: "4 views · 2 days ago", tags: ["Opened deck", "Asked to meet"] },
-          { name: "Kestrel Ridge Angels", meta: "Asked for access · today", tags: ["Waiting for you"], quiet: "Approve · Decline" },
-          { name: "Northlight Seed", meta: "1 view · 5 days ago", tags: [], quiet: "Not opened yet" },
-        ]}
-        note="Example numbers and made-up investors, to show how it will look."
-        cta="I want my pitch room"
-        onCta={ask}
-      />
+      {!hasKit ? <div className="empty"><b>Your pitch room opens with your kit.</b><span>Create your deck and teaser first; your room shares them privately.</span><Link className="btn primary sm" to="/build?edit=1">Create my deck →</Link></div> : (
+        <>
+          <section className="kpr-room">
+            <div className="kpr-room-h"><span className="up-badge">● Live · Beta</span><h2>Your private pitch room</h2><p>Share one link instead of attaching files. Investors ask for access with their email; you approve. Then you see every view, slide by slide, and who asked to meet.</p></div>
+            <div className="kpr-link"><span>{link ? link.replace(/^https?:\/\//, "") : "Making your link…"}</span><button className="btn white sm" disabled={!link} onClick={copy}>Copy link</button>{link && <a className="btn ghost-w sm" href={link} target="_blank" rel="noreferrer noopener">Open ↗</a>}</div>
+            <div className="gp-stats">{([["👁", room?.stats.views ?? 0, "Views"], ["◎", room?.stats.viewers ?? 0, "Investors viewing"], ["▭", room?.stats.slides ?? 0, "Slides read"], ["✓", room?.stats.meets ?? 0, "Asked to meet"]] as const).map(([ic, n, l]) => <div key={l}><i aria-hidden="true">{ic}</i><b>{n}</b><span>{l}</span></div>)}</div>
+          </section>
+          <section className="kpr-reqs">
+            <h2 className="dash-h">Access requests{room?.stats.pending ? ` · ${room.stats.pending} waiting for you` : ""}</h2>
+            {!room ? <div className="spinner" /> : room.requests.length === 0 ? <div className="empty"><b>No requests yet.</b><span>Add your link to your pitch emails ("Here's our deck: {link.replace(/^https?:\/\//, "")}") and to your LinkedIn notes. Requests show up here, and we email you.</span></div> : (
+              <div className="ko-rows">{room.requests.map((r) => (
+                <div className={`ko-li kpr-req ${r.status}`} key={r.id}>
+                  <div className="ko-li-main"><b>{r.name}{r.firm ? <span className="muted"> · {r.firm}</span> : null}</b><span><a href={`mailto:${r.email}`}>{r.email}</a> · asked {ago(r.at)}</span>
+                    {r.status === "approved" && <span className="kpr-act">{r.views} views · {r.slidesSeen} slides read{r.teaser ? " · opened teaser" : ""}{r.lastSeen ? ` · last seen ${ago(r.lastSeen)}` : " · not opened yet"}{r.meet ? " · " : ""}{r.meet && <b className="kpr-meet">asked to meet</b>}</span>}</div>
+                  <div className="ko-li-a">
+                    {r.status === "pending" ? <><button className="btn primary sm" onClick={() => void set(r.id, "approved")}>Approve</button><button className="btn ghost sm" onClick={() => void set(r.id, "declined")}>Decline</button></>
+                      : <><span className={`ko-li-tag${r.status === "approved" ? " ok" : ""}`}>{r.status === "approved" ? "Approved" : "Declined"}</span><button className="btn ghost sm" onClick={() => void set(r.id, r.status === "approved" ? "declined" : "approved")}>{r.status === "approved" ? "Remove access" : "Approve"}</button></>}
+                  </div>
+                </div>
+              ))}</div>
+            )}
+          </section>
+        </>
+      )}
       <section className="kpr-facts">
         <h2 className="dash-h">Your facts</h2>
         <p className="kb-help">Your deck, teaser and pitches use only these. Change them and rebuild your deck.</p>

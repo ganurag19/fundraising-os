@@ -27,6 +27,7 @@ import type * as limits from "../limits.js";
 import type * as notify from "../notify.js";
 import type * as pipeline from "../pipeline.js";
 import type * as pmf from "../pmf.js";
+import type * as room from "../room.js";
 import type * as suggest from "../suggest.js";
 import type * as track from "../track.js";
 import type * as watch from "../watch.js";
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   notify: typeof notify;
   pipeline: typeof pipeline;
   pmf: typeof pmf;
+  room: typeof room;
   suggest: typeof suggest;
   track: typeof track;
   watch: typeof watch;

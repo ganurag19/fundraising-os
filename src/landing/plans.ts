@@ -16,7 +16,7 @@ export const COMPARE: [string, string, string, string, string][] = [
   ["Investors who fit, with reasons", "Top 5", "Up to 100", "Up to 100", "Up to 100"],
   ["Personal pitches and follow-ups", "5", "✓", "✓", "✓"],
   ["Swipe to send from Gmail", "5", "✓", "✓", "✓"],
-  ["Private pitch link, with who opened what", "–", "✓", "✓", "✓"],
+  ["Private pitch room, with who opened what", "Beta", "✓", "✓", "✓"],
   ["Calls with founders who've raised", "–", "–", "✓", "✓"],
   ["Warm connects", "–", "–", "✓", "✓"],
   ["Outreach run with you, day to day", "–", "–", "–", "✓"],

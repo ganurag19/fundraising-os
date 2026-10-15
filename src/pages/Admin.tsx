@@ -110,6 +110,8 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
     [funnel ? st("signed_in") : undefined, "signed in with Google"],
     [funnel ? ev("click_swipe_send").people : undefined, "sent a pitch"],
     [funnel ? st("kit_upgrade_requested") : undefined, "asked for full access"],
+    [funnel ? st("room_access_requested") : undefined, "investors asked to see a room"],
+    [funnel ? st("room_access_approved") : undefined, "room requests approved"],
   ];
   const kitPeople = people?.filter((p) => p.kit) ?? [];
   const wouldPay = forms ? forms.upgrades.filter((u) => u.wouldPay === "yes").length : 0;

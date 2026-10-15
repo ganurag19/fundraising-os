@@ -26,9 +26,9 @@ type Facts = {
   company: string; website: string; name: string; linkedin: string; sectors: string[]; stage: string; ask: string;
   oneLiner: string; founderLine: string; traction: string; problem: string; product: string; forWho: string; customers: string;
   market: string; businessModel: string; competitors: string; useOfFunds: string; whyNow: string; team: Member[];
-  primary: string; accent: string; logo: string; font: string;
+  primary: string; accent: string; logo: string; font: string; fontCss: string;
 };
-const EMPTY: Facts = { company: "", website: "", name: "", linkedin: "", sectors: [], stage: "", ask: "", oneLiner: "", founderLine: "", traction: "", problem: "", product: "", forWho: "", customers: "", market: "", businessModel: "", competitors: "", useOfFunds: "", whyNow: "", team: [], primary: "#3D7BFF", accent: "", logo: "", font: "" };
+const EMPTY: Facts = { company: "", website: "", name: "", linkedin: "", sectors: [], stage: "", ask: "", oneLiner: "", founderLine: "", traction: "", problem: "", product: "", forWho: "", customers: "", market: "", businessModel: "", competitors: "", useOfFunds: "", whyNow: "", team: [], primary: "#3D7BFF", accent: "", logo: "", font: "", fontCss: "" };
 type Step = "site" | "reading" | "enrich" | "confirm" | "building" | "reveal";
 type Found = { palette: string[]; numbers: string[]; problemOptions: string[]; productOptions: string[] };
 
@@ -70,7 +70,7 @@ export default function Build() {
       oneLiner: me.profile.oneLiner, founderLine: me.profile.founderLine, traction: me.profile.traction,
       problem: kit?.facts.problem ?? "", product: kit?.facts.product ?? "", forWho: kit?.facts.forWho ?? "", customers: kit?.facts.customers ?? "",
       market: kit?.facts.market ?? "", businessModel: kit?.facts.businessModel ?? "", competitors: kit?.facts.competitors ?? "", useOfFunds: kit?.facts.useOfFunds ?? "", whyNow: kit?.facts.whyNow ?? "",
-      team: kit?.facts.team ?? [], primary: kit?.brand.primary ?? "#3D7BFF", accent: kit?.brand.accent ?? "", logo: kit?.brand.logo ?? "", font: kit?.brand.font ?? "",
+      team: kit?.facts.team ?? [], primary: kit?.brand.primary ?? "#3D7BFF", accent: kit?.brand.accent ?? "", logo: kit?.brand.logo ?? "", font: kit?.brand.font ?? "", fontCss: kit?.brand.fontCss ?? "",
     });
     setStep("confirm");
   }
@@ -136,7 +136,7 @@ function Reading({ token, f, setF, setFound, onDone }: { token: string; f: Facts
       setF((o) => ({
         ...o, company: o.company || r.companyName, oneLiner: o.oneLiner || r.oneLiner, problem: o.problem || r.problem, product: o.product || r.product,
         forWho: o.forWho || r.forWho, customers: o.customers || r.customers, sectors: o.sectors.length ? o.sectors : r.sectors,
-        team: o.team.length ? o.team : r.team, primary: r.brand.palette[0] ?? o.primary, accent: r.brand.palette[1] ?? "", logo: r.brand.logo ?? "", font: r.brand.font ?? "",
+        team: o.team.length ? o.team : r.team, primary: r.brand.palette[0] ?? o.primary, accent: r.brand.palette[1] ?? "", logo: r.brand.logo ?? "", font: r.brand.font ?? "", fontCss: r.brand.fontCss ?? "",
         traction: o.traction || r.numbers.join(" · "),
       }));
       setFound({ palette: r.brand.palette, numbers: r.numbers, problemOptions: r.problemOptions, productOptions: r.productOptions });
@@ -282,7 +282,7 @@ function Confirm({ token, f, set, setF, found, onBuilt, onBack }: { token: strin
     const r = await confirm({
       token, code: savedInviteCode() ?? "", company: f.company, name: f.name, website: f.website, linkedin: f.linkedin, sectors: f.sectors, stage: f.stage, ask: f.ask,
       oneLiner: f.oneLiner, founderLine: f.founderLine, traction: f.traction,
-      brand: { primary: f.primary, accent: f.accent || undefined, logo: f.logo || undefined, font: f.font || undefined },
+      brand: { primary: f.primary, accent: f.accent || undefined, logo: f.logo || undefined, font: f.font || undefined, fontCss: f.fontCss || undefined },
       facts: { problem: f.problem, product: f.product, forWho: f.forWho, customers: f.customers, market: f.market, businessModel: f.businessModel, competitors: f.competitors, useOfFunds: f.useOfFunds, whyNow: f.whyNow, team: f.team },
       uploads: 0,
     }).catch(() => ({ ok: false as const, error: "Couldn't save that. Check your connection and try again." }));
@@ -486,7 +486,7 @@ function Reveal({ token }: { token: string }) {
   const cta = (
     <div className="kb-cta" ref={ctaRef}>
       <p className="kb-cta-line"><b>{me.matchCount} investors</b> fit {me.company} · <b>{me.activeCount}</b> invested recently · <b>5 personal pitches</b> ready · your deck and teaser in your brand</p>
-      <button className="btn white big" data-track="click_signin" disabled={busy} onClick={go}><GoogleG />{busy ? "Opening…" : isAuthenticated ? "Open my dashboard" : "Read and send my pitches, free"}</button>
+      <button className="btn white big" data-track="click_signin" disabled={busy} onClick={go}><GoogleG />{busy ? "Opening…" : isAuthenticated ? <>Open my dashboard <em className="kb-free">Free</em></> : <>Read and send my pitches <em className="kb-free">Free</em></>}</button>
       <span className="kb-dim">Saved to your Google account. Nothing is ever sent without you.</span>
     </div>
   );
@@ -525,7 +525,7 @@ function Reveal({ token }: { token: string }) {
         </>
       )}
       {cta}
-      <div className={`kb-stick${ctaSeen ? " gone" : ""}`}><button className="btn white" disabled={busy} onClick={go}><GoogleG />{busy ? "Opening…" : isAuthenticated ? "Open my dashboard" : "Read and send my pitches, free"}</button></div>
+      <div className={`kb-stick${ctaSeen ? " gone" : ""}`}><button className="btn white" disabled={busy} onClick={go}><GoogleG />{busy ? "Opening…" : isAuthenticated ? <>Open my dashboard <em className="kb-free">Free</em></> : <>Read and send my pitches <em className="kb-free">Free</em></>}</button></div>
     </section>
   );
 }

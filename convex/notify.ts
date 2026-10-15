@@ -9,7 +9,7 @@ import { founderByToken, isUnlocked } from "./founders";
 const site = () => process.env.SITE_URL ?? "https://www.firstcheq.ai";
 const escape = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
-async function send(to: string, subject: string, lines: string[], cta: { label: string; url: string }): Promise<string | null> {
+export async function send(to: string, subject: string, lines: string[], cta: { label: string; url: string }): Promise<string | null> {
   const key = process.env.RESEND_API_KEY, from = process.env.EMAIL_FROM;
   if (!key || !from) return "Email not set up (RESEND_API_KEY or EMAIL_FROM missing)";
   const text = [...lines, "", `${cta.label}: ${cta.url}`, "", "Turn these emails off in Settings: " + site() + "/dashboard", "FirstCheq · nothing is ever sent to investors for you."].join("\n");
@@ -32,7 +32,7 @@ async function send(to: string, subject: string, lines: string[], cta: { label: 
 const istDate = (t = Date.now()) => new Date(t + 5.5 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 export const log = internalMutation({
-  args: { founderId: v.id("founders"), kind: v.union(v.literal("welcome"), v.literal("followups_due")), error: v.union(v.string(), v.null()), remindedOn: v.optional(v.string()) },
+  args: { founderId: v.id("founders"), kind: v.union(v.literal("welcome"), v.literal("followups_due"), v.literal("room_request")), error: v.union(v.string(), v.null()), remindedOn: v.optional(v.string()) },
   returns: v.null(),
   handler: async (ctx, { founderId, kind, error, remindedOn }) => {
     await ctx.db.insert("notifications", { founderId, kind, ok: !error, error: error ?? undefined });

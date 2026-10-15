@@ -12,6 +12,7 @@ import LandingFull from "./landing/LandingFull";
 import KitLanding from "./landing/KitLanding";
 import Build from "./kit/Build";
 import KitApp from "./kit/KitApp";
+import Room from "./kit/Room";
 import Tracker from "./lib/Tracker";
 
 export default function App() {
@@ -37,6 +38,8 @@ export default function App() {
       {/* The Raise Kit flow (15 Oct): build your kit, then the kit dashboard after Google sign-in. */}
       <Route path="/build" element={<Build />} />
       <Route path="/app" element={<KitApp />} />
+      {/* A founder's pitch room: investors ask for access, she approves. */}
+      <Route path="/p/:slug" element={<Room />} />
       <Route path="/compare/fundraising-consultant" element={<CompareConsultant />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
