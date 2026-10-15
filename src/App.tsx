@@ -9,6 +9,7 @@ import Admin from "./pages/Admin";
 import CompareConsultant from "./pages/CompareConsultant";
 import LandingDraft from "./landing/LandingDraft";
 import LandingFull from "./landing/LandingFull";
+import KitLanding from "./landing/KitLanding";
 import Tracker from "./lib/Tracker";
 
 export default function App() {
@@ -25,6 +26,8 @@ export default function App() {
       <Route path="/admin" element={<Admin />} />
       <Route path="/draft" element={<LandingDraft />} />
       <Route path="/draft-full" element={<LandingFull />} />
+      {/* Dev server only while it's a draft: not in the live build. */}
+      {import.meta.env.DEV && <Route path="/kit" element={<KitLanding />} />}
       <Route path="/compare/fundraising-consultant" element={<CompareConsultant />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
