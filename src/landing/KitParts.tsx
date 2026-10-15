@@ -4,6 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { Dial } from "../components/Art";
 import { SampleSlide } from "./SampleDeck";
 import { DECK_TITLES } from "./deckTitles";
+import { DataRoomDoc, MarketDoc, QADoc, TeaserDoc } from "./SampleDocs";
 
 // Pieces of the Raise Kit landing draft (/kit). Example founder, brand and investors are made up;
 // the raise-plan counts are real (counts only, from our research).
@@ -140,39 +141,10 @@ export function KitShowcase() {
           <div className="kk2-meta"><span>✓ In your logo, colours and fonts</span><span>✓ PowerPoint, Google Slides, PDF</span><span>✓ Your numbers; sources on every claim</span></div>
         </div>
       )}
-      {tab === "Teaser" && (
-        <div className="kk2-doc">
-          <div className="kk2-doc-h"><i className="kd-dot" /><b>Kiln Labs</b><span>Investor teaser · 2 pages</span></div>
-          <div className="kk2-doc-grid">
-            <div><em>What we do</em><p>A retrofit burner and fuel app that cuts coal use in brick kilns by 18%.</p></div>
-            <div><em>Traction</em><p>62 paying kilns, up from 9 in March. ₹4,500 per kiln per month.</p></div>
-            <div><em>Why now</em><p className="sl-gap">[From your answers]</p></div>
-            <div><em>The round</em><p>₹3 Cr seed, to reach 400 kilns in 18 months.</p></div>
-          </div>
-        </div>
-      )}
-      {tab === "Investor Q&A" && (
-        <div className="kk2-doc">
-          <div className="kk2-doc-h"><b>The 20 questions investors will ask you</b><span>Answers drafted from your numbers · gaps flagged</span></div>
-          {[["What's your CAC and payback?", "₹4,500/month per kiln; the kiln saves its cost back in 9 weeks.", ""], ["Why won't kilns switch back?", "The saving shows on their first fuel bill, and the burner stays fitted.", ""], ["What's your burn and runway?", "You haven't told us yet. Add it before you send.", "gap"], ["Who else is trying this?", "Drafted from your competitors, with sources.", ""]].map(([q, a, g]) => <details key={q}><summary>{q}</summary><p className={g ? "sl-gap" : ""}>{g ? "⚠ " : ""}{a}</p></details>)}
-          <span className="muted small">+16 more questions</span>
-        </div>
-      )}
-      {tab === "Market & competition" && (
-        <div className="kk2-doc">
-          <div className="kk2-doc-h"><b>Market & competition</b><span>Researched, with a source for every number</span></div>
-          <div className="kk2-mkt">{[["TAM", "All brick kilns in India", "[source]"], ["SAM", "Coal-fired kilns in North India", "[source]"], ["SOM", "Reachable in 3 years", "[your plan]"]].map(([k, d, src]) => <div key={k}><b>{k}</b><span>{d}</span><em>{src}</em></div>)}</div>
-          <div className="kk2-comp"><span>Funding in your sector, from our deal data</span><b>Who backed startups like yours in the last 2 years, at what stage and cheque size</b></div>
-        </div>
-      )}
-      {tab === "Data room" && (
-        <div className="kk2-doc">
-          <div className="kk2-doc-h"><b>Data room</b><span>A checklist, templates, and one link to share</span></div>
-          <ul className="kk2-check">{[["Certificate of incorporation", 1], ["DPIIT recognition", 1], ["Cap table", 1], ["Founders' agreement", 0], ["ESOP pool", 0], ["12 months of financials", 0], ["Customer contracts", 0], ["GST registration", 1]].map(([x, ok]) => <li key={x as string} className={ok ? "ok" : ""}>{x}</li>)}</ul>
-          <div className="kk2-progress"><i style={{ width: "50%" }} /><span>4 of 8 ready</span></div>
-          <span className="muted small">Templates where you need them. Information, not legal advice.</span>
-        </div>
-      )}
+      {tab === "Teaser" && <TeaserDoc />}
+      {tab === "Investor Q&A" && <QADoc />}
+      {tab === "Market & competition" && <MarketDoc />}
+      {tab === "Data room" && <DataRoomDoc />}
     </div>
   );
 }
