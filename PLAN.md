@@ -47,6 +47,18 @@ Before milestone 1: GitHub repo, Convex project, Claude keys and caps (the setup
 - [x] Convex project `fundraisingos` signed in, dev deployment running; app connected (12 Oct)
 - [x] `ANTHROPIC_API_KEY` set on the Convex dev deployment (12 Oct). Live key goes on prod at go-live.
 
+## New direction (15 Oct, confirmed): FirstCheq Raise Kit
+
+**"Paste your website. In 5 minutes: your raise plan, your investor kit in your brand, and pitches to the investors who fit, sent with a swipe."** From the GrowthX feedback ("collateral building is the real pain", AI-native) and Relay's pattern.
+
+1. **Input:** website; about-you text (pasted, or LinkedIn's own "Save to PDF"; we never read LinkedIn); stage and amount; 5 questions (traction, team, use of funds, two competitors, milestones).
+2. **Output:** (a) **Raise plan:** investor types, how many fit each, sequence (angels and networks → accelerators and grants → micro-VCs), timeline. (b) **Investor kit in her brand** (logo, colours, fonts from her site): deck from Anurag's templates, two-page teaser, investor Q&A, business model, roadmap, team, funding trends in her sector (from our data), competition and market sizing (web research, every claim sourced or marked), compliance and data-room checklist and templates. Paid sections shown as locked previews. (c) **Outreach cards:** one investor at a time, why them, the personalised pitch; edit, swipe left to skip, swipe right to send. Plus LinkedIn note (copy and open profile), forwardable intro blurb, build-in-public post templates and their sequence. No X tagging.
+3. **Sending:** Saturday: swipe right opens Gmail with the email ready. Next: optional "Connect Gmail" (gmail.send; Google's sensitive-scope review, up to 100 listed testers meanwhile): swipe right sends or schedules from her Gmail, spaced 10–15 a day in IST business hours. Rule: nothing is sent without her explicit swipe, send or schedule. LinkedIn never automated.
+4. **Price:** free preview (strategy snapshot, deck cover + 2 slides, top 3 with pitches) → **Raise Kit ₹24,999** (3 revisions included) → add-ons (deck and story review call +₹10–15k, done-with-you sprint +₹25k, warm-intro help +₹5k) → credits (₹2,500 for 10).
+5. **Saturday slice (Build Sprint):** brand extraction; 8–10 slide deck (PDF) and teaser; strategy snapshot from real data; outreach cards with swipe right → Gmail; locked previews + unlock → founding list.
+6. **Next week:** Connect Gmail (send, schedule; review submitted), competition and market research with sources, investor Q&A, editable PowerPoint, payments; then the tracking and readiness milestones below fold into this.
+Needs from Anurag: deck and teaser templates.
+
 ## Next milestone (after the colleague test, 15 Oct): tracking without "I sent it"
 
 1. "Did you send it?" when she returns to FirstCheq after Open in Gmail: one tap, Yes / Not yet.
