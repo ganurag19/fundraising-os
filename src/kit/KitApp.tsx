@@ -46,7 +46,7 @@ export default function KitApp() {
   const view = useKitView(token);
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { signOut: authSignOut } = useAuthActions();
-  const signOut = () => authSignOut().finally(() => { freshVisitorToken(); location.assign("/kit"); });
+  const signOut = () => authSignOut().finally(() => { freshVisitorToken(); location.assign("/"); });
   const mine = useQuery(api.founders.myToken, isAuthenticated ? {} : "skip");
   const switching = isAuthenticated && !!mine && mine.token !== token && (me === null || (!!me && me.claimed && !me.unlocked));
   useEffect(() => { if (switching && mine) { adoptToken(mine.token); location.reload(); } }, [switching, mine]);
@@ -81,7 +81,7 @@ export default function KitApp() {
   // Dev build only: ?preview shows the layout without Google sign-in (names beyond the top 5 stay hidden). Not in the live build.
   const preview = import.meta.env.DEV && new URLSearchParams(location.search).has("preview");
   if (isLoading || me === undefined || kit === undefined || switching) return <Opening />;
-  if (!isAuthenticated && !preview) return <Navigate to={me && kit ? "/build" : "/kit"} replace />;
+  if (!isAuthenticated && !preview) return <Navigate to={me && kit ? "/build" : "/"} replace />;
   // One Google account holds one startup. Never lose the kit she just built: signing out here keeps this browser's kit,
   // so she can sign in with another account.
   if (claimError || conflict) {
@@ -97,7 +97,7 @@ export default function KitApp() {
       </div></Shell>
     );
   }
-  if (!me) return <Navigate to="/kit" replace />;
+  if (!me) return <Navigate to="/" replace />;
   if (!me.unlocked && !preview) return <Opening />;
   if (!kit) return <Navigate to="/dashboard" replace />; // a classic list without a kit keeps the classic dashboard
 
@@ -119,7 +119,7 @@ export default function KitApp() {
   return (
     <div className="dash ka">
       <aside className="dash-nav" aria-label="Sections">
-        <Link className="logo dash-logo" to="/kit"><LogoMark /><Wordmark /></Link>
+        <Link className="logo dash-logo" to="/"><LogoMark /><Wordmark /></Link>
         <div className="ws ka-ws"><span className="ka-mark" style={{ background: kit.brand.primary }}>{kit.brand.logo ? <img src={kit.brand.logo} alt="" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : me.company.slice(0, 2).toUpperCase()}</span><div><b>{me.company}</b><span>{me.stage} · {me.ask}</span></div></div>
         <Rings sent={sent} replies={replies} fit={me.matchCount} />
         <span className="nlbl">Your raise</span>
@@ -155,7 +155,7 @@ export default function KitApp() {
       )}
 
       <main className="dash-main">
-        <div className="dash-top"><Link className="logo" to="/kit"><LogoMark /><Wordmark /></Link><button className="theme-btn sm" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Switch theme">{theme === "dark" ? "☀" : "☾"}</button></div>
+        <div className="dash-top"><Link className="logo" to="/"><LogoMark /><Wordmark /></Link><button className="theme-btn sm" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Switch theme">{theme === "dark" ? "☀" : "☾"}</button></div>
         {!full && (
           <div className={`ka-band${kit.requested ? " done" : ""}`}>
             {kit.requested
@@ -279,7 +279,7 @@ function Home({ me, k, go, onUnlock, sent, replies, ready, full }: { me: Me; k: 
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <main className="theme-light kbx"><header className="kb-top"><Link className="logo" to="/kit"><LogoMark /><Wordmark /></Link></header><div className="kb-main">{children}</div></main>;
+  return <main className="theme-light kbx"><header className="kb-top"><Link className="logo" to="/"><LogoMark /><Wordmark /></Link></header><div className="kb-main">{children}</div></main>;
 }
 function Opening() {
   return <Shell><div className="kb-step center" role="status"><div className="spinner" /><h1 style={{ fontSize: 24 }}>Opening your kit…</h1><p className="kb-help">Signing you in and moving your kit to your account.</p></div></Shell>;

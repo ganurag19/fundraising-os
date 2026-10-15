@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Landing from "./landing/Landing";
 import Start from "./pages/Start";
 import Emails from "./pages/Emails";
@@ -19,7 +19,9 @@ export default function App() {
     <>
     <Tracker />
     <Routes>
-      <Route path="/" element={<Landing />} />
+      {/* 16 Oct: the Raise Kit page is the main landing page. The previous landing stays at /classic (not linked). */}
+      <Route path="/" element={<KitLanding />} />
+      <Route path="/classic" element={<Landing />} />
       <Route path="/start" element={<Start />} />
       <Route path="/emails" element={<Emails />} />
       <Route path="/dashboard" element={<Dashboard />} />
@@ -28,8 +30,8 @@ export default function App() {
       <Route path="/admin" element={<Admin />} />
       <Route path="/draft" element={<LandingDraft />} />
       <Route path="/draft-full" element={<LandingFull />} />
-      {/* Hidden concept page (noindex, not linked), for feedback. */}
-      <Route path="/kit" element={<KitLanding />} />
+      {/* Old /kit links (with ?code=) land on the main page. */}
+      <Route path="/kit" element={<KitRedirect />} />
       {/* The Raise Kit flow (15 Oct): build your kit, then the kit dashboard after Google sign-in. */}
       <Route path="/build" element={<Build />} />
       <Route path="/app" element={<KitApp />} />
@@ -38,4 +40,10 @@ export default function App() {
     </Routes>
     </>
   );
+}
+
+/** /kit?code=X → /?code=X, so links already shared keep their code. */
+function KitRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/${search}`} replace />;
 }

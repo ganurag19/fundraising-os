@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogoMark, Wordmark } from "../components/Brand";
 import InviteSheet from "./InviteSheet";
@@ -7,7 +7,7 @@ import { savedInviteCode, savePrefill } from "../lib/token";
 import { HeroBuild, InvestorCards, KitShowcase, PlanPicker, ProofStrip } from "./KitParts";
 import { COMPARE, PLANS } from "./plans";
 
-// DRAFT (dev only, /kit): the Raise Kit landing, on Relay Studio's skeleton: one input, the product working on screen,
+// The main landing page (since 16 Oct; was the /kit draft): the Raise Kit landing, on Relay Studio's skeleton: one input, the product working on screen,
 // alternating "visual + one promise" sections, calm light theme. Example founder and investors are made up.
 
 const WHY: ["data" | "engine" | "templates" | "circle", string, string][] = [
@@ -58,12 +58,6 @@ export default function KitLanding() {
     if (site.trim()) savePrefill({ first: site.trim(), sectors: [], stage: "", ask: "" });
     if (savedInviteCode()) navigate("/start"); else setSheet("code");
   };
-  useEffect(() => {
-    const m = document.createElement("meta");
-    m.name = "robots"; m.content = "noindex, nofollow";
-    document.head.appendChild(m);
-    return () => m.remove();
-  }, []);
   const cup = <svg className="k3-cup" viewBox="0 0 40 40" aria-hidden="true"><path className="st s1" d="M15 9c-2 2 2 3 0 6" /><path className="st s2" d="M21 7c-2 2 2 3 0 6" /><path className="st s3" d="M27 9c-2 2 2 3 0 6" /><path d="M8 18h24v6a10 10 0 0 1-10 10h-4A10 10 0 0 1 8 24z" fill="currentColor" /><path d="M32 20h2a4 4 0 0 1 0 8h-3" stroke="currentColor" strokeWidth="2.5" fill="none" /></svg>;
   // The brewing cup after "coffee": bigger, with three wisps of steam.
   const brew = <svg className="k5-brew" viewBox="0 0 40 40" aria-hidden="true"><path className="st s1" d="M15 10c-2.5 2.5 2.5 4 0 7.5" /><path className="st s2" d="M21 7c-2.5 2.5 2.5 4 0 7.5" /><path className="st s3" d="M27 10c-2.5 2.5 2.5 4 0 7.5" /><path d="M8 19h24v6a10 10 0 0 1-10 10h-4A10 10 0 0 1 8 25z" fill="currentColor" /><path d="M32 21h2a4 4 0 0 1 0 8h-3" stroke="currentColor" strokeWidth="2.5" fill="none" /></svg>;

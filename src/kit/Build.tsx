@@ -84,7 +84,7 @@ export default function Build() {
   return (
     <main className="theme-light kbx">
       <header className="kb-top">
-        <Link className="logo" to="/kit"><LogoMark /><Wordmark /></Link>
+        <Link className="logo" to="/"><LogoMark /><Wordmark /></Link>
         <span className="kb-time">{step === "reveal" ? "Ready" : step === "building" ? "Almost there" : "About 4 minutes"}</span>
       </header>
       <div className="kb-prog" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
