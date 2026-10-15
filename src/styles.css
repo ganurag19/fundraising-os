@@ -1023,3 +1023,8 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .k2-cal-g{grid-template-columns:repeat(7,minmax(0,1fr))} .k2-day{min-width:0;overflow:hidden} .k2-day i{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:560px){.k2-day i{font-size:0;padding:0;width:8px;height:8px;border-radius:50%}}
 .k2-visual,.k2-copy{min-width:0}
+.k2-tag{align-self:flex-start;font:700 12px/1 var(--mono);text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--line2);border-radius:999px;padding:6px 10px;color:var(--fg2)}
+.k2-tag.gold{border-color:var(--gold-line);background:var(--gold-soft);color:var(--gold)}
+.k2-rec.dark{background:var(--fg)}
+.k2-k.light{color:#9DBBFF;display:block;margin-bottom:6px}
+.k2-soon{gap:12px;background:#fff;color:var(--fg)} .k2-soon h2{font-family:var(--display);font-size:26px;margin:0} .k2-soon p{margin:0;color:var(--fg2);line-height:1.55}

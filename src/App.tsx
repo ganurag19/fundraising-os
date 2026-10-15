@@ -26,8 +26,8 @@ export default function App() {
       <Route path="/admin" element={<Admin />} />
       <Route path="/draft" element={<LandingDraft />} />
       <Route path="/draft-full" element={<LandingFull />} />
-      {/* Dev server only while it's a draft: not in the live build. */}
-      {import.meta.env.DEV && <Route path="/kit" element={<KitLanding />} />}
+      {/* Hidden concept page (noindex, not linked), for feedback. */}
+      <Route path="/kit" element={<KitLanding />} />
       <Route path="/compare/fundraising-consultant" element={<CompareConsultant />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

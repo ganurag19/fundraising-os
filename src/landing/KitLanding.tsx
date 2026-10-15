@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogoMark, Wordmark } from "../components/Brand";
 import InviteSheet from "./InviteSheet";
@@ -22,11 +22,20 @@ export default function KitLanding() {
   const navigate = useNavigate();
   const [site, setSite] = useState("");
   const [sheet, setSheet] = useState<SheetMode | null>(null);
-  const start = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    savePrefill({ first: site.trim(), sectors: [], stage: "", ask: "" });
+  const [soon, setSoon] = useState(false);
+  // Concept page: every button explains that the full flow is coming, and offers what's live today.
+  const start = (e?: React.FormEvent) => { e?.preventDefault(); setSoon(true); };
+  const tryLive = () => {
+    setSoon(false);
+    if (site.trim()) savePrefill({ first: site.trim(), sectors: [], stage: "", ask: "" });
     if (savedInviteCode()) navigate("/start"); else setSheet("code");
   };
+  useEffect(() => {
+    const m = document.createElement("meta");
+    m.name = "robots"; m.content = "noindex, nofollow";
+    document.head.appendChild(m);
+    return () => m.remove();
+  }, []);
   const input = (cls = "") => (
     <form className={`k2-input ${cls}`} onSubmit={start}>
       <span className="k2-www" aria-hidden="true">www.</span>
@@ -37,18 +46,18 @@ export default function KitLanding() {
 
   return (
     <div className="theme-light k2">
-      <div className="draft-bar">Local draft · Raise Kit landing v2 · not live</div>
+      <div className="draft-bar">Concept preview · the Raise Kit is being built · feedback welcome</div>
       <header className="k2-nav">
         <a className="logo" href="/" aria-label="FirstCheq home"><LogoMark /><Wordmark /></a>
-        <nav><a href="#how">How it works</a><a href="#pricing">Pricing</a><button className="btn primary sm" onClick={() => setSheet("request")}>Get started</button></nav>
+        <nav><a href="#how">How it works</a><a href="#plans">Plans</a><button className="btn primary sm" onClick={() => setSoon(true)}>Get started</button></nav>
       </header>
 
       {/* Hero */}
       <section className="k2-hero">
         <h1>Your first round,<br /><em>ready in 5 minutes.</em></h1>
-        <p>FirstCheq builds your investor-ready deck in your brand, finds the investors who back startups like yours, and writes a personal pitch to each. Add your website, then swipe right on the investors you want.</p>
+        <p>Your investor-ready deck and collateral, in your brand. Every investor who backs startups like yours, with a pitch written to each. Swipe to send, and start your round over a cup of coffee.</p>
         {input("big")}
-        <span className="k2-alt">No website yet? <button className="text-link" onClick={() => setSheet("request")}>Tell us about your startup</button></span>
+        <span className="k2-alt">No website yet? <button className="text-link" onClick={() => setSoon(true)}>Tell us about your startup</button></span>
         <div className="k2-fan" aria-hidden="true">
           <div className="f1 k2-mini deck"><b>Kiln Labs</b><span>Seed · ₹3 Cr</span></div>
           <div className="f2 k2-mini"><em>Fit 95</em><b>Verdant Arc</b><span>Backed GridLeaf at seed</span></div>
@@ -127,26 +136,26 @@ export default function KitLanding() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="k2-wide" id="pricing">
-        <h2>Pricing</h2>
-        <p className="k2-sub">One payment per round. No subscription.</p>
+      {/* Plans (no prices while it's a concept) */}
+      <section className="k2-wide" id="plans">
+        <h2>Pick how much help<br /><em>you want.</em></h2>
+        <p className="k2-sub">One payment per round. No subscription. Founding access for the first founders.</p>
         <div className="k2-plans">
-          <div className="k2-plan"><b>Preview</b><span className="k2-amt">₹0</span><span className="muted small">See it before you pay</span>
-            <ul><li>Your raise plan: who to approach, in order</li><li>Deck cover and 2 slides, in your brand</li><li>Your top 3 investors, with pitches</li><li>Swipe to send on those 3</li></ul>
-            <button className="btn ghost" onClick={() => start()}>Start free</button></div>
-          <div className="k2-plan rec"><span className="k2-rec">Recommended</span><b>Raise Kit</b><span className="k2-amt">₹14,999 <s>₹24,999</s></span><span className="k2-gold">Founding price, first 20 founders</span>
-            <ul><li>Full 10-slide deck in your brand (PowerPoint, Google Slides, PDF)</li><li>Two-page teaser</li><li>The 20 investor questions, with your answers drafted</li><li>Market size and competition, with sources</li><li>Data room checklist and templates</li><li>Every investor who fits (up to 100), ranked, with the reason</li><li>A pitch, LinkedIn note and intro blurb for each</li><li>Swipe to send and schedule, from your Gmail</li><li>Follow-ups on day 3 and day 10</li><li>3 rounds of revisions</li></ul>
-            <button className="btn primary" onClick={() => start()}>Get my Raise Kit</button></div>
-          <div className="k2-plan"><b>Raise Kit + Review</b><span className="k2-amt">₹34,999</span><span className="muted small">For founders who want a second pair of eyes</span>
-            <ul><li>Everything in Raise Kit</li><li>A 45-minute deck and story review with a fundraising advisor</li><li>Your pitch and ask, sharpened before you send</li><li>Priority support while you raise</li></ul>
-            <button className="btn ghost" onClick={() => setSheet("request")}>Request access</button></div>
+          <div className="k2-plan"><b>Preview</b><span className="k2-tag">Free</span><span className="muted small">See your kit before you decide</span>
+            <ul><li>Your raise plan: who to approach, and in what order</li><li>Your deck cover and 2 slides, in your brand</li><li>Your top 3 investors, each with a pitch</li><li>Swipe to send on those 3</li></ul>
+            <button className="btn ghost" onClick={() => setSoon(true)}>Start free</button></div>
+          <div className="k2-plan rec"><span className="k2-rec">Most founders</span><b>Raise Kit</b><span className="k2-tag gold">Founding access</span><span className="muted small">Everything you need to go out and raise</span>
+            <ul><li>A 10-slide investor-ready deck in your brand (PowerPoint, Google Slides, PDF)</li><li>A two-page teaser to attach to every pitch</li><li>The 20 questions investors ask, with your answers drafted</li><li>Market size and competition, with sources</li><li>Funding trends in your sector, from our deal data</li><li>Data room checklist and templates</li><li>Every investor who fits (up to 100), ranked, with the reason</li><li>A pitch, LinkedIn note and intro blurb for each</li><li>Swipe to send and schedule from your Gmail, with follow-ups on day 3 and day 10</li><li>3 rounds of revisions</li></ul>
+            <button className="btn primary" onClick={() => setSoon(true)}>Get founding access</button></div>
+          <div className="k2-plan"><span className="k2-rec dark">For a faster round</span><b>Raise Kit + Advisors</b><span className="k2-tag">Founding access</span><span className="muted small">Learn from founders who've already raised</span>
+            <ul><li>Everything in Raise Kit</li><li>Advisory calls with founders who've raised their first round</li><li>Your deck and story pressure-tested before you send</li><li>Warm connects: introductions to investors in our founders' networks, when you're ready</li><li>Mock investor Q&A before your first meetings</li><li>Priority support while you raise</li></ul>
+            <button className="btn ghost" onClick={() => setSoon(true)}>Request access</button></div>
         </div>
-        <p className="muted small k2-credits">Need more later? Credits: ₹2,500 for 10 (more revisions, more investors, a new round).</p>
+        <p className="muted small k2-credits">Need more later? Top up with credits for more revisions, more investors, or your next round.</p>
         <div className="k2-managed">
-          <div><b>Done with you</b><p>We run your outreach with you for 3 weeks: list, kit, pitches, follow-ups and meeting prep. From ₹49,999.</p></div>
-          <ul><li><b>Raise plan review</b> with you, week one</li><li><b>Outreach run together</b>, every working day</li><li><b>Meeting prep</b> before each investor call</li><li><b>You send every email</b>; we never pitch on your behalf</li></ul>
-          <button className="btn primary" onClick={() => setSheet("request")}>Book a call</button>
+          <div><span className="k2-k light">Done for you</span><b>We run your raise with you.</b><p>A small team works on your round from day one to term sheet: plan, kit, outreach, follow-ups, meetings. You stay in every decision and send every email.</p></div>
+          <ul><li><b>Week 1:</b> raise strategy, target list and your full kit, reviewed with you</li><li><b>Weeks 2–6:</b> outreach run together every working day, with follow-ups</li><li><b>Warm connects</b> from our network of founders and investors</li><li><b>Meeting prep</b> before every investor call, and notes after</li><li><b>Term sheet support:</b> what to ask, and partner lawyers when you need one</li></ul>
+          <button className="btn primary" onClick={() => setSoon(true)}>Book a call</button>
         </div>
       </section>
 
@@ -163,6 +172,19 @@ export default function KitLanding() {
       </section>
 
       <footer className="k2-foot"><a className="logo" href="/"><LogoMark /><Wordmark /></a><span>Built in India · Nothing is sent without your swipe · Example founder and investors on this page are made up · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span></footer>
+      {soon && (
+        <div className="sheet-scrim" onClick={(e) => e.target === e.currentTarget && setSoon(false)}>
+          <div className="sheet rise k2-soon" role="dialog" aria-modal="true" aria-label="Coming soon">
+            <button className="xbtn" style={{ alignSelf: "flex-end" }} onClick={() => setSoon(false)} aria-label="Close">✕</button>
+            <span className="k2-k">Coming soon</span>
+            <h2>The Raise Kit is being built.</h2>
+            <p>The full flow (your branded deck, the kit and swipe-to-send) opens to founding founders first. Join the list and we'll let you in as soon as it's ready.</p>
+            <p className="muted small">Today you can already try FirstCheq's investor matching and personal pitches.</p>
+            <button className="btn primary" onClick={() => { setSoon(false); setSheet("request"); }}>Join the founding list</button>
+            <button className="btn ghost" onClick={tryLive}>Try what's live today</button>
+          </div>
+        </div>
+      )}
       {sheet && <InviteSheet mode={sheet} onMode={setSheet} onClose={() => setSheet(null)} />}
     </div>
   );
