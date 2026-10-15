@@ -97,6 +97,9 @@ export default function KitApp() {
       </div></Shell>
     );
   }
+  if (!me && isAuthenticated && mine === null) {
+    return <Shell><div className="kb-step center"><span className="kb-kicker">Signed in</span><h1>No startup on this account <em>yet.</em></h1><p className="kb-help">Paste your website and we'll build your raise kit in about 5 minutes. If you used another Google account before, sign in with that one.</p><div className="kb-actions center" style={{ flexDirection: "column" }}><Link className="btn primary" to="/build">Start my kit →</Link><button className="btn ghost" onClick={() => void authSignOut().finally(() => location.assign("/"))}>Use another Google account</button></div></div></Shell>;
+  }
   if (!me) return <Navigate to="/" replace />;
   if (!me.unlocked && !preview) return <Opening />;
   // A founder from the classic sign-up has a list but no kit yet: same dashboard, with "Create your deck" where the kit goes.

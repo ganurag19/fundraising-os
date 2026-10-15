@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useConvexAuth } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { LogoMark, Wordmark } from "../components/Brand";
 import InviteSheet from "./InviteSheet";
 import type { SheetMode } from "./InviteSheet";
@@ -40,6 +42,9 @@ const FAQ: [string, string][] = [
 
 export default function KitLanding() {
   const navigate = useNavigate();
+  // Existing founders: sign in from the home page and land on their dashboard.
+  const { isAuthenticated } = useConvexAuth();
+  const { signIn } = useAuthActions();
   const [site, setSite] = useState("");
   const [sheet, setSheet] = useState<SheetMode | null>(null);
   const [soon, setSoon] = useState(false);
@@ -74,7 +79,7 @@ export default function KitLanding() {
       <div className="draft-bar">Early preview · for friends and colleagues · feedback welcome</div>
       <header className="k2-nav">
         <a className="logo" href="/" aria-label="FirstCheq home"><LogoMark /><Wordmark /></a>
-        <nav><a href="#how">How it works</a><a href="#plans">Plans</a><button className="btn primary sm" onClick={() => start()}>Get started, free</button></nav>
+        <nav><a href="#how">How it works</a><a href="#plans">Plans</a>{isAuthenticated ? <Link className="k5-signin" to="/app">My dashboard</Link> : <button className="k5-signin" data-track="click_signin" onClick={() => void signIn("google", { redirectTo: "/app" })}>Sign in</button>}<button className="btn primary sm" onClick={() => start()}>Get started, free</button></nav>
       </header>
 
       {/* Hero */}
