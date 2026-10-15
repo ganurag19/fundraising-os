@@ -77,7 +77,11 @@ export default function KitLanding() {
       {/* Hero */}
       <section className="k2-hero">
         <h1>Your first round,<br /><em>ready in 5 minutes.</em></h1>
-        <p>Your investor-ready deck and collateral, in your brand. Every investor who backs startups like yours, with a pitch written to each. Swipe to send. All the heavy lifting of your first round, done over a cup of coffee.</p>
+        <p className="k2-hook">
+          <span className="k2-cup" aria-hidden="true"><svg viewBox="0 0 40 40"><path className="st s1" d="M15 9c-2 2 2 3 0 6" /><path className="st s2" d="M21 7c-2 2 2 3 0 6" /><path className="st s3" d="M27 9c-2 2 2 3 0 6" /><path d="M8 18h24v6a10 10 0 0 1-10 10h-4A10 10 0 0 1 8 24z" fill="currentColor" /><path d="M32 20h2a4 4 0 0 1 0 8h-3" stroke="currentColor" strokeWidth="2.5" fill="none" /></svg></span>
+          <span className="k2-hook-t">All the heavy lifting of your first round, <em>done over a cup of coffee.</em></span>
+        </p>
+        <p>Your investor-ready deck and collateral, in your brand. Every investor who backs startups like yours, with a pitch written to each. Then just swipe to send.</p>
         {input("big")}
         <span className="k2-alt">No website yet? <button className="text-link" onClick={() => setSoon(true)}>Tell us about your startup</button></span>
         <div className="k2-fan" aria-hidden="true">
