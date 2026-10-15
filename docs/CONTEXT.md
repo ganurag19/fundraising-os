@@ -97,3 +97,4 @@ Anurag may reorder.
 - 15 Oct: parked the Pitch room idea (per-investor links, view analytics, Interested/Pass, path to a marketplace) in PLAN.md.
 - 16 Oct: Raise Kit flow built on dev (/build → Google → /app: swipe outreach, plan, branded deck and teaser, coming-soon tabs, pitch-room preview, full-access request with feedback questions); classic flow tagged v1-classic. Awaiting Anurag's phone check before prod.
 - 16 Oct: Raise Kit deployed to prod (commit 6f9749f), KIT invite code (300 uses) created on prod; dev email keys set.
+- 16 Oct: live test on prod passed (raiseuk.co.uk: site read, 195 matched, 5 pitches, deck + teaser in 16s, Google chooser reached); test founder removed (kit:removeTestFounder), KIT code back to 0 uses. Main page is the Raise Kit; company switcher (add company: soon).
