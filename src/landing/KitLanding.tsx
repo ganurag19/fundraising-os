@@ -77,9 +77,14 @@ export default function KitLanding() {
       {/* Hero */}
       <section className="k2-hero">
         <h1>Your first round,<br /><em>ready in 5 minutes.</em></h1>
-        <p className="k2-hook">
-          <span className="k2-cup" aria-hidden="true"><svg viewBox="0 0 40 40"><path className="st s1" d="M15 9c-2 2 2 3 0 6" /><path className="st s2" d="M21 7c-2 2 2 3 0 6" /><path className="st s3" d="M27 9c-2 2 2 3 0 6" /><path d="M8 18h24v6a10 10 0 0 1-10 10h-4A10 10 0 0 1 8 24z" fill="currentColor" /><path d="M32 20h2a4 4 0 0 1 0 8h-3" stroke="currentColor" strokeWidth="2.5" fill="none" /></svg></span>
-          <span className="k2-hook-t">All the heavy lifting of your first round, <em>done over a cup of coffee.</em></span>
+        <p className="k3-hook">
+          All the heavy lifting of your first round,{" "}
+          <span className="k3-hook-em">done over a{" "}
+            <span className="k3-coffee">cup of coffee
+              <svg className="k3-ul" viewBox="0 0 220 18" preserveAspectRatio="none" aria-hidden="true"><path d="M3 12 C 40 4, 80 16, 120 9 S 190 6, 217 11" /></svg>
+            </span>
+            <svg className="k3-cup" viewBox="0 0 40 40" aria-hidden="true"><path className="st s1" d="M15 9c-2 2 2 3 0 6" /><path className="st s2" d="M21 7c-2 2 2 3 0 6" /><path className="st s3" d="M27 9c-2 2 2 3 0 6" /><path d="M8 18h24v6a10 10 0 0 1-10 10h-4A10 10 0 0 1 8 24z" fill="currentColor" /><path d="M32 20h2a4 4 0 0 1 0 8h-3" stroke="currentColor" strokeWidth="2.5" fill="none" /></svg>
+          </span>
         </p>
         <p>Your investor-ready deck and collateral, in your brand. Every investor who backs startups like yours, with a pitch written to each. Then just swipe to send.</p>
         {input("big")}
