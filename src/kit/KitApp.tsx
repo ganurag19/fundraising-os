@@ -78,14 +78,16 @@ export default function KitApp() {
   // Back from Google: move her kit and list to her account (once). One Google account holds one startup.
   const conflict = isAuthenticated && !!me && !me.unlocked && !!mine && mine.token !== token && !switching ? `This Google account already holds ${mine.company}'s list.` : "";
   useEffect(() => {
-    if (!isAuthenticated || !me || me.unlocked || claimed.current || mine === undefined || switching || conflict) return;
+    if (!isAuthenticated || !me || me.unlocked || me.claimed || claimed.current || mine === undefined || switching || conflict) return;
     claimed.current = true;
     claim({ token }).then((r) => { if (!r.ok) setClaimError(r.error); });
   }, [isAuthenticated, me, claim, token, mine, switching, conflict]);
 
   // Dev build only: ?preview shows the layout without Google sign-in (names beyond the top 5 stay hidden). Not in the live build.
   const preview = import.meta.env.DEV && new URLSearchParams(location.search).has("preview");
-  if (isLoading || me === undefined || kit === undefined || switching) return <Opening />;
+  // Signed in on a browser that doesn't hold her kit yet (a new phone, after signing out): wait for her account's
+  // startup before deciding anything, or she'd be sent home while it loads.
+  if (isLoading || me === undefined || kit === undefined || switching || (isAuthenticated && !me && mine === undefined)) return <Opening />;
   if (!isAuthenticated && !preview) return <Navigate to={me && kit ? "/build" : "/"} replace />;
   // One Google account holds one startup. Never lose the kit she just built: signing out here keeps this browser's kit,
   // so she can sign in with another account.
@@ -102,8 +104,10 @@ export default function KitApp() {
       </div></Shell>
     );
   }
-  if (!me && isAuthenticated && mine === null) {
-    return <Shell><div className="kb-step center"><span className="kb-kicker">Signed in</span><h1>No startup on this account <em>yet.</em></h1><p className="kb-help">Paste your website and we'll build your raise kit in about 5 minutes. If you used another Google account before, sign in with that one.</p><div className="kb-actions center" style={{ flexDirection: "column" }}><Link className="btn primary" to="/build">Start my kit →</Link><button className="btn ghost" onClick={() => void authSignOut().finally(() => location.assign("/"))}>Use another Google account</button></div></div></Shell>;
+  // Signed in, and this account holds no startup: either nothing in this browser, or a startup saved to another
+  // account. Offer a fresh start (a new browser code, so the other account's kit is left alone) or another account.
+  if (isAuthenticated && mine === null && (!me || (me.claimed && !me.unlocked))) {
+    return <Shell><div className="kb-step center"><span className="kb-kicker">Signed in</span><h1>No startup on this account <em>yet.</em></h1><p className="kb-help">Paste your website and we'll build your raise kit in about 5 minutes. If you used another Google account before, sign in with that one.</p><div className="kb-actions center" style={{ flexDirection: "column" }}><button className="btn primary" onClick={() => { if (me) freshVisitorToken(); location.assign("/build"); }}>Start my kit →</button><button className="btn ghost" onClick={() => void authSignOut().finally(() => location.assign("/"))}>Use another Google account</button></div></div></Shell>;
   }
   if (!me) return <Navigate to="/" replace />;
   if (!me.unlocked && !preview) return <Opening />;
