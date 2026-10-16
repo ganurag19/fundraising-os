@@ -104,6 +104,7 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
     [funnel?.visitors, "visitors"],
     [funnel ? ev("visit_landing").people : undefined, "saw the main page"],
     [funnel ? ev("visit_build").people : undefined, "started a kit"],
+    [funnel ? st("deck_reviewed") : undefined, "got a deck review"],
     [funnel ? st("kit_site_read") : undefined, "website read"],
     [funnel ? st("kit_enriched") : undefined, "added a deck or CV"],
     [funnel ? st("kit_facts_confirmed") : undefined, "confirmed their facts"],
