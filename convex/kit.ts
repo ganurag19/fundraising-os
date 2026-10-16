@@ -324,9 +324,10 @@ export const myReview = query({
     const full = f?.plan === "round_pass";
     return {
       at: r._creationTime, fileName: r.fileName, score: r.score, verdict: r.verdict, verdictWhy: r.verdictWhy, strengths: r.strengths,
-      fixes: full ? r.fixes : r.fixes.slice(0, 3), missing: full ? r.missing : [], thesis: full ? r.thesis : { claim: r.thesis.claim, tests: r.thesis.tests.slice(0, 1) },
+      // Free (16 Oct, after friends' feedback): every fix and what's missing. The stress test beyond the first, and the questions, are the full kit.
+      fixes: r.fixes, missing: r.missing, thesis: full ? r.thesis : { claim: r.thesis.claim, tests: r.thesis.tests.slice(0, 1) },
       questions: full ? r.questions : [],
-      locked: full ? { fixes: 0, missing: 0, tests: 0, questions: 0 } : { fixes: Math.max(0, r.fixes.length - 3), missing: r.missing.length, tests: Math.max(0, r.thesis.tests.length - 1), questions: r.questions.length },
+      locked: full ? { fixes: 0, missing: 0, tests: 0, questions: 0 } : { fixes: 0, missing: 0, tests: Math.max(0, r.thesis.tests.length - 1), questions: r.questions.length },
     };
   },
 });

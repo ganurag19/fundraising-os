@@ -44,7 +44,7 @@ Before I share the link: I open it on my phone, logged out, on mobile data, and 
 
 ## 4. The AI call
 
-Model: Claude Haiku 4.5 for matching, follow-ups, reading her website and files, and "Write email" beyond her top picks; Claude Sonnet 5.5 for her top picks' drafts (3 classic, 5 on the Raise Kit) and her deck and teaser text. Thinking: low or off.
+Model: Claude Haiku 4.5 for matching, follow-ups, reading her website and files, and "Write email" beyond her top picks; Claude Sonnet 5.5 for her top picks' drafts (3 classic, 5 on the Raise Kit) her deck and teaser text, and her market research (web search, every line sourced). Thinking: low or off.
 What goes in, and its limit: the founder's four fields and profile (length-limited) and only the filtered shortlist of investor records, never the whole list; at most 20 records per call.
 Where it runs: a Convex action. Never in the interface.
 Key: ANTHROPIC_API_KEY in Convex environment variables, dev and prod.

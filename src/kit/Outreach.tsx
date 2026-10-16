@@ -195,18 +195,19 @@ function List({ me, token, onToast, onOpen, onUnlock }: { me: Me; token: string;
   return (
     <div className="ko-list">
       <Pipeline rows={me.rows.filter((r) => !r.locked)} token={token} onToast={onToast} account={me.gmail} />
-      <h2 className="dash-h">To send · {todo.length - lockedN} open{lockedN ? ` · ${lockedN} locked` : ""}</h2>
+      <h2 className="dash-h">To send · {todo.length - lockedN} pitch ready{lockedN ? ` · ${lockedN} more fit you` : ""}</h2>
       <div className="ko-filters">
         <div className="ko-types" role="tablist" aria-label="Investor type">{TYPES.filter(([, , ks]) => !ks.length || count(ks) > 0).map(([k, label, ks]) => <button key={k} role="tab" aria-selected={type === k} onClick={() => setType(k)}>{label}<i>{count(ks)}</i></button>)}</div>
         <label className="ko-sort">Sort<select value={sort} onChange={(e) => setSort(e.target.value)}>{SORTS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
       </div>
-      <div className="ko-legend"><span className="t5">Top 5 · pitch ready</span><span className="op">Open</span><span className="lk">🔒 Full kit</span></div>
+      <div className="ko-legend"><span className="t5">Top 5 · pitch ready</span><span className="op">Next 15 · named, free</span><span className="lk">🔒 Email, pitch and the rest: full kit</span></div>
       <div className="ko-rows">
         {todo.map((r) => r.locked ? (
-          <div className="ko-li locked" key={r.rank}>
+          <div className={`ko-li locked${r.rank < 20 ? " named" : ""}`} key={r.rank}>
             <Dial score={r.score} size={40} />
-            <div className="ko-li-main"><b>{r.displayName}</b><span>{r.reason ?? "Fits your sector, stage and round."}{r.city ? ` · ${r.city}` : ""}</span></div>
-            <button className="btn primary sm" onClick={onUnlock}>🔒 Unlock</button>
+            {r.rank < 20 && <InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={32} />}
+            <div className="ko-li-main"><b>{r.displayName}</b><span>{r.reason ?? "Fits your sector, stage and round."}{r.deal ? ` · Backed ${r.deal.company}${r.deal.year ? ` (${r.deal.year})` : ""}` : ""}{r.city ? ` · ${r.city}` : ""}</span></div>
+            <button className="btn primary sm" onClick={onUnlock}>🔒 {r.rank < 20 ? "Email & pitch" : "Unlock"}</button>
           </div>
         ) : (
           <div className={`ko-li${r.rank < 5 ? " top" : ""}${r.retired ? " retired" : ""}${open === r.rank ? " open" : ""}`} key={r.rank}>

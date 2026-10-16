@@ -115,14 +115,14 @@ describe("Raise Kit: the deck only uses her numbers", () => {
 });
 
 describe("Raise Kit: the free kit keeps investors beyond the top 5 locked", () => {
-  test("names are part-hidden, and no email, link or pitch leaves the server", async () => {
+  test("ranks 6–20 show name and reason; beyond 20 names are part-hidden; no email, link or pitch leaves the server", async () => {
     const t = await setup();
     await t.mutation(api.kit.confirm, { ...arjun, token: tokenA });
     const userId = await t.run(async (ctx) => {
       const f = (await ctx.db.query("founders").collect())[0];
-      for (let rank = 0; rank < 7; rank++) {
+      for (let rank = 0; rank < 23; rank++) {
         const inv = await ctx.db.insert("investors", { seedId: `s${rank}`, kind: "vc", displayName: `Made Up Capital ${rank}`, email: `team${rank}@madeup.example`, website: "https://madeup.example", sectors: ["climate"], stages: ["seed"], portfolio: [], recent: [], sourceUrls: ["https://madeup.example/portfolio"] });
-        await ctx.db.insert("matches", { founderId: f._id, investorId: inv, rank, score: 80 - rank });
+        await ctx.db.insert("matches", { founderId: f._id, investorId: inv, rank, score: 90 - rank, reason: "Backs climate at seed." });
       }
       return await ctx.db.insert("users", { email: "arjun@kilnlabs.example.in" });
     });
@@ -131,12 +131,13 @@ describe("Raise Kit: the free kit keeps investors beyond the top 5 locked", () =
     const me = await arjunIn.query(api.founders.me, { token: tokenA });
     const open = me!.rows.filter((r) => r.rank < 5), locked = me!.rows.filter((r) => r.rank >= 5);
     expect(open.every((r) => !r.locked && r.email && r.displayName?.startsWith("Made Up"))).toBe(true);
-    expect(locked.length).toBe(2);
+    expect(locked.length).toBe(18);
     for (const r of locked) {
       expect(r.locked).toBe(true);
       expect([r.email, r.website, r.linkedin, r.draft]).toEqual([null, null, null, null]);
       expect(r.sourceUrls).toEqual([]);
-      expect(r.displayName).toMatch(/^Ma•+ Up•+ Capital/);
+      if (r.rank < 20) expect([r.displayName, r.reason]).toEqual([`Made Up Capital ${r.rank}`, "Backs climate at seed."]);
+      else expect(r.displayName).toMatch(/^Ma•+ Up•+ Capital/);
     }
   });
 });
@@ -214,7 +215,7 @@ describe("Quick feedback", () => {
 });
 
 describe("Deck review", () => {
-  test("free shows the score, verdict, strengths and top 3 fixes; the rest stays on the server", async () => {
+  test("free shows the score, verdict, every fix and what is missing; the stress test and questions stay on the server", async () => {
     const t = await setup();
     await t.mutation(api.kit.confirm, { ...arjun, token: tokenA });
     const userId = await t.run((ctx) => ctx.db.insert("users", { email: "arjun@kilnlabs.example.in" }));
@@ -228,8 +229,8 @@ describe("Deck review", () => {
       questions: ["What is your churn?"],
     });
     const r = await arjunIn.query(api.kit.myReview, { token: tokenA });
-    expect([r?.score, r?.verdict, r?.fixes.length, r?.thesis?.tests.length, r?.missing, r?.questions]).toEqual([46, "raise_with_fixes", 3, 1, [], []]);
-    expect(r?.locked).toEqual({ fixes: 2, missing: 1, tests: 1, questions: 1 });
+    expect([r?.score, r?.verdict, r?.fixes.length, r?.thesis?.tests.length, r?.missing, r?.questions]).toEqual([46, "raise_with_fixes", 5, 1, ["Use of funds"], []]);
+    expect(r?.locked).toEqual({ fixes: 0, missing: 0, tests: 1, questions: 1 });
     expect(await t.query(api.kit.myReview, { token: tokenA })).toBeNull(); // signed out
   });
 });
@@ -249,5 +250,29 @@ describe("Start with your deck", () => {
     await t.withIdentity({ subject: `${userId}|s1` }).mutation(api.founders.claim, { token: tokenA });
     expect(await t.query(api.kit.myReview, { token: tokenA })).toBeNull();
     expect((await t.withIdentity({ subject: `${userId}|s1` }).query(api.kit.myReview, { token: tokenA }))?.score).toBe(52);
+  });
+});
+
+describe("Market & competition", () => {
+  test("free shows 3 competitors, 5 rounds and 1 trend; the rest stays on the server; a stranger sees nothing", async () => {
+    const t = await setup();
+    await t.mutation(api.kit.confirm, { ...arjun, token: tokenA });
+    const { userId, otherId } = await t.run(async (ctx) => {
+      const f = (await ctx.db.query("founders").collect())[0];
+      const src = "https://news.example/round";
+      await ctx.db.insert("markets", {
+        founderId: f._id, status: "ready", summary: "Climate rounds are steady.",
+        competitors: [1, 2, 3, 4, 5].map((i) => ({ name: `Made Up Kilns ${i}`, what: "Kiln sensors", where: "india" as const, source: src })),
+        deals: [1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({ company: `Made Up Co ${i}`, amount: "₹10 Cr", round: "Seed", date: "Mar 2026", investors: ["Made Up Ventures"], where: "india" as const, atStage: true, source: src })),
+        trends: [{ line: "One", source: src }, { line: "Two", source: src }],
+      });
+      return { userId: await ctx.db.insert("users", { email: "arjun@kilnlabs.example.in" }), otherId: await ctx.db.insert("users", { email: "someone@else.example" }) };
+    });
+    const owner = t.withIdentity({ subject: `${userId}|s1` });
+    await owner.mutation(api.founders.claim, { token: tokenA });
+    const m = await owner.query(api.market.mine, { token: tokenA });
+    expect([m?.competitors.length, m?.deals.length, m?.trends.length]).toEqual([3, 5, 1]);
+    expect(m?.locked).toEqual({ competitors: 2, deals: 3, trends: 1 });
+    expect(await t.withIdentity({ subject: `${otherId}|s2` }).query(api.market.mine, { token: tokenA })).toBeNull();
   });
 });

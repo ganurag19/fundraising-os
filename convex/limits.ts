@@ -27,6 +27,8 @@ export const limits = new RateLimiter(components.rateLimiter, {
   roomRequestsGlobal: { kind: "token bucket", rate: 300, period: HOUR },
   roomEventsPerViewer: { kind: "fixed window", rate: 400, period: HOUR }, // views and slides counted for her
   deckReviewsPerVisitor: { kind: "fixed window", rate: 3, period: 24 * HOUR }, // deck review before sign-in (Start with your deck)
+  marketRunsPerFounder: { kind: "fixed window", rate: 1, period: 24 * HOUR }, // market research on Sonnet with web search: about $0.60 a run
+  marketRunsGlobal: { kind: "token bucket", rate: 80, period: 24 * HOUR },
   deckReviewsGlobal: { kind: "token bucket", rate: 120, period: 24 * HOUR }, // app-wide, so a spike can't drain the AI budget
   deckReviewsPerFounder: { kind: "fixed window", rate: 3, period: 24 * HOUR }, // Deck and pitch review (Sonnet, reads her PDF)
   docReadsPerVisitor: { kind: "fixed window", rate: 4, period: 24 * HOUR }, // reading those files once

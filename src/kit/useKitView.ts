@@ -9,11 +9,13 @@ const ORDER = ["cover", "problem", "solution", "traction", "market", "model", "c
 export function useKitView(token: string): KitView | null | undefined {
   const me = useQuery(api.founders.me, { token });
   const kit = useQuery(api.kit.mine, { token });
+  const market = useQuery(api.market.mine, { token });
   return useMemo(() => {
     if (me === undefined || kit === undefined) return undefined;
     if (!me || !kit || !kit.deck) return null;
-    // The first build writes 4 slides; the rest show as locked until full access writes them.
+    // The first build writes 5 slides; team comes from her facts; the rest are templates for her numbers.
     const slides = ORDER.map((key) => kit.deck?.find((x) => x.key === key) ?? { key, headline: "", points: [], metrics: [] });
-    return { company: me.company, founder: me.name, stage: me.stage, ask: me.ask, website: me.website, brand: kit.brand, slides, teaser: kit.teaser, facts: kit.facts };
-  }, [me, kit]);
+    return { company: me.company, founder: me.name, stage: me.stage, ask: me.ask, website: me.website, brand: kit.brand, slides, teaser: kit.teaser, facts: kit.facts,
+      rivals: market?.competitors.map((c) => ({ name: c.name, logo: c.logo ?? null, where: c.where })) };
+  }, [me, kit, market]);
 }

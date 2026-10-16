@@ -5,7 +5,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 import type { FunctionReturnType } from "convex/server";
 
 // Deck and pitch review: her own deck, read once (then deleted), reviewed like a seed investor would before a first call.
-// Free: score, verdict, strengths and the top 3 fixes. The rest (every fix, thesis stress test, missing pieces, investor questions) with full access.
+// Free (16 Oct): score, verdict, strengths, every fix and what's missing. The thesis stress test beyond the first, and investor questions, with full access.
 
 const VERDICT: Record<string, [string, string]> = {
   raise_now: ["Ready to raise", "ok"], raise_with_fixes: ["Raise after these fixes", "warn"], build_traction_first: ["Build more traction first", "bad"],

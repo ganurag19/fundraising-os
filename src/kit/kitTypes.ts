@@ -7,6 +7,7 @@ export type Teaser = { summary: string; highlights: string[] };
 export type KitView = {
   company: string; founder: string; stage: string; ask: string; website: string | null;
   brand: Brand; slides: Slide[]; teaser: Teaser | null;
+  rivals?: { name: string; logo: string | null; where: string }[]; // from her market research, for the competition slide
   facts: { problem?: string; product?: string; forWho?: string; customers?: string; market?: string; businessModel?: string; competitors?: string; useOfFunds?: string; team: { name: string; role: string; line: string }[] };
 };
 

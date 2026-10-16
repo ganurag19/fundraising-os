@@ -24,6 +24,7 @@ import type * as lib_links from "../lib/links.js";
 import type * as lib_match from "../lib/match.js";
 import type * as lib_prompt from "../lib/prompt.js";
 import type * as limits from "../limits.js";
+import type * as market from "../market.js";
 import type * as notify from "../notify.js";
 import type * as pipeline from "../pipeline.js";
 import type * as pmf from "../pmf.js";
@@ -56,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   "lib/match": typeof lib_match;
   "lib/prompt": typeof lib_prompt;
   limits: typeof limits;
+  market: typeof market;
   notify: typeof notify;
   pipeline: typeof pipeline;
   pmf: typeof pmf;

@@ -3,12 +3,12 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { v } from "convex/values";
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import type { ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { normaliseUrl } from "./lib/links";
-import { DECK_REVIEW_SYSTEM, DECK_SYSTEM, DOC_FACTS_SYSTEM, KIT_SECTORS, SITE_FACTS_SYSTEM } from "./lib/prompt";
+import { DECK_REVIEW_SYSTEM, DECK_SYSTEM, DOC_FACTS_SYSTEM, KIT_SECTORS, MARKET_SYSTEM, SITE_FACTS_SYSTEM } from "./lib/prompt";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { cleanDeck, deckProblems } from "./lib/checks";
 import { pageText } from "./suggest";
@@ -18,6 +18,7 @@ import { limits } from "./limits";
 // The Raise Kit's AI work (15 Oct): read her website (facts + brand), read her files, build her deck and teaser.
 const HAIKU = "claude-haiku-4-5"; // reading her site and files (AGENTS.md section 4: the website one-liner runs on Haiku)
 const SONNET = "claude-sonnet-5-5"; // her deck and teaser, like her first drafts
+const MARKET_MODEL = SONNET; // market research with web search: accuracy and relevance first (16 Oct)
 const BUSY = "Busy right now. Try again in a few minutes.";
 const TOKEN = /^[a-f0-9]{48}$/;
 const MAX_HTML = 500_000;
@@ -369,13 +370,14 @@ export const build = action({
     await ctx.runMutation(internal.kit.saveContent, { founderId: f._id, status: "building" });
     const res = await firstEmails(ctx, token, KIT_TOP, 1, () => writeDeck(ctx, f, kit));
     if (!res.ok) await ctx.runMutation(internal.kit.saveContent, { founderId: f._id, status: kit.deck ? "ready" : "failed" });
+    else await ctx.scheduler.runAfter(0, internal.kitAi.autoResearch, { founderId: f._id }); // her market, ready by the time she signs in
     return res;
   },
 });
 
-// The free kit shows 3 slides and page 1 of the teaser, so the first build writes only those 4 slides (fast).
-// The other slides are written when she gets full access.
-const FIRST_KEYS = ["cover", "problem", "solution", "traction"];
+// The first build writes the 5 slides her facts can carry (16 Oct); team draws from her facts, and market, model and
+// competition show as templates for her numbers (competition fills from her market research). The rest are written with her on the full kit.
+const FIRST_KEYS = ["cover", "problem", "solution", "traction", "ask"];
 
 async function writeDeck(ctx: ActionCtx, f: Doc<"founders">, kit: Doc<"kits">): Promise<void> {
   const facts = {
@@ -395,7 +397,7 @@ async function writeDeck(ctx: ActionCtx, f: Doc<"founders">, kit: Doc<"kits">): 
   for (let attempt = 0; attempt < 2; attempt++) {
     const started = Date.now();
     try {
-      const res = await new Anthropic().messages.parse({ model: SONNET, max_tokens: 2500, system: DECK_SYSTEM, messages: [{ role: "user", content: input + fix }], output_config: { format: zodOutputFormat(Deck) } });
+      const res = await new Anthropic().messages.parse({ model: SONNET, max_tokens: 3000, system: DECK_SYSTEM, messages: [{ role: "user", content: input + fix }], output_config: { format: zodOutputFormat(Deck) } });
       const out = res.parsed_output;
       await logCall(ctx, { founderId: f._id, purpose: "kit_deck", model: SONNET, input: input + fix, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
       if (!out) continue;
@@ -411,4 +413,136 @@ async function writeDeck(ctx: ActionCtx, f: Doc<"founders">, kit: Doc<"kits">): 
   // The rewrite failed: use the first draft with every line that broke a rule taken out.
   if (first) { await save(first); return; }
   await ctx.runMutation(internal.kit.saveContent, { founderId: f._id, status: "failed" });
+}
+
+/* ---------- 4. Her market and competition: web search, every line with its source ---------- */
+
+const Market = z.object({
+  summary: z.string(),
+  competitors: z.array(z.object({ name: z.string(), what: z.string(), where: z.enum(["india", "global"]), funding: z.string().optional(), website: z.string().optional(), source: z.string() })),
+  deals: z.array(z.object({ company: z.string(), what: z.string().optional(), amount: z.string(), round: z.string(), date: z.string(), investors: z.array(z.string()), where: z.enum(["india", "global"]), atStage: z.boolean(), source: z.string() })),
+  trends: z.array(z.object({ line: z.string(), source: z.string() })),
+});
+// The same shape with every field required, for structured output.
+const MarketStrict = z.object({
+  summary: z.string(),
+  competitors: z.array(z.object({ name: z.string(), what: z.string(), where: z.enum(["india", "global"]), funding: z.string(), website: z.string(), source: z.string() })),
+  deals: z.array(z.object({ company: z.string(), what: z.string(), amount: z.string(), round: z.string(), date: z.string(), investors: z.array(z.string()), where: z.enum(["india", "global"]), atStage: z.boolean(), source: z.string() })),
+  trends: z.array(z.object({ line: z.string(), source: z.string() })),
+});
+const urlKey = (u: string) => u.trim().replace(/#.*$/, "").replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "").toLowerCase();
+
+/** She asks for it (Market tab), or it runs after her first build. The work itself is scheduled; the tab updates by itself. */
+export const research = action({
+  args: { token: v.string() },
+  returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
+  handler: async (ctx, { token }): Promise<{ ok: true } | { ok: false; error: string }> => {
+    if (!TOKEN.test(token)) return { ok: false as const, error: "Please start again from the first step." };
+    const userId = (await getAuthUserId(ctx)) ?? undefined;
+    const data: { founder: Doc<"founders">; market: { status: string } | null } | null = await ctx.runQuery(internal.market.forResearch, { token, userId });
+    if (!data) return { ok: false as const, error: "Please start again from the first step." };
+    if (data.market?.status === "running") return { ok: true as const };
+    const ok = await startResearch(ctx, data.founder._id);
+    return ok ? { ok: true as const } : { ok: false as const, error: "You ran this today. Come back tomorrow." };
+  },
+});
+
+export const autoResearch = internalAction({
+  args: { founderId: v.id("founders") },
+  returns: v.null(),
+  handler: async (ctx, { founderId }) => {
+    const data: { market: { status: string } | null } | null = await ctx.runQuery(internal.market.forResearch, { founderId });
+    if (data && !data.market) await startResearch(ctx, founderId);
+    return null;
+  },
+});
+
+async function startResearch(ctx: ActionCtx, founderId: Id<"founders">): Promise<boolean> {
+  if (!(await limits.limit(ctx, "marketRunsPerFounder", { key: founderId })).ok) return false;
+  if (!(await limits.limit(ctx, "marketRunsGlobal", {})).ok || !(await limits.limit(ctx, "aiCallsGlobal", { count: 2 })).ok) return false;
+  if (!(await ctx.runMutation(internal.market.start, { founderId }))) return true; // already running
+  await ctx.scheduler.runAfter(0, internal.kitAi.runResearch, { founderId });
+  return true;
+}
+
+export const runResearch = internalAction({
+  args: { founderId: v.id("founders") },
+  returns: v.null(),
+  handler: async (ctx, { founderId }) => {
+    const data: { founder: Doc<"founders">; kit: Doc<"kits"> } | null = await ctx.runQuery(internal.market.forResearch, { founderId });
+    if (!data) return null;
+    const { founder: f, kit } = data;
+    const facts = { company: f.company, website: f.website, oneLiner: f.oneLiner, sectors: f.sectors, stage: f.stage, raising: f.ask, product: kit.facts.product, forWho: kit.facts.forWho, problem: kit.facts.problem, competitorsSheNamed: kit.facts.competitors };
+    const input = `FACTS:\n${JSON.stringify(facts)}`;
+    const client = new Anthropic();
+    const started = Date.now();
+    const seen = new Set<string>(); // every page the search returned: the only links we keep
+    let searches = 0;
+    let text = "";
+    try {
+      const messages: Anthropic.MessageParam[] = [{ role: "user", content: input }];
+      let res: Anthropic.Message | null = null;
+      for (let turn = 0; turn < 2; turn++) {
+        res = await client.messages.create({
+          model: MARKET_MODEL, max_tokens: 16000, system: MARKET_SYSTEM, messages,
+          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 7, user_location: { type: "approximate", country: "IN" } }],
+        });
+        for (const b of res.content) {
+          if (b.type === "web_search_tool_result" && Array.isArray(b.content)) for (const r of b.content) seen.add(urlKey(r.url));
+          if (b.type === "server_tool_use") searches++;
+          if (b.type === "text") for (const c of b.citations ?? []) if (c.type === "web_search_result_location") seen.add(urlKey(c.url));
+        }
+        if (res.stop_reason !== "pause_turn") break;
+        messages.push({ role: "assistant", content: res.content });
+      }
+      // The answer is the text after the last search.
+      const blocks = res?.content ?? [];
+      const lastTool = blocks.map((b) => b.type).lastIndexOf("web_search_tool_result");
+      text = blocks.slice(lastTool + 1).map((b) => (b.type === "text" ? b.text : "")).join("");
+      await logCall(ctx, { founderId, purpose: "kit_market", model: MARKET_MODEL, input, output: `searches: ${searches} · stop: ${res?.stop_reason}\n${text}`, started, usage: res?.usage });
+    } catch (e) {
+      await logCall(ctx, { founderId, purpose: "kit_market", model: MARKET_MODEL, input, output: "", started, error: errText(e) });
+      await ctx.runMutation(internal.market.save, { founderId, ok: false });
+      return null;
+    }
+    let out = parseMarket(text);
+    if (!out && text.trim()) out = await tidyMarket(ctx, founderId, text); // the reply wasn't clean JSON: Haiku puts it in shape
+    if (!out) { await ctx.runMutation(internal.market.save, { founderId, ok: false }); return null; }
+    const own = f.website ? urlKey(normaliseUrl(f.website) ?? f.website).split("/")[0] : "";
+    const sourced = (u: string) => !!u && seen.has(urlKey(u));
+    const competitors = out.competitors
+      .filter((c) => sourced(c.source) && c.name.toLowerCase() !== f.company.toLowerCase() && !(own && c.website && urlKey(c.website).startsWith(own)))
+      .slice(0, 8)
+      .map((c) => ({ name: c.name.slice(0, 60), what: c.what.slice(0, 140), where: c.where, funding: c.funding && !/^(none|n\/?a|unknown|not (found|disclosed))\b/i.test(c.funding.trim()) ? c.funding.slice(0, 80) : undefined, website: c.website ? normaliseUrl(c.website) ?? undefined : undefined, source: c.source }));
+    const deals = out.deals.filter((d) => sourced(d.source) && d.company.toLowerCase() !== f.company.toLowerCase()).slice(0, 10)
+      .map((d) => ({ company: d.company.slice(0, 60), what: d.what?.slice(0, 100) || undefined, amount: d.amount.slice(0, 40), round: d.round.slice(0, 30), date: d.date.slice(0, 20), investors: d.investors.slice(0, 3).map((x) => x.slice(0, 60)), where: d.where, atStage: d.atStage, source: d.source }));
+    const trends = out.trends.filter((t) => sourced(t.source)).slice(0, 4).map((t) => ({ line: t.line.slice(0, 200), source: t.source }));
+    // Their logos, from their own sites (a missing one shows their initials).
+    const withLogos = await Promise.all(competitors.map(async (c) => {
+      const page = c.website ? await fetchSite(c.website).catch(() => null) : null;
+      const logo = page ? logoFrom(page.text, page.url) : null;
+      return { ...c, logo: logo ?? undefined };
+    }));
+    await ctx.runMutation(internal.market.save, { founderId, ok: competitors.length + deals.length > 0, summary: out.summary.slice(0, 500), competitors: withLogos, deals, trends, searches });
+    return null;
+  },
+});
+
+function parseMarket(text: string): z.infer<typeof Market> | null {
+  const a = text.indexOf("{"), b = text.lastIndexOf("}");
+  if (a < 0 || b <= a) return null;
+  try { const r = Market.safeParse(JSON.parse(text.slice(a, b + 1))); return r.success ? r.data : null; } catch { return null; }
+}
+
+async function tidyMarket(ctx: ActionCtx, founderId: Id<"founders">, text: string): Promise<z.infer<typeof Market> | null> {
+  const started = Date.now();
+  const input = `Put this research into the JSON shape. Copy every URL exactly; drop any item without one. Change nothing else.\n\n${text.slice(0, 30000)}`;
+  try {
+    const res = await new Anthropic().messages.parse({ model: HAIKU, max_tokens: 4000, messages: [{ role: "user", content: input }], output_config: { format: zodOutputFormat(MarketStrict) } });
+    await logCall(ctx, { founderId, purpose: "kit_market_tidy", model: HAIKU, input, output: res.parsed_output ? JSON.stringify(res.parsed_output) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
+    return res.parsed_output ?? null;
+  } catch (e) {
+    await logCall(ctx, { founderId, purpose: "kit_market_tidy", model: HAIKU, input, output: "", started, error: errText(e) });
+    return null;
+  }
 }

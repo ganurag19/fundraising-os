@@ -202,6 +202,18 @@ export default defineSchema({
     uploads: v.number(), // how many files she gave us (read once, then deleted)
   }).index("by_founderId", ["founderId"]).index("by_slug", ["slug"]),
 
+  // Her market and competition (16 Oct): found on the web once per kit, every line with the page it came from.
+  // Links are kept only if the search actually returned that page.
+  markets: defineTable({
+    founderId: v.id("founders"),
+    status: v.union(v.literal("running"), v.literal("ready"), v.literal("failed")),
+    summary: v.optional(v.string()),
+    competitors: v.array(v.object({ name: v.string(), what: v.string(), where: v.union(v.literal("india"), v.literal("global")), funding: v.optional(v.string()), website: v.optional(v.string()), logo: v.optional(v.string()), source: v.string() })),
+    deals: v.array(v.object({ company: v.string(), what: v.optional(v.string()), amount: v.string(), round: v.string(), date: v.string(), investors: v.array(v.string()), where: v.union(v.literal("india"), v.literal("global")), atStage: v.boolean(), source: v.string() })),
+    trends: v.array(v.object({ line: v.string(), source: v.string() })),
+    searches: v.optional(v.number()),
+  }).index("by_founderId", ["founderId"]),
+
   // Her pitch room (16 Oct): an investor asks for access with name and email; she approves or declines.
   // viewer is a long random code kept in the investor's browser, so only that browser sees the room once approved.
   roomRequests: defineTable({

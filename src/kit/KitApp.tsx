@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -18,6 +18,9 @@ import { BrandSlide, BrandTeaser } from "./BrandDeck";
 import { SLIDE_TITLES } from "./kitTypes";
 import type { KitView } from "./kitTypes";
 import { useKitView } from "./useKitView";
+import { PrintKit } from "./PrintKit";
+import { MarketTab } from "./Market";
+import { useMarket } from "./useMarket";
 import InvLogo from "./InvLogo";
 import { DeckReview } from "./Review";
 import { COMPARE, PLANS } from "../landing/plans";
@@ -32,14 +35,13 @@ import "./kit.css";
 type Tab = "home" | "outreach" | "plan" | "review" | "deck" | "teaser" | "qa" | "market" | "dataroom" | "circle" | "profile" | "plans" | "settings";
 type Nav = [Tab, string, string, boolean];
 const RAISE: Nav[] = [["home", "Home", "◎", false], ["outreach", "Investors", "★", false], ["plan", "Game plan", "➚", false]];
-const KIT: Nav[] = [["review", "Deck review", "✓", false], ["deck", "Deck", "▭", false], ["teaser", "Teaser", "▤", false], ["qa", "Investor Q&A", "❝", true], ["market", "Market & competition", "⚔", true], ["dataroom", "Data room", "▦", true]];
+const KIT: Nav[] = [["review", "Deck review", "✓", false], ["deck", "Deck", "▭", false], ["teaser", "Teaser", "▤", false], ["qa", "Investor Q&A", "❝", true], ["market", "Market & competition", "⚔", false], ["dataroom", "Data room", "▦", true]];
 const PEOPLE: Nav[] = [["circle", "Founders circle", "✦", true], ["profile", "Pitch profile", "◐", false], ["plans", "Plans and upgrade", "◆", false]];
 const ALL: Nav[] = [...RAISE, ...KIT, ...PEOPLE, ["settings", "Settings", "⚙", false]];
 const TITLES: Record<Tab, [string, string]> = {
   home: ["Your round,", "at a glance."], outreach: ["Your investors", "and outreach."], plan: ["Your", "game plan."], review: ["Your deck,", "reviewed like an investor would."], deck: ["Your deck,", "in your brand."], teaser: ["Your", "teaser."],
   qa: ["They will ask.", "Be ready."], market: ["Know your", "market."], dataroom: ["Your", "data room."], circle: ["Founders who've", "been there."], profile: ["Your", "pitch profile."], plans: ["Pick how much help", "you want."], settings: ["Your", "settings."],
 };
-const FREE_SLIDES = 3; // cover, problem, solution open; the rest with full access
 const nowMs = () => Date.now();
 const remember = (k: string, v?: string): string | null => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { /* private mode */ } return null; };
 
@@ -123,7 +125,7 @@ export default function KitApp() {
   const navItem = ([k, label, icon, soon]: Nav) => (
     <button key={k} className={tab === k ? "on" : ""} aria-current={tab === k ? "page" : undefined} data-track={soon ? `soon_tab_kit_${k}` : undefined} onClick={() => go(k)}>
       <span className="ic" aria-hidden="true">{icon}</span><span className="lb">{label}</span>
-      {soon ? <span className="soon-tag">SOON</span> : k === "outreach" ? <span className="dot quiet">{me.matchCount}</span> : k === "deck" && !full ? <span className="ka-lock" aria-label="Partly locked">🔒</span> : null}
+      {soon ? <span className="soon-tag">SOON</span> : k === "outreach" ? <span className="dot quiet">{me.matchCount}</span> : null}
     </button>
   );
   const [h1a, h1b] = TITLES[tab];
@@ -177,20 +179,21 @@ export default function KitApp() {
               ? <><span>Your investors are here. <b>Create your deck and teaser</b> in your brand, in about 30 seconds.</span><Link className="ka-band-a" to="/build?edit=1">Create my deck →</Link></>
               : kk.requested
               ? <span>✓ Founding access requested. We'll be in touch about {me.company}'s full kit.</span>
-              : <><span>You're seeing <b>5 of {me.matchCount} investors</b> and <b>3 of 9 slides</b>.</span><button onClick={() => openUp()}>Unlock your full kit → <small>2 min · founding price</small></button></>}
+              : <><span>Free: <b>pitches to your top 5</b>, <b>20 investors named</b>, your deck and teaser as PDF. <b>{Math.max(0, me.matchCount - 5)} more</b> wait for an email and pitch.</span><button onClick={() => openUp()}>Unlock your full kit → <small>2 min · founding price</small></button></>}
           </div>
         )}
         <header className="reveal-head">
           <span className="kicker">{me.company} · {me.stage} · {me.ask}</span>
           <h1>{h1a} <span className="it">{h1b}</span></h1>
         </header>
-        {tab === "home" && <Home me={me} k={view ?? null} go={go} onUnlock={openUp} onRate={() => setRating(0)} rated={kk.rated} sent={sent} replies={replies} ready={ready} full={full} />}
+        {tab === "home" && <Home me={me} token={token} k={view ?? null} go={go} onUnlock={openUp} onRate={() => setRating(0)} rated={kk.rated} sent={sent} replies={replies} ready={ready} full={full} />}
         {tab === "outreach" && <Outreach me={me} token={token} onToast={setToast} onUnlock={() => openUp()} />}
         {tab === "plan" && <Plan me={me} go={go} />}
         {tab === "review" && <DeckReview token={token} onUnlock={() => openUp()} />}
-        {tab === "deck" && (view ? <Deck k={view} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
-        {tab === "teaser" && (view ? <TeaserTab k={view} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
-        {(tab === "qa" || tab === "market" || tab === "dataroom" || tab === "circle") && <Soon tab={tab} company={me.company} onToast={setToast} />}
+        {tab === "deck" && (view ? <Deck k={view} full={full} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
+        {tab === "teaser" && (view ? <TeaserTab k={view} full={full} /> : <Pending status={kk.status} />)}
+        {tab === "market" && <MarketTab token={token} company={me.company} sector={(me.sectors[0] ?? "your space").toLowerCase()} onUnlock={() => openUp()} />}
+        {(tab === "qa" || tab === "dataroom" || tab === "circle") && <Soon tab={tab} company={me.company} onToast={setToast} />}
         {tab === "profile" && <Profile me={me} token={token} hasKit={!!kit} onToast={setToast} />}
         {tab === "plans" && <Plans onUnlock={openUp} requested={kk.requested} />}
         {tab === "settings" && <Settings me={me} token={token} theme={theme} setTheme={setTheme} signOut={() => void signOut()} />}
@@ -208,7 +211,7 @@ function UnlockBtn({ onUnlock, plan = "raise_kit", label = "Unlock" }: { onUnloc
 }
 
 /* ---------- Home: her round at a glance, and everything still locked ---------- */
-function Home({ me, k, go, onUnlock, onRate, rated, sent, replies, ready, full }: { me: Me; k: KitView | null; go: (t: Tab) => void; onUnlock: (plan?: string) => void; onRate: () => void; rated: boolean; sent: number; replies: number; ready: number; full: boolean }) {
+function Home({ me, token, k, go, onUnlock, onRate, rated, sent, replies, ready, full }: { me: Me; token: string; k: KitView | null; go: (t: Tab) => void; onUnlock: (plan?: string) => void; onRate: () => void; rated: boolean; sent: number; replies: number; ready: number; full: boolean }) {
   const top = me.rows.filter((r) => r.rank < 5);
   const locked = me.rows.filter((r) => r.locked);
   const more = Math.max(0, me.matchCount - 5);
@@ -247,7 +250,7 @@ function Home({ me, k, go, onUnlock, onRate, rated, sent, replies, ready, full }
         <div className="kh-fomo">
           <div><b>{me.activeCount}</b><span>of your investors invested this year or last. They're writing cheques now.</span></div>
           <div><b>{Math.max(0, me.matchCount - 5)}</b><span>more investors fit {me.company} and haven't heard from you yet.</span></div>
-          <div><b>6</b><span>slides of your deck, page 2 of your teaser, and your Q&A are waiting.</span></div>
+          <div><b>{Math.max(0, me.matchCount - 5)}</b><span>emails and personal pitches open with your full kit, plus your Q&A and every slide written with you.</span></div>
         </div>
       )}
 
@@ -256,24 +259,20 @@ function Home({ me, k, go, onUnlock, onRate, rated, sent, replies, ready, full }
           <section className="kh-tile locked wide">
             <div className="kh-h"><span className="kh-ic">★</span><div><b>{more} more investors fit {me.company}</b><span>{me.leadCount} lead rounds · ranked by Fit Score, each with the reason</span></div></div>
             <div className="kh-rows">{locked.slice(0, 4).map((r) => <div key={r.rank}><Dial score={r.score} size={32} /><b>{r.displayName}</b><span>{r.city ?? "India"}</span><i aria-hidden="true">🔒</i></div>)}</div>
-            <div className="kh-f"><span>Names, emails and a personal pitch to each, with full access.</span><UnlockBtn onUnlock={onUnlock} label={`Unlock all ${me.matchCount}`} /></div>
+            <div className="kh-f"><span>The next 15 are named free in Investors. Emails and a personal pitch to each, with full access.</span><UnlockBtn onUnlock={onUnlock} label={`Unlock all ${me.matchCount}`} /></div>
           </section>
         )}
         <section className="kh-tile" onClick={() => go("deck")} role="button" tabIndex={0}>
-          <div className="kh-h"><span className="kh-ic">▭</span><div><b>Your deck, in your brand</b><span>{full ? "All 9 slides" : "3 of 9 slides open"}</span></div></div>
+          <div className="kh-h"><span className="kh-ic">▭</span><div><b>Your deck, in your brand</b><span>9 slides · download as PDF</span></div></div>
           {k && <div className="kh-thumb"><BrandSlide k={k} i={0} /></div>}
-          <div className="kh-f"><span>Open your deck</span>{!full && <UnlockBtn onUnlock={onUnlock} label="Unlock 6 more slides" />}</div>
+          <div className="kh-f"><span>Open your deck</span><span className="kb-free">Free</span></div>
         </section>
         <section className="kh-tile" onClick={() => go("teaser")} role="button" tabIndex={0}>
-          <div className="kh-h"><span className="kh-ic">▤</span><div><b>Two-page teaser</b><span>{full ? "Both pages" : "Page 1 of 2 open"}</span></div></div>
+          <div className="kh-h"><span className="kh-ic">▤</span><div><b>Two-page teaser</b><span>Both pages · download as PDF</span></div></div>
           {k && <div className="kh-thumb tall"><BrandTeaser k={k} page={1} /></div>}
-          <div className="kh-f"><span>Open your teaser</span>{!full && <UnlockBtn onUnlock={onUnlock} label="Unlock page 2" />}</div>
+          <div className="kh-f"><span>Open your teaser</span><span className="kb-free">Free</span></div>
         </section>
-        <section className="kh-tile locked">
-          <div className="kh-h"><span className="kh-ic">⚔</span><div><b>Market & competition</b><span>Who else is building in {sector}, who funds them, your market size with sources</span></div></div>
-          <div className="kh-blur"><span>Competitor table · positioning map · who funds your space · your answer</span></div>
-          <div className="kh-f"><span className="soon-tag">SOON</span><UnlockBtn onUnlock={onUnlock} label="Get it first" /></div>
-        </section>
+        <MarketTile token={token} sector={sector} go={go} />
         <section className="kh-tile locked">
           <div className="kh-h"><span className="kh-ic">❝</span><div><b>20 questions investors will ask {me.company}</b><span>Answers drafted from your facts, gaps flagged before your first call</span></div></div>
           <div className="kh-blur"><span>"What's your burn and runway?" · "Why now?" · "Who else is doing this?"</span></div>
@@ -309,6 +308,25 @@ function Home({ me, k, go, onUnlock, onRate, rated, sent, replies, ready, full }
 
       {!full && <><h2 className="dash-h">Pick how much help you want</h2><Plans onUnlock={onUnlock} requested={false} compact /></>}
     </div>
+  );
+}
+
+/** Home: a peek at her market research (it starts by itself the first time). */
+function MarketTile({ token, sector, go }: { token: string; sector: string; go: (t: Tab) => void }) {
+  const { m } = useMarket(token);
+  const ready = m?.status === "ready";
+  const deal = m?.deals[0];
+  return (
+    <section className="kh-tile" onClick={() => go("market")} role="button" tabIndex={0}>
+      <div className="kh-h"><span className="kh-ic">⚔</span><div><b>Market & competition</b><span>{ready ? `Who else is building in ${sector}, and the rounds they raised` : `Searching the web for who else is building in ${sector}…`}</span></div></div>
+      {ready ? (
+        <div className="kh-mkt">
+          <div className="kh-mkt-logos">{m.competitors.slice(0, 3).map((c) => <span key={c.name}><InvLogo src={c.logo ?? null} name={c.name} kind="company" size={30} /><em>{c.name}</em></span>)}</div>
+          {deal && <p><b>{deal.company}</b> raised {deal.amount} ({deal.round}, {deal.date})</p>}
+        </div>
+      ) : <div className="kh-blur"><span>Competitors · recent rounds · who led them · sources</span></div>}
+      <div className="kh-f"><span>{ready ? "Open your market" : "About a minute"}</span><span className="kb-free">Free</span></div>
+    </section>
   );
 }
 
@@ -367,30 +385,33 @@ function Plan({ me, go }: { me: Me; go: (t: Tab) => void }) {
   );
 }
 
-/* ---------- Deck: slide viewer, part open ---------- */
-function Deck({ k, onUnlock }: { k: KitView; onUnlock: () => void }) {
+/* ---------- Deck: every slide open (16 Oct); the ones we couldn't write from her facts are templates to fill ---------- */
+const isTemplate = (s: { key: string; headline: string; points: string[] }) => !s.headline && !s.points.length && s.key !== "cover" && s.key !== "team";
+function Deck({ k, full, onUnlock }: { k: KitView; full: boolean; onUnlock: () => void }) {
   const [cur, setCur] = useState(0);
-  const locked = cur >= FREE_SLIDES;
+  const [printing, setPrinting] = useState(false);
+  const done = useCallback(() => setPrinting(false), []);
+  const written = k.slides.filter((s) => !isTemplate(s)).length;
   return (
     <div className="kz">
-      <div className="kz-main">
-        <div className={`kz-slide${locked ? " locked" : ""}`}><BrandSlide k={k} i={cur} /></div>
-        {locked && <Lock line={`Slides ${FREE_SLIDES + 1}–${k.slides.length} open with full access.`} onUnlock={onUnlock} />}
-      </div>
-      <div className="kz-bar"><span>{cur + 1} / {k.slides.length} · {SLIDE_TITLES[k.slides[cur]?.key]}</span><div><button className="btn ghost sm" disabled={cur === 0} onClick={() => setCur((c) => c - 1)}>←</button><button className="btn ghost sm" disabled={cur === k.slides.length - 1} onClick={() => setCur((c) => c + 1)}>→</button></div></div>
-      <div className="kz-thumbs">{k.slides.map((s, i) => <button key={s.key} className={`${i === cur ? "on" : ""}${i >= FREE_SLIDES ? " lk" : ""}`} onClick={() => setCur(i)} aria-label={`Slide ${i + 1}: ${SLIDE_TITLES[s.key]}`}><BrandSlide k={k} i={i} /><span>{i >= FREE_SLIDES ? "🔒 " : ""}{SLIDE_TITLES[s.key]}</span></button>)}</div>
-      <div className="kz-meta"><span>✓ In your colours{k.brand.font ? ` and ${k.brand.font}` : ""}</span><span>✓ Only your numbers</span><button className="text-link" onClick={onUnlock}>Download PowerPoint or PDF 🔒</button></div>
+      <div className="kz-top"><span><b>{written} slides written</b> from your facts · {k.slides.length - written} templates for your numbers</span><button className="btn primary sm" onClick={() => setPrinting(true)} disabled={printing}>{printing ? "Preparing…" : "⤓ Download PDF"}</button></div>
+      <div className="kz-main"><div className="kz-slide"><BrandSlide k={k} i={cur} /></div></div>
+      <div className="kz-bar"><span>{cur + 1} / {k.slides.length} · {SLIDE_TITLES[k.slides[cur]?.key]}{isTemplate(k.slides[cur]) ? " · template" : ""}</span><div><button className="btn ghost sm" disabled={cur === 0} onClick={() => setCur((c) => c - 1)}>←</button><button className="btn ghost sm" disabled={cur === k.slides.length - 1} onClick={() => setCur((c) => c + 1)}>→</button></div></div>
+      <div className="kz-thumbs">{k.slides.map((s, i) => <button key={s.key} className={`${i === cur ? "on" : ""}${isTemplate(s) ? " tp" : ""}`} onClick={() => setCur(i)} aria-label={`Slide ${i + 1}: ${SLIDE_TITLES[s.key]}`}><BrandSlide k={k} i={i} /><span>{isTemplate(s) ? "✎ " : ""}{SLIDE_TITLES[s.key]}</span></button>)}</div>
+      <div className="kz-meta"><span>✓ In your colours{k.brand.font ? ` and ${k.brand.font}` : ""}</span><span>✓ Only your numbers</span>{!full && <button className="text-link" onClick={onUnlock}>We write every slide with you, plus PowerPoint 🔒</button>}</div>
+      {printing && <PrintKit k={k} what="deck" made={!full} onDone={done} />}
     </div>
   );
 }
-function Lock({ line, onUnlock }: { line: string; onUnlock: () => void }) {
-  return <div className="kz-lock"><b>🔒 Part of your full kit</b><span>{line}</span><button className="btn primary sm" onClick={onUnlock}>Unlock full kit</button></div>;
-}
-function TeaserTab({ k, onUnlock }: { k: KitView; onUnlock: () => void }) {
+function TeaserTab({ k, full }: { k: KitView; full: boolean }) {
+  const [printing, setPrinting] = useState(false);
+  const done = useCallback(() => setPrinting(false), []);
   return (
     <div className="kt">
+      <div className="kz-top"><span><b>Your two-page teaser</b> · send it before the deck</span><button className="btn primary sm" onClick={() => setPrinting(true)} disabled={printing}>{printing ? "Preparing…" : "⤓ Download PDF"}</button></div>
       <div className="kt-page"><BrandTeaser k={k} page={1} /></div>
-      <div className="kt-page locked"><BrandTeaser k={k} page={2} /><Lock line="Page 2: market, model, competition, team and the ask." onUnlock={onUnlock} /></div>
+      <div className="kt-page"><BrandTeaser k={k} page={2} /></div>
+      {printing && <PrintKit k={k} what="teaser" made={!full} onDone={done} />}
     </div>
   );
 }

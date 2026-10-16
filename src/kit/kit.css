@@ -656,3 +656,112 @@
 .kb-rvmini{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid rgba(123,92,255,.3);border-radius:18px;padding:14px}
 .kb-rvmini>div:last-child{display:flex;flex-direction:column;gap:2px} .kb-rvmini b{font-size:16px} .kb-rvmini span:not(.kb-kicker){font-size:13.5px;color:var(--fg2)} .kb-rvmini em{font-style:normal;font-size:12.5px;color:var(--blue-ink);font-weight:600}
 .kb-rvmini .rv-score{width:76px;height:76px;padding-top:22px} .kb-rvmini .rv-score b{font-size:24px}
+
+/* ---------- Deck v2 (16 Oct): icon cards, traction chart, templates to fill ---------- */
+.bd-pill{font-style:normal;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:5px 10px;margin-right:8px}
+.bd-cover h1{font-size:96px}
+.bd-glow{position:absolute;left:-120px;bottom:-160px;width:520px;height:360px;border-radius:50%;background:radial-gradient(closest-side,var(--ba),transparent);opacity:.35;z-index:0;pointer-events:none}
+.bd-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;flex:1;align-content:start}
+.bd-cards>div{background:var(--bt);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:19px;line-height:1.35;min-height:170px}
+.bd-cards>div>b{font-size:15px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--bm)}
+.bd-cards.pain>div{background:#F6F5F8}
+.bd-ic{width:46px;height:46px;border-radius:14px;background:var(--bp);color:var(--bi);display:grid;place-items:center}
+.bd-ic svg{width:24px;height:24px}
+.bd-cards.pain .bd-ic{background:var(--bd);color:#fff}
+.bd-split .bd-cards{grid-template-columns:minmax(0,1fr)} .bd-split .bd-cards>div{min-height:0;flex-direction:row;align-items:center;padding:14px 16px}
+.bd-trac{flex:1;display:grid;grid-template-columns:1.1fr 1fr;gap:18px;align-items:stretch}
+.bd-trac-l{display:flex;flex-direction:column;gap:14px}
+.bd-trac-l .bd-kpis{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr))}
+.bd-chart{border:2px dashed var(--bs);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.bd-chart em{font:700 12px/1 var(--mono);font-style:normal;letter-spacing:.08em;text-transform:uppercase;color:var(--bm)}
+.bd-chart span{font-size:14px;color:var(--bm)}
+.bd-bars{flex:1;display:flex;align-items:flex-end;gap:12px;border-bottom:2px solid var(--bs);padding:0 4px}
+.bd-bars i{flex:1;border-radius:8px 8px 0 0;background:linear-gradient(180deg,var(--bp),var(--bs));opacity:.35}
+.bd-tpl{position:absolute;right:44px;bottom:26px;font:700 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bp);background:var(--bt);border:1px dashed var(--bp);border-radius:999px;padding:7px 12px}
+.bd-blank{display:inline-block;height:.9em;border-bottom:2px dashed var(--bs);vertical-align:-2px;margin:0 3px}
+.ph,.bd .ph{opacity:.9}
+.bd-cards>div.ph,.bd-team>div.ph{background:transparent;border:2px dashed var(--bs)}
+.bd-av.ph{background:transparent;border:2px dashed var(--bs);color:var(--bm)}
+.bd-mkt-list b.ph{color:var(--bm);font-size:24px}
+.bd-rings.ghost circle{fill:transparent;stroke-dasharray:6 6} .bd-rings.ghost circle:nth-child(3){fill:var(--bt)}
+.bd-rivals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.bd-rivals span{display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;padding:8px 10px;min-width:0}
+.bd-rivals img,.bd-rivals i{width:28px;height:28px;border-radius:8px;object-fit:contain;flex:none;background:#fff}
+.bd-rivals i{display:grid;place-items:center;font:800 11px/1 var(--bf);font-style:normal;background:var(--bs);color:var(--bd)}
+.bd-rivals b{font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-rivals small{font:700 10px/1 var(--mono);text-transform:uppercase;color:var(--bm)}
+.bd-uof{display:flex;flex-direction:column;gap:12px}
+.bd-uof>div{display:grid;grid-template-columns:150px 1fr 60px;gap:12px;align-items:center;font-size:16px}
+.bd-uof i{height:12px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden} .bd-uof i b{display:block;height:100%;width:40%;background:rgba(255,255,255,.45)}
+.bd-uof em{font-style:normal} .bd-uof .bd-blank{border-color:rgba(255,255,255,.5)}
+.bd-uof-n{font-size:14px;opacity:.8}
+.bd-askslide .bd-tpl{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.5)}
+
+/* PDF download: the pages print at full size, nothing else on the page */
+.kp-print{position:fixed;left:-30000px;top:0;pointer-events:none}
+.kp-print .kp-page{position:relative}
+.kp-made{position:absolute;right:14px;bottom:8px;font:600 9px/1 var(--mono);color:rgba(120,120,140,.85);z-index:5}
+@media print{
+  body>*:not(.kp-print){display:none!important}
+  .kp-print{position:static;left:auto}
+  .kp-page{break-after:page;page-break-after:always;overflow:hidden}
+  .kp-page:last-child{break-after:auto;page-break-after:auto}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.kz-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:14px;color:var(--fg2)}
+.kz-top b{color:var(--fg)}
+.kz-thumbs button.tp span{color:var(--muted)}
+.kt>.kz-top{grid-column:1/-1}
+.ko-li.locked.named{align-items:center;gap:12px}
+
+/* ---------- Market & competition (16 Oct) ---------- */
+.km{display:flex;flex-direction:column;gap:18px}
+.km-sum{background:linear-gradient(135deg,rgba(123,92,255,.10),rgba(192,79,216,.07));border:1px solid rgba(123,92,255,.25);border-radius:18px;padding:16px 18px}
+.km-sum p{margin:6px 0 0;font-size:16px;line-height:1.55;color:var(--fg)}
+.km-sec{display:flex;flex-direction:column;gap:10px}
+.km-sec>header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.km-sec h3{margin:0;font-size:18px}
+.km-comps{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.km-comp{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px;text-align:left;font:inherit;color:inherit}
+.km-comp-h{display:flex;gap:10px;align-items:center} .km-comp-h>div{display:flex;flex-direction:column;gap:3px;min-width:0} .km-comp-h b{font-size:16px}
+.km-comp-h img,.km-comp-h svg{border-radius:10px;flex:none;object-fit:contain;background:#fff}
+.km-comp p{margin:0;font-size:14px;line-height:1.45;color:var(--fg2)}
+.km-fund{font-size:13px;font-weight:600;color:var(--fg)}
+.km-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;font-size:12.5px} .km-links a{color:var(--fg2)}
+.km-src{font:600 11.5px/1.2 var(--mono);color:var(--violet,#7B5CFF);text-decoration:none;white-space:nowrap}
+.km-where{display:inline-block;font:700 10px/1 var(--mono);text-transform:uppercase;letter-spacing:.05em;border-radius:6px;padding:3px 6px;background:var(--card2);color:var(--fg2);vertical-align:2px}
+.km-where.india{background:rgba(255,153,51,.14);color:#B45F06} .km-where.global{background:rgba(59,130,246,.12);color:#1D4ED8}
+.km-more{cursor:pointer;border-style:dashed;justify-content:center;align-items:flex-start;background:linear-gradient(90deg,rgba(123,92,255,.08),rgba(192,79,216,.05))}
+.km-more span{font-size:13px;color:var(--fg2)} .km-more em{font-style:normal;font-weight:700;color:#7B5CFF;font-size:13px}
+.km-deals{display:flex;flex-direction:column;gap:8px}
+.km-deal{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.km-deal.stage{border-color:rgba(123,92,255,.45);box-shadow:0 0 0 1px rgba(123,92,255,.15)}
+.km-deal-a{display:flex;flex-direction:column;gap:2px} .km-deal-a b{font-size:18px;letter-spacing:-.01em} .km-deal-a span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+.km-deal-m{display:flex;flex-direction:column;gap:3px;min-width:0} .km-deal-m b{font-size:15px} .km-deal-m span{font-size:13px;color:var(--fg2)}
+.km-inv{color:var(--muted)!important}
+.km-comp-tag{display:inline-block;margin-left:6px;font:700 10px/1 var(--mono);text-transform:uppercase;background:#7B5CFF;color:#fff;border-radius:6px;padding:3px 6px;vertical-align:2px}
+.km-ours{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.km-ours>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.km-ours b{font-size:14.5px} .km-ours span{font-size:12px;color:var(--muted)} .km-ours em{font-style:normal;font-size:13px;color:var(--fg2)}
+.km-trends{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:14.5px;line-height:1.5}
+.km-run{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;padding:30px 10px}
+.km-run h3{margin:6px 0 0;font-size:18px} .km-run p{margin:0;max-width:46ch;color:var(--fg2);font-size:14px;line-height:1.5}
+.km-radar{position:relative;width:90px;height:90px}
+.km-radar i{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(123,92,255,.5);animation:kmPing 2.4s ease-out infinite}
+.km-radar i:nth-child(2){animation-delay:.8s} .km-radar i:nth-child(3){animation-delay:1.6s}
+@keyframes kmPing{from{transform:scale(.2);opacity:1}to{transform:scale(1);opacity:0}}
+@media (max-width:560px){.km-deal{grid-template-columns:84px minmax(0,1fr)} .km-deal .km-src{grid-column:2} .km-deal-a b{font-size:16px}}
+.kh-mkt{display:flex;flex-direction:column;gap:8px} .kh-mkt p{margin:0;font-size:13px;color:var(--fg2)}
+.kh-mkt-logos{display:flex;gap:10px;flex-wrap:wrap} .kh-mkt-logos>span{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.kh-mkt-logos em{font-style:normal;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kh-mkt-logos img{border-radius:8px;background:#fff;object-fit:contain}
+:root[data-theme="dark"] .ka .km-where.india{color:#FDBA74} :root[data-theme="dark"] .ka .km-where.global{color:#93C5FD}
+.km-deal-a b{overflow-wrap:anywhere} .km-comp-h .km-where{align-self:flex-start}
+@media (max-width:560px){.km-deal-a b{font-size:15px}}
+.bd-bars i{background:transparent;border:2px dashed var(--bs);border-bottom:0;opacity:1}
+.bd-trac-l .bd-kpis div{padding:16px 18px} .bd-trac-l .bd-kpis b{font-size:38px}
+.bd:has(.bd-tpl){padding-bottom:62px}
+.bd-rivals{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.bd-rivals span{padding:9px 10px;gap:9px}
+.bd-rivals b{white-space:normal;font-size:14.5px;line-height:1.2;overflow:visible}
+.bd-vs{grid-template-columns:1.25fr 1fr}

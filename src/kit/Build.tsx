@@ -554,7 +554,7 @@ function Reveal({ token }: { token: string }) {
   }, [me]);
   if (!me) return <div className="spinner" />;
   const picks = me.rows.filter((r) => r.rank < 5 && r.draft);
-  const peek = [0, 1, 2]; // the 3 slides open on the free kit
+  const peek = [0, 1, 2, 3]; // the slides written from her facts
   const go = () => { setBusy(true); if (isAuthenticated) navigate("/app"); else void signIn("google", { redirectTo: "/app" }); };
   const cta = (
     <div className="kb-cta" ref={ctaRef}>
@@ -589,7 +589,7 @@ function Reveal({ token }: { token: string }) {
           <div className="kb-slide"><BrandSlide k={view} i={peek[cur]} /></div>
           <div className="kb-thumbs">
             {peek.map((i, j) => <button key={i} className={j === cur ? "on" : ""} onClick={() => setCur(j)} aria-label={SLIDE_TITLES[view.slides[i]?.key]}><BrandSlide k={view} i={i} /></button>)}
-            <div className="kb-more-slides">+6 more slides in your full kit</div>
+            <div className="kb-more-slides">+5 more in your dashboard · download as PDF</div>
           </div>
         </div>
       ) : <div className="kb-note">Your deck is still being written. It will show up here, and in your dashboard.</div>}
