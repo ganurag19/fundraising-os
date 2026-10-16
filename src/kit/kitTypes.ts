@@ -2,10 +2,10 @@ import type { Brand } from "./brand";
 
 // Shapes and names shared by the kit screens.
 
-export type Slide = { key: string; headline: string; points: string[]; metrics: { value: string; label: string }[] };
+export type Slide = { key: string; headline: string; points: string[]; metrics: { value: string; label: string }[]; sample?: boolean }; // sample: content we laid in until she gives us hers
 export type Teaser = { summary: string; highlights: string[] };
 export type KitView = {
-  company: string; founder: string; stage: string; ask: string; website: string | null;
+  company: string; founder: string; founderLine?: string; stage: string; ask: string; website: string | null;
   brand: Brand; slides: Slide[]; teaser: Teaser | null;
   rivals?: { name: string; logo: string | null; where: string }[]; // from her market research, for the competition slide
   facts: { problem?: string; product?: string; forWho?: string; customers?: string; market?: string; businessModel?: string; competitors?: string; useOfFunds?: string; team: { name: string; role: string; line: string }[] };

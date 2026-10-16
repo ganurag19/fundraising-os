@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { KitView } from "./kitTypes";
+import { withSamples } from "./deckSample";
 
 const ORDER = ["cover", "problem", "solution", "traction", "market", "model", "competition", "team", "ask"];
 
@@ -14,8 +15,8 @@ export function useKitView(token: string): KitView | null | undefined {
     if (me === undefined || kit === undefined) return undefined;
     if (!me || !kit || !kit.deck) return null;
     // The first build writes 5 slides; team comes from her facts; the rest are templates for her numbers.
-    const slides = ORDER.map((key) => kit.deck?.find((x) => x.key === key) ?? { key, headline: "", points: [], metrics: [] });
-    return { company: me.company, founder: me.name, stage: me.stage, ask: me.ask, website: me.website, brand: kit.brand, slides, teaser: kit.teaser, facts: kit.facts,
+    const slides = withSamples(ORDER.map((key) => kit.deck?.find((x) => x.key === key) ?? { key, headline: "", points: [], metrics: [] }), { company: me.company, facts: kit.facts });
+    return { company: me.company, founder: me.name, founderLine: me.profile.founderLine || undefined, stage: me.stage, ask: me.ask, website: me.website, brand: kit.brand, slides, teaser: kit.teaser, facts: kit.facts,
       rivals: market?.competitors.map((c) => ({ name: c.name, logo: c.logo ?? null, where: c.where })) };
   }, [me, kit, market]);
 }

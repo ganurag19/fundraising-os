@@ -24,3 +24,6 @@ docs/sell/
 docs/ads/
 # eval outputs hold real investors' facts and founders' details
 evals/runs/
+
+# Third-party pitch decks for design study (copyrighted; never commit)
+docs/decks/

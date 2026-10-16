@@ -4,7 +4,7 @@ import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
 import { LogoMark, Wordmark } from "../components/Brand";
-import { Dial, Face } from "../components/Art";
+import { Face } from "../components/Art";
 import { FeedbackButton } from "../components/Feedback";
 import { WantButton } from "../components/Investor";
 import { copyOut } from "../lib/send";
@@ -19,13 +19,14 @@ import { SLIDE_TITLES } from "./kitTypes";
 import type { KitView } from "./kitTypes";
 import { useKitView } from "./useKitView";
 import { PrintKit } from "./PrintKit";
+import { missingFacts } from "./deckSample";
 import { MarketTab } from "./Market";
 import { useMarket } from "./useMarket";
 import InvLogo from "./InvLogo";
 import { DeckReview } from "./Review";
 import { COMPARE, PLANS } from "../landing/plans";
 import { Outreach } from "./Outreach";
-import { GlassPreview, QuickRate, RateSheet, UpgradeSheet } from "./Upgrade";
+import { QuickRate, RateSheet, UpgradeSheet } from "./Upgrade";
 import "./kit.css";
 
 // /app: the Raise Kit dashboard, after Google sign-in. Home (her round at a glance, with what's still locked), Outreach,
@@ -190,9 +191,9 @@ export default function KitApp() {
         {tab === "outreach" && <Outreach me={me} token={token} onToast={setToast} onUnlock={() => openUp()} />}
         {tab === "plan" && <Plan me={me} go={go} />}
         {tab === "review" && <DeckReview token={token} onUnlock={() => openUp()} />}
-        {tab === "deck" && (view ? <Deck k={view} full={full} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
+        {tab === "deck" && (view ? <Deck k={view} full={full} /> : <Pending status={kk.status} />)}
         {tab === "teaser" && (view ? <TeaserTab k={view} full={full} /> : <Pending status={kk.status} />)}
-        {tab === "market" && <MarketTab token={token} company={me.company} sector={(me.sectors[0] ?? "your space").toLowerCase()} onUnlock={() => openUp()} />}
+        {tab === "market" && <MarketTab token={token} company={me.company} sector={sectorWord(me.sectors[0])} onUnlock={() => openUp()} />}
         {(tab === "qa" || tab === "dataroom" || tab === "circle") && <Soon tab={tab} company={me.company} onToast={setToast} />}
         {tab === "profile" && <Profile me={me} token={token} hasKit={!!kit} onToast={setToast} />}
         {tab === "plans" && <Plans onUnlock={openUp} requested={kk.requested} />}
@@ -210,122 +211,92 @@ function UnlockBtn({ onUnlock, plan = "raise_kit", label = "Unlock" }: { onUnloc
   return <button className="btn primary sm" onClick={(e) => { e.stopPropagation(); onUnlock(plan); }}>🔒 {label}</button>;
 }
 
-/* ---------- Home: her round at a glance, and everything still locked ---------- */
+/* ---------- Home: her round at a glance (17 Oct: calmer, fewer and smaller blocks) ---------- */
+const sectorWord = (x?: string) => (!x ? "your space" : x.length <= 4 ? x : x.toLowerCase());
 function Home({ me, token, k, go, onUnlock, onRate, rated, sent, replies, ready, full }: { me: Me; token: string; k: KitView | null; go: (t: Tab) => void; onUnlock: (plan?: string) => void; onRate: () => void; rated: boolean; sent: number; replies: number; ready: number; full: boolean }) {
   const top = me.rows.filter((r) => r.rank < 5);
-  const locked = me.rows.filter((r) => r.locked);
+  const named = me.rows.filter((r) => r.locked && r.rank < 20);
   const more = Math.max(0, me.matchCount - 5);
   const topSent = top.filter((r) => r.status !== "new").length;
-  const sector = (me.sectors[0] ?? "your space").toLowerCase();
+  const sector = sectorWord(me.sectors[0]);
   return (
-    <div className="kh">
-      <div className="stats four">
-        <div><b>{me.matchCount}</b><span>investors fit {me.company}</span></div>
+    <div className="kh calm">
+      <div className="kh-strip">
+        <div><b>{me.matchCount}</b><span>investors fit</span></div>
         <div><b>{me.activeCount}</b><span>invested recently</span></div>
         <div><b>{ready}</b><span>pitches ready</span></div>
         <div><b>{sent}</b><span>sent · {replies} replies</span></div>
       </div>
 
       <section className="kh-next">
-        <div className="kh-next-t"><span className="kb-kicker">Do this next</span><h3>{topSent < top.length ? `Send your top ${top.length} pitches` : "Your top 5 are out. Unlock the rest of your list."}</h3><p>{topSent < top.length ? "Each one opens on something that investor actually did. Send 3 to 5 a day; follow-ups come on day 3 and day 10." : `${more} more investors fit ${me.company}, each waiting for a pitch.`}</p></div>
-        <div className="kh-five">{top.map((r) => <span key={r.rank} className={r.status !== "new" ? "sent" : ""} title={r.displayName ?? ""}><InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={38} /><em>{r.status !== "new" ? "✓ Sent" : (r.displayName ?? "").split(" ")[0]}</em><Dial score={r.score} size={30} /></span>)}</div>
-        <div className="kh-next-a">{topSent < top.length ? <button className="btn primary" onClick={() => go("outreach")}>Open my top 5 →</button> : <UnlockBtn onUnlock={onUnlock} label={`Unlock all ${me.matchCount}`} />}<span className="kb-dim">{topSent}/{top.length} sent</span></div>
+        <div className="kh-next-t"><span className="kb-kicker">Do this next</span><h3>{topSent < top.length ? `Send your top ${top.length} pitches` : "Your top 5 are out. Unlock the rest of your list."}</h3><p>{topSent < top.length ? "Each opens on something that investor actually did. Send 3 to 5 a day." : `${more} more investors fit ${me.company}.`}</p></div>
+        <div className="kh-five">{top.map((r) => <span key={r.rank} className={r.status !== "new" ? "sent" : ""} title={r.displayName ?? ""}><InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={34} /><em>{r.status !== "new" ? "✓ Sent" : (r.displayName ?? "").split(" ")[0]}</em></span>)}</div>
+        <div className="kh-next-a">{topSent < top.length ? <button className="btn primary sm" onClick={() => go("outreach")}>Open my top 5 →</button> : <UnlockBtn onUnlock={onUnlock} label={`Unlock all ${me.matchCount}`} />}<span className="kb-dim">{topSent}/{top.length} sent</span></div>
       </section>
 
-      <button className="kh-review" onClick={() => go("review")}>
-        <span className="kh-review-ic" aria-hidden="true">✓</span>
-        <span><b>Already have a deck? Get it reviewed like an investor would.</b><em>Readiness score, raise now or build traction first, slide-by-slide fixes, and your thesis stress-tested. About 30 seconds.</em></span>
-        <span className="kh-rate-go">Review my deck →</span>
-      </button>
-
-      <Interests />
-
-      <button className={`kh-rate${rated ? " done" : ""}`} onClick={onRate}>
-        <span className="kh-rate-ic" aria-hidden="true">★</span>
-        <span><b>{rated ? "Thanks for your feedback" : "Rate your kit"}</b><em>{rated ? "Add more any time; we read every answer." : "60 seconds. Tell us what works and what to fix."}</em></span>
-        <span className="kh-rate-go">{rated ? "Add more →" : "Rate it →"}</span>
-      </button>
-
-      {!full && (
-        <div className="kh-fomo">
-          <div><b>{me.activeCount}</b><span>of your investors invested this year or last. They're writing cheques now.</span></div>
-          <div><b>{Math.max(0, me.matchCount - 5)}</b><span>more investors fit {me.company} and haven't heard from you yet.</span></div>
-          <div><b>{Math.max(0, me.matchCount - 5)}</b><span>emails and personal pitches open with your full kit, plus your Q&A and every slide written with you.</span></div>
-        </div>
-      )}
-
-      <div className="kh-grid">
-        {!full && more > 0 && (
-          <section className="kh-tile locked wide">
-            <div className="kh-h"><span className="kh-ic">★</span><div><b>{more} more investors fit {me.company}</b><span>{me.leadCount} lead rounds · ranked by Fit Score, each with the reason</span></div></div>
-            <div className="kh-rows">{locked.slice(0, 4).map((r) => <div key={r.rank}><Dial score={r.score} size={32} /><b>{r.displayName}</b><span>{r.city ?? "India"}</span><i aria-hidden="true">🔒</i></div>)}</div>
-            <div className="kh-f"><span>The next 15 are named free in Investors. Emails and a personal pitch to each, with full access.</span><UnlockBtn onUnlock={onUnlock} label={`Unlock all ${me.matchCount}`} /></div>
-          </section>
-        )}
-        <section className="kh-tile" onClick={() => go("deck")} role="button" tabIndex={0}>
-          <div className="kh-h"><span className="kh-ic">▭</span><div><b>Your deck, in your brand</b><span>9 slides · download as PDF</span></div></div>
+      <h2 className="kh-sec">Your kit</h2>
+      <div className="kh-kit">
+        <section className="kh-card" onClick={() => go("deck")} role="button" tabIndex={0}>
           {k && <div className="kh-thumb"><BrandSlide k={k} i={0} /></div>}
-          <div className="kh-f"><span>Open your deck</span><span className="kb-free">Free</span></div>
+          <div className="kh-card-b"><div><b>Investor deck</b><span>9 slides in your brand</span></div>{k && <Downloads k={k} full={full} compact />}</div>
         </section>
-        <section className="kh-tile" onClick={() => go("teaser")} role="button" tabIndex={0}>
-          <div className="kh-h"><span className="kh-ic">▤</span><div><b>Two-page teaser</b><span>Both pages · download as PDF</span></div></div>
-          {k && <div className="kh-thumb tall"><BrandTeaser k={k} page={1} /></div>}
-          <div className="kh-f"><span>Open your teaser</span><span className="kb-free">Free</span></div>
+        <section className="kh-card" onClick={() => go("teaser")} role="button" tabIndex={0}>
+          {k && <div className="kh-thumb crop"><BrandTeaser k={k} page={1} /></div>}
+          <div className="kh-card-b"><div><b>Two-page teaser</b><span>Send it before the deck</span></div>{k && <Downloads k={k} full={full} what="teaser" compact />}</div>
         </section>
         <MarketTile token={token} sector={sector} go={go} />
-        <section className="kh-tile locked">
-          <div className="kh-h"><span className="kh-ic">❝</span><div><b>20 questions investors will ask {me.company}</b><span>Answers drafted from your facts, gaps flagged before your first call</span></div></div>
-          <div className="kh-blur"><span>"What's your burn and runway?" · "Why now?" · "Who else is doing this?"</span></div>
-          <div className="kh-f"><span className="soon-tag">SOON</span><UnlockBtn onUnlock={onUnlock} label="Get it first" /></div>
-        </section>
-
-        <section className="kh-tile locked">
-          <div className="kh-h"><span className="kh-ic">▦</span><div><b>Data room</b><span>The checklist investors expect at {me.stage.toLowerCase()}, with one private link</span></div></div>
-          <div className="kh-blur"><span>0 of 13 ready · cap table · financials · incorporation</span></div>
-          <div className="kh-f"><span className="soon-tag">SOON</span><UnlockBtn onUnlock={onUnlock} label="Get it first" /></div>
-        </section>
-        <section className="kh-tile locked">
-          <div className="kh-h"><span className="kh-ic">✦</span><div><b>Founders circle</b><span>Founders who closed their first round, in your corner: honest feedback, warm doors</span></div></div>
-          <div className="kh-blur"><span>Deck review · mock investor Q&A · warm connects</span></div>
-          <div className="kh-f"><span className="soon-tag">Advisors plan</span><UnlockBtn onUnlock={onUnlock} plan="raise_kit_advisors" label="Request a seat" /></div>
+        <section className="kh-card kh-inv" onClick={() => go("outreach")} role="button" tabIndex={0}>
+          <div className="kh-card-h"><b>Your next {named.length} investors</b><span>Named free, with Fit Score and reason</span></div>
+          <div className="kh-inv-rows">{named.slice(0, 3).map((r) => <div key={r.rank}><InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={26} /><b>{r.displayName}</b><i className="kh-score">{r.score}</i></div>)}</div>
+          <div className="kh-card-f"><span>{more > named.length ? `+${more - named.length} more with full access` : "Open your list"}</span><em>Open →</em></div>
         </section>
       </div>
 
-      <GlassPreview
-        badge="Live · Pitch profile (beta)"
-        title={<>See who opened <em>your pitch.</em></>}
-        sub={`One private link for ${me.company}. Each investor gets their own link and asks for access; you approve. Then you see every view, slide by slide, and who's warm.`}
-        stats={[["👁", "128", "Views"], ["◎", "34", "Investors"], ["▭", "19", "Deck opens"], ["✓", "6", "Asked to meet"]]}
-        rows={[
-          { name: "Verdant Arc Capital", meta: "4 views · 2 days ago", tags: ["Opened deck", "Asked to meet"] },
-          { name: "Northlight Seed", meta: "Read 6 of 9 slides, twice", tags: ["Warm"] },
-          { name: "Kestrel Ridge Angels", meta: "Asked for access · today", tags: [], quiet: "Approve · Decline" },
-        ]}
-        note="Example numbers and made-up investors, to show how it looks once investors open your room."
-        cta="Open my pitch room →"
-        onCta={() => go("profile")}
-      />
+      <button className="kh-slim" onClick={() => go("review")}>
+        <span className="kh-slim-ic" aria-hidden="true">✓</span>
+        <span><b>Get your own deck reviewed</b><em>Score, raise-now verdict and every fix, free</em></span>
+        <span className="kh-slim-go">Review →</span>
+      </button>
+      <button className="kh-slim" onClick={() => go("profile")}>
+        <span className="kh-slim-ic" aria-hidden="true">◐</span>
+        <span><b>Your private pitch room</b><em>One link for your deck; see who opened it</em></span>
+        <span className="kh-slim-go">Open →</span>
+      </button>
 
-      {!full && <><h2 className="dash-h">Pick how much help you want</h2><Plans onUnlock={onUnlock} requested={false} compact /></>}
+      <h2 className="kh-sec">Coming soon</h2>
+      <div className="kh-soon">
+        {[["❝", "Investor Q&A", "20 questions, answers drafted", "raise_kit"], ["▦", "Data room", `Checklist for ${me.stage.toLowerCase()}`, "raise_kit"], ["✦", "Founders circle", "Founders who've raised", "raise_kit_advisors"]].map(([ic, t, d, plan]) => (
+          <button key={t} onClick={() => onUnlock(plan)}><span aria-hidden="true">{ic}</span><b>{t}</b><em>{d}</em><i>Get it first</i></button>
+        ))}
+      </div>
+
+      <section className="kh-help">
+        <Interests />
+        <button className="text-link" onClick={onRate}>{rated ? "★ Thanks! Add more feedback →" : "★ Rate your kit in 60 seconds →"}</button>
+      </section>
+
+      {!full && <button className="kh-plans" onClick={() => go("plans")}><span>Want every investor, every slide written with you, and the full market report?</span><b>See plans →</b></button>}
     </div>
   );
 }
 
-/** Home: a peek at her market research (it starts by itself the first time). */
+/** Home: her market research at a glance (it starts by itself the first time). */
 function MarketTile({ token, sector, go }: { token: string; sector: string; go: (t: Tab) => void }) {
   const { m } = useMarket(token);
   const ready = m?.status === "ready";
-  const deal = m?.deals[0];
+  const priced = m?.deals.filter((d) => /\d/.test(d.amount)) ?? [];
+  const deal = priced.find((d) => d.atStage) ?? priced[0];
+  const found = ready ? m.competitors.length + m.locked.competitors : 0, rounds = ready ? m.deals.length + m.locked.deals : 0;
   return (
-    <section className="kh-tile" onClick={() => go("market")} role="button" tabIndex={0}>
-      <div className="kh-h"><span className="kh-ic">⚔</span><div><b>Market & competition</b><span>{ready ? `Who else is building in ${sector}, and the rounds they raised` : `Searching the web for who else is building in ${sector}…`}</span></div></div>
+    <section className="kh-card kh-mkt2" onClick={() => go("market")} role="button" tabIndex={0}>
+      <div className="kh-card-h"><b>Market & competition</b><span>{ready ? `${found} competitors · ${rounds} recent rounds · sources linked` : `Searching the web for who else is building in ${sector}…`}</span></div>
       {ready ? (
-        <div className="kh-mkt">
-          <div className="kh-mkt-logos">{m.competitors.slice(0, 3).map((c) => <span key={c.name}><InvLogo src={c.logo ?? null} name={c.name} kind="company" size={30} /><em>{c.name}</em></span>)}</div>
-          {deal && <p><b>{deal.company}</b> raised {deal.amount} ({deal.round}, {deal.date})</p>}
-        </div>
-      ) : <div className="kh-blur"><span>Competitors · recent rounds · who led them · sources</span></div>}
-      <div className="kh-f"><span>{ready ? "Open your market" : "About a minute"}</span><span className="kb-free">Free</span></div>
+        <>
+          <div className="kh-inv-rows">{m.competitors.slice(0, 3).map((c) => <div key={c.name}><InvLogo src={c.logo ?? null} name={c.name} kind="company" size={26} /><b>{c.name}</b><i className={`km-where ${c.where}`}>{c.where === "india" ? "India" : "Global"}</i></div>)}</div>
+          {deal && <div className="kh-deal"><b>{deal.amount}</b><span><em>{deal.company}</em> · {deal.round} · {deal.date}{deal.atStage ? " · comp at your stage" : ""}</span></div>}
+        </>
+      ) : <div className="kh-wait"><span className="km-radar sm" aria-hidden="true"><i /><i /><i /></span><span>About a minute. This fills in by itself.</span></div>}
+      <div className="kh-card-f"><span>{ready ? "Who funds your space, with links" : "India and global"}</span><em>Open →</em></div>
     </section>
   );
 }
@@ -385,33 +356,56 @@ function Plan({ me, go }: { me: Me; go: (t: Tab) => void }) {
   );
 }
 
-/* ---------- Deck: every slide open (16 Oct); the ones we couldn't write from her facts are templates to fill ---------- */
-const isTemplate = (s: { key: string; headline: string; points: string[] }) => !s.headline && !s.points.length && s.key !== "cover" && s.key !== "team";
-function Deck({ k, full, onUnlock }: { k: KitView; full: boolean; onUnlock: () => void }) {
-  const [cur, setCur] = useState(0);
+/* ---------- Deck: every slide open; slides without her facts show marked samples ---------- */
+const FileIc = ({ t }: { t: string }) => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" strokeWidth="1.6" /><text x="12" y="17.5" textAnchor="middle" fontSize="6.4" fontWeight="800" fill="currentColor">{t}</text></svg>;
+/** PDF and PowerPoint, one tap each. */
+function Downloads({ k, full, what = "deck", compact = false }: { k: KitView; full: boolean; what?: "deck" | "teaser"; compact?: boolean }) {
   const [printing, setPrinting] = useState(false);
+  const [ppt, setPpt] = useState(false);
   const done = useCallback(() => setPrinting(false), []);
-  const written = k.slides.filter((s) => !isTemplate(s)).length;
+  const pptx = () => { setPpt(true); void import("./pptx").then((x) => x.downloadPptx(k, !full)).catch(() => null).finally(() => setPpt(false)); };
+  return (
+    <div className={`kd-dl${compact ? " compact" : ""}`} onClick={(e) => e.stopPropagation()}>
+      <button className="kd-btn" onClick={() => setPrinting(true)} disabled={printing} title="Download PDF"><FileIc t="PDF" /><span>{printing ? "Preparing…" : "PDF"}</span></button>
+      {what === "deck" && <button className="kd-btn" onClick={pptx} disabled={ppt} title="Download PowerPoint"><FileIc t="PPT" /><span>{ppt ? "Building…" : "PowerPoint"}</span></button>}
+      {printing && <PrintKit k={k} what={what} made={!full} onDone={done} />}
+    </div>
+  );
+}
+/** What she can share to turn the sample slides into hers. */
+function MissingBlock({ k }: { k: KitView }) {
+  const navigate = useNavigate();
+  const miss = missingFacts(k);
+  if (!miss.length) return null;
+  return (
+    <section className="kd-miss">
+      <div><b>Share a few details and we'll make it investor-ready.</b><span>Slides marked <i className="kd-smp">Sample</i> show example content until you add yours. Investors notice placeholders, so replace them before you send.</span></div>
+      <ul>{miss.map((m) => <li key={m.key}>{m.label}</li>)}</ul>
+      <button className="btn primary sm" onClick={() => navigate("/build?edit=1")}>Add my details →</button>
+    </section>
+  );
+}
+function Deck({ k, full }: { k: KitView; full: boolean }) {
+  const [cur, setCur] = useState(0);
+  const samples = k.slides.filter((s) => s.sample).length;
   return (
     <div className="kz">
-      <div className="kz-top"><span><b>{written} slides written</b> from your facts · {k.slides.length - written} templates for your numbers</span><button className="btn primary sm" onClick={() => setPrinting(true)} disabled={printing}>{printing ? "Preparing…" : "⤓ Download PDF"}</button></div>
+      <div className="kz-top"><span><b>{k.slides.length - samples} slides from your facts</b>{samples ? ` · ${samples} with sample content` : ""}</span><Downloads k={k} full={full} /></div>
       <div className="kz-main"><div className="kz-slide"><BrandSlide k={k} i={cur} /></div></div>
-      <div className="kz-bar"><span>{cur + 1} / {k.slides.length} · {SLIDE_TITLES[k.slides[cur]?.key]}{isTemplate(k.slides[cur]) ? " · template" : ""}</span><div><button className="btn ghost sm" disabled={cur === 0} onClick={() => setCur((c) => c - 1)}>←</button><button className="btn ghost sm" disabled={cur === k.slides.length - 1} onClick={() => setCur((c) => c + 1)}>→</button></div></div>
-      <div className="kz-thumbs">{k.slides.map((s, i) => <button key={s.key} className={`${i === cur ? "on" : ""}${isTemplate(s) ? " tp" : ""}`} onClick={() => setCur(i)} aria-label={`Slide ${i + 1}: ${SLIDE_TITLES[s.key]}`}><BrandSlide k={k} i={i} /><span>{isTemplate(s) ? "✎ " : ""}{SLIDE_TITLES[s.key]}</span></button>)}</div>
-      <div className="kz-meta"><span>✓ In your colours{k.brand.font ? ` and ${k.brand.font}` : ""}</span><span>✓ Only your numbers</span>{!full && <button className="text-link" onClick={onUnlock}>We write every slide with you, plus PowerPoint 🔒</button>}</div>
-      {printing && <PrintKit k={k} what="deck" made={!full} onDone={done} />}
+      <div className="kz-bar"><span>{cur + 1} / {k.slides.length} · {SLIDE_TITLES[k.slides[cur]?.key]}{k.slides[cur]?.sample ? " · sample" : ""}</span><div><button className="btn ghost sm" disabled={cur === 0} onClick={() => setCur((c) => c - 1)}>←</button><button className="btn ghost sm" disabled={cur === k.slides.length - 1} onClick={() => setCur((c) => c + 1)}>→</button></div></div>
+      <div className="kz-thumbs">{k.slides.map((s, i) => <button key={s.key} className={`${i === cur ? "on" : ""}${s.sample ? " tp" : ""}`} onClick={() => setCur(i)} aria-label={`Slide ${i + 1}: ${SLIDE_TITLES[s.key]}`}><BrandSlide k={k} i={i} /><span>{SLIDE_TITLES[s.key]}{s.sample ? " · sample" : ""}</span></button>)}</div>
+      <MissingBlock k={k} />
+      <div className="kz-meta"><span>✓ In your colours{k.brand.font ? ` and ${k.brand.font}` : ""}</span><span>✓ Only your numbers on your slides</span><span>✓ PowerPoint opens in Google Slides and Keynote</span></div>
     </div>
   );
 }
 function TeaserTab({ k, full }: { k: KitView; full: boolean }) {
-  const [printing, setPrinting] = useState(false);
-  const done = useCallback(() => setPrinting(false), []);
   return (
     <div className="kt">
-      <div className="kz-top"><span><b>Your two-page teaser</b> · send it before the deck</span><button className="btn primary sm" onClick={() => setPrinting(true)} disabled={printing}>{printing ? "Preparing…" : "⤓ Download PDF"}</button></div>
+      <div className="kz-top"><span><b>Your two-page teaser</b> · send it before the deck</span><Downloads k={k} full={full} what="teaser" /></div>
       <div className="kt-page"><BrandTeaser k={k} page={1} /></div>
       <div className="kt-page"><BrandTeaser k={k} page={2} /></div>
-      {printing && <PrintKit k={k} what="teaser" made={!full} onDone={done} />}
+      <div className="kt-miss"><MissingBlock k={k} /></div>
     </div>
   );
 }

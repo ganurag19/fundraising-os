@@ -375,9 +375,11 @@ export const build = action({
   },
 });
 
-// The first build writes the 5 slides her facts can carry (16 Oct); team draws from her facts, and market, model and
-// competition show as templates for her numbers (competition fills from her market research). The rest are written with her on the full kit.
+// The first build writes the 5 slides her facts can always carry (16 Oct), plus market, model, competition and team
+// once she has given us those facts. Slides without facts show sample content, clearly marked, until she adds hers.
 const FIRST_KEYS = ["cover", "problem", "solution", "traction", "ask"];
+const ORDER = ["cover", "problem", "solution", "traction", "market", "model", "competition", "team", "ask"];
+const keysFor = (k: Doc<"kits">) => ORDER.filter((key) => FIRST_KEYS.includes(key) || (key === "market" && !!k.facts.market) || (key === "model" && !!k.facts.businessModel) || (key === "competition" && !!k.facts.competitors) || (key === "team" && k.facts.team.length > 0));
 
 async function writeDeck(ctx: ActionCtx, f: Doc<"founders">, kit: Doc<"kits">): Promise<void> {
   const facts = {
@@ -386,22 +388,23 @@ async function writeDeck(ctx: ActionCtx, f: Doc<"founders">, kit: Doc<"kits">): 
   };
   const factsText = JSON.stringify(facts);
   const allowed = [String(new Date().getFullYear())];
-  const input = `Write ONLY these slides, in this order: ${FIRST_KEYS.join(", ")}. Then the teaser.\n\nFACTS:\n${factsText}`;
+  const KEYS = keysFor(kit);
+  const input = `Write ONLY these slides, in this order: ${KEYS.join(", ")}. Then the teaser.\n\nFACTS:\n${factsText}`;
   let fix = "";
   let first: z.infer<typeof Deck> | null = null; // a draft with problems, kept in case the rewrite fails
   const save = async (out: z.infer<typeof Deck>) => {
-    const slides = FIRST_KEYS.map((k) => out.slides.find((x) => x.key === k) ?? { key: k, headline: "", points: [], metrics: [] });
+    const slides = KEYS.map((k) => out.slides.find((x) => x.key === k) ?? { key: k, headline: "", points: [], metrics: [] });
     const clean = cleanDeck(slides, out.teaser, factsText, allowed);
     await ctx.runMutation(internal.kit.saveContent, { founderId: f._id, status: "ready", deck: clean.slides, teaser: clean.teaser });
   };
   for (let attempt = 0; attempt < 2; attempt++) {
     const started = Date.now();
     try {
-      const res = await new Anthropic().messages.parse({ model: SONNET, max_tokens: 3000, system: DECK_SYSTEM, messages: [{ role: "user", content: input + fix }], output_config: { format: zodOutputFormat(Deck) } });
+      const res = await new Anthropic().messages.parse({ model: SONNET, max_tokens: 5000, system: DECK_SYSTEM, messages: [{ role: "user", content: input + fix }], output_config: { format: zodOutputFormat(Deck) } });
       const out = res.parsed_output;
       await logCall(ctx, { founderId: f._id, purpose: "kit_deck", model: SONNET, input: input + fix, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
       if (!out) continue;
-      const slides = FIRST_KEYS.map((k) => out.slides.find((x) => x.key === k) ?? { key: k, headline: "", points: [], metrics: [] });
+      const slides = KEYS.map((k) => out.slides.find((x) => x.key === k) ?? { key: k, headline: "", points: [], metrics: [] });
       const problems = deckProblems(slides, out.teaser, factsText, allowed);
       if (problems.length && attempt === 0) { first = out; fix = `\n\nYour last version had these problems. Fix them and keep everything else true:\n- ${problems.join("\n- ")}`; continue; }
       await save(out);

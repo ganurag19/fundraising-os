@@ -1,26 +1,19 @@
 import { useEffect, useState } from "react";
 import { Scaled } from "../landing/SampleDocs";
 import { brandVars, loadBrandFont } from "./brand";
-
-// Her deck and teaser, drawn from the words written for her (every number is one she gave us) in her brand.
-// Slides are 960×540 and teaser pages A4 (794×1123), scaled to fit. A missing fact shows as "To add", never invented.
-
 import { SLIDE_TITLES } from "./kitTypes";
 import type { KitView, Slide } from "./kitTypes";
+
+// Her deck and teaser, drawn from the words written for her (every number is one she gave us) in her brand.
+// Slides are 960×540 and teaser pages A4 (794×1123), scaled to fit. Deck v3 (17 Oct), after real seed decks:
+// a claim as the headline, a section tab, numbered steps, icon cards, big numbers. A slide we have no facts for
+// shows sample content in the same design, marked "Sample" on the slide, until she gives us hers.
 
 const initials = (s: string) => s.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
 const MONTH = new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 const site = (u: string | null) => (u ?? "").replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
+const SECTION: Record<string, string> = { problem: "The problem", solution: "Our solution", traction: "Traction", market: "Market", model: "Business model", competition: "Competition", team: "Team", ask: "The ask" };
 
-function Mark({ k, light = false }: { k: KitView; light?: boolean }) {
-  const [broken, setBroken] = useState(false);
-  if (k.brand.logo && !broken) return <img className={`bd-logo-img${light ? " light" : ""}`} src={k.brand.logo} alt="" onError={() => setBroken(true)} referrerPolicy="no-referrer" />;
-  return <span className={`bd-mark${light ? " light" : ""}`}>{initials(k.company) || "•"}</span>;
-}
-
-function Head({ k, n, label, dark = false }: { k: KitView; n: number; label: string; dark?: boolean }) {
-  return <div className={`bd-head${dark ? " dark" : ""}`}><Mark k={k} light={dark} /><span>{k.company} · {label}</span><span>{String(n).padStart(2, "0")}</span></div>;
-}
 const ICONS: Record<string, string> = {
   alert: "M12 3 2 20h20L12 3Zm0 6v5m0 3v.5",
   clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v5l3 2",
@@ -28,139 +21,146 @@ const ICONS: Record<string, string> = {
   check: "M4 12.5 9.5 18 20 6",
   bolt: "M13 2 4 14h7l-1 8 9-12h-7l1-8Z",
   chart: "M4 20V10m6 10V4m6 16v-7m4 7H2",
+  users: "M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 9v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8",
+  target: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-4a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-4a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z",
 };
 const Icon = ({ d }: { d: string }) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS[d]} /></svg>;
-/** A slide we lay out for her to fill: her own numbers go in the blanks. */
-const Template = () => <span className="bd-tpl">Template · add your numbers</span>;
-const Blank = ({ w = 90 }: { w?: number }) => <i className="bd-blank" style={{ width: w }} />;
-const ToAdd = ({ children }: { children: React.ReactNode }) => <div className="bd-toadd"><b>To add</b><span>{children}</span></div>;
+
+function Mark({ k, light = false }: { k: KitView; light?: boolean }) {
+  const [broken, setBroken] = useState(false);
+  if (k.brand.logo && !broken) return <img className={`bd-logo-img${light ? " light" : ""}`} src={k.brand.logo} alt="" onError={() => setBroken(true)} referrerPolicy="no-referrer" />;
+  return <span className={`bd-mark${light ? " light" : ""}`}>{initials(k.company) || "•"}</span>;
+}
+function RivalLogo({ r }: { r: { name: string; logo: string | null } }) {
+  const [broken, setBroken] = useState(false);
+  return r.logo && !broken ? <img src={r.logo} alt="" referrerPolicy="no-referrer" onError={() => setBroken(true)} /> : <i>{initials(r.name)}</i>;
+}
+
+/** The frame every content slide shares: claim headline with an accent, section tab, logo, page badge. */
+function Frame({ k, s, n, children, dark = false }: { k: KitView; s: Slide; n: number; children: React.ReactNode; dark?: boolean }) {
+  return (
+    <div className={`dk${dark ? " dark" : ""}${s.sample ? " is-sample" : ""}`}>
+      <div className="dk-top">
+        <div className="dk-hl"><span className="dk-tab">{SECTION[s.key] ?? SLIDE_TITLES[s.key]}</span><h2>{s.headline}</h2><i className="dk-dots" aria-hidden="true"><b /><b /><b /><b /></i></div>
+        <div className="dk-brand"><Mark k={k} light={dark} /><span>{k.company}</span></div>
+      </div>
+      <div className="dk-body">{children}</div>
+      <span className="dk-pg">{String(n).padStart(2, "0")}</span>
+      {s.sample && <span className="dk-sample">Sample · replace with yours</span>}
+    </div>
+  );
+}
+
+/** "Product and tech: 45%" → a bar; anything else stays a line. */
+const share = (p: string) => { const m = p.match(/^(.{2,40}?):\s*(\d{1,3})%$/); return m ? { label: m[1], pct: Math.min(100, Number(m[2])) } : null; };
 
 function SlideBody({ k, s, n }: { k: KitView; s: Slide; n: number }) {
-  const title = SLIDE_TITLES[s.key] ?? s.key;
   const pts = s.points, m = s.metrics;
   switch (s.key) {
     case "cover":
       return (
-        <div className="bd bd-cover">
-          <Head k={k} n={n} label="Investor presentation" dark />
-          <div className="bd-cover-body">
-            <span className="bd-eyebrow"><i className="bd-pill">{k.stage} round</i> Raising {k.ask} · {MONTH}</span>
+        <div className="dk-cover">
+          <div className="dk-cover-l">
+            <div className="dk-cover-mark"><Mark k={k} light /></div>
             <h1>{k.company}</h1>
             <p>{s.headline}</p>
-            {m.length > 0 && <div className="bd-chips">{m.slice(0, 3).map((x) => <span key={x.label}><b>{x.value}</b> {x.label}</span>)}</div>}
+            {m.length > 0 && <div className="dk-chips">{m.slice(0, 3).map((x) => <span key={x.label}><b>{x.value}</b> {x.label}</span>)}</div>}
+            <span className="dk-cover-meta">{k.stage} round · raising {k.ask} · {MONTH}</span>
           </div>
-          <div className="bd-orbs" aria-hidden="true"><i /><i /><i /></div>
-          <div className="bd-glow" aria-hidden="true" />
-          <div className="bd-foot dark"><span>{k.founder}, founder{k.website ? ` · ${site(k.website)}` : ""}</span><span>Confidential</span></div>
+          <div className="dk-cover-r" aria-hidden="true"><span>{initials(k.company)}</span></div>
+          <div className="dk-cover-foot"><span>{k.founder}, founder{k.website ? ` · ${site(k.website)}` : ""}</span><span>Confidential</span></div>
         </div>
+      );
+    case "problem":
+      return (
+        <Frame k={k} s={s} n={n}>
+          <div className="dk-steps">{(pts.length ? pts : ["—"]).slice(0, 3).map((p, i, a) => (
+            <div key={p} className="dk-step"><em>{String(i + 1).padStart(2, "0")}</em><span className="dk-ic"><Icon d={["alert", "clock", "coins"][i]} /></span><p>{p}</p>{i < a.length - 1 && <i className="dk-chev" aria-hidden="true" />}</div>
+          ))}</div>
+          {m.length > 0 && <div className="dk-band">{m.slice(0, 2).map((x) => <span key={x.label}><b>{x.value}</b>{x.label}</span>)}</div>}
+        </Frame>
+      );
+    case "solution":
+      return (
+        <Frame k={k} s={s} n={n}>
+          <div className="dk-cards">{pts.slice(0, 3).map((p, i) => <div key={p}><span className="dk-ic solid"><Icon d={["check", "bolt", "chart"][i]} /></span><p>{p}</p></div>)}</div>
+          {m.length > 0 && <div className="dk-band">{m.slice(0, 3).map((x) => <span key={x.label}><b>{x.value}</b>{x.label}</span>)}</div>}
+        </Frame>
       );
     case "traction":
       return (
-        <div className="bd">
-          <Head k={k} n={n} label={title} />
-          <h2>{s.headline}</h2>
-          <div className="bd-trac">
-            <div className="bd-trac-l">
-              {m.length ? <div className={`bd-kpis${m.length > 2 ? " three" : ""}`}>{m.map((x) => <div key={x.label}><b>{x.value}</b><span>{x.label}</span></div>)}</div> : <ToAdd>Your one number first: paying customers, revenue or pilots.</ToAdd>}
-              {pts.length > 0 && m.length < 3 && <ul className="bd-list">{pts.slice(0, 2).map((p) => <li key={p}>{p}</li>)}</ul>}
-            </div>
-            <div className="bd-chart">
+        <Frame k={k} s={s} n={n}>
+          <div className="dk-trac">
+            <div className="dk-pills">{m.length ? m.slice(0, 3).map((x) => <div key={x.label}><span>{x.label}</span><b>{x.value}</b></div>) : pts.slice(0, 3).map((p) => <div key={p} className="txt"><span>{p}</span></div>)}</div>
+            <div className="dk-chart">
               <em>Growth, month by month</em>
-              <div className="bd-bars" aria-hidden="true">{[22, 30, 36, 48, 61, 78].map((h, i) => <i key={i} style={{ height: `${h}%` }} />)}</div>
-              <span>Add 6 months of revenue or customers to chart your growth</span>
+              <div className="dk-bars" aria-hidden="true">{[18, 26, 34, 47, 63, 84].map((h, i) => <i key={i} style={{ height: `${h}%` }} />)}</div>
+              <span className="dk-chart-n">Sample chart · add 6 months of revenue or customers</span>
             </div>
           </div>
-        </div>
+        </Frame>
       );
     case "market":
       return (
-        <div className="bd">
-          <Head k={k} n={n} label={title} />
-          <h2>{s.headline || "A market worth building for"}</h2>
-          {m.length ? (
-            <div className="bd-mkt">
-              <svg viewBox="0 0 200 200" className="bd-rings" aria-hidden="true"><circle cx="100" cy="100" r="96" /><circle cx="100" cy="120" r="66" /><circle cx="100" cy="142" r="38" /></svg>
-              <div className="bd-mkt-list">{m.map((x, i) => <div key={x.label}><em>{["TAM", "SAM", "SOM"][i] ?? ""}</em><b>{x.value}</b><span>{x.label}</span></div>)}</div>
-            </div>
-          ) : (
-            <div className="bd-mkt">
-              <svg viewBox="0 0 200 200" className="bd-rings ghost" aria-hidden="true"><circle cx="100" cy="100" r="96" /><circle cx="100" cy="120" r="66" /><circle cx="100" cy="142" r="38" /></svg>
-              <div className="bd-mkt-list">{[["TAM", "Everyone who could buy"], ["SAM", "Who you can reach"], ["SOM", "Who you'll win in 3 years"]].map(([a, b]) => <div key={a}><em>{a}</em><b className="ph">₹ <Blank w={70} /> Cr</b><span>{b} · source <Blank w={80} /></span></div>)}</div>
-            </div>
-          )}
-          {pts.length > 0 && <ul className="bd-list">{pts.map((p) => <li key={p}>{p}</li>)}</ul>}
-          {!m.length && <Template />}
-        </div>
-      );
-    case "competition":
-      return (
-        <div className="bd">
-          <Head k={k} n={n} label={title} />
-          <h2>{s.headline || `Who else is building, and why ${k.company} wins`}</h2>
-          <div className="bd-vs">
-            <div><em>{k.rivals?.length ? "Who else is building" : "Today"}</em>
-              {k.rivals?.length
-                ? <div className="bd-rivals">{k.rivals.slice(0, 6).map((r) => <span key={r.name}><RivalLogo r={r} /><b>{r.name}</b><small>{r.where === "global" ? "Global" : "India"}</small></span>)}</div>
-                : (k.facts.competitors ? k.facts.competitors.split(/[,;]/).slice(0, 4) : ["The way it's done today"]).map((c) => <span key={c}>{c.trim()}</span>)}
-            </div>
-            <div className="us"><em>With {k.company}</em>{pts.length ? pts.map((p) => <span key={p}>✓ {p}</span>) : <>{[1, 2, 3].map((i) => <span key={i} className="ph">✓ What you do better <Blank w={120} /></span>)}</>}</div>
+        <Frame k={k} s={s} n={n}>
+          <div className="dk-mkt">
+            <svg viewBox="0 0 220 220" className="dk-rings" aria-hidden="true"><circle cx="110" cy="110" r="104" /><circle cx="110" cy="134" r="72" /><circle cx="110" cy="160" r="42" /></svg>
+            <div className="dk-mkt-list">{m.slice(0, 3).map((x, i) => <div key={x.label}><em>{["TAM", "SAM", "SOM"][i]}</em><b>{x.value}</b><span>{x.label}</span></div>)}
+              {!m.length && pts.slice(0, 3).map((p) => <div key={p}><span>{p}</span></div>)}</div>
           </div>
-          {!pts.length && <Template />}
-        </div>
+          {m.length > 0 && pts[0] && <span className="dk-src">{pts[0]}</span>}
+        </Frame>
       );
+    case "model":
+      return (
+        <Frame k={k} s={s} n={n}>
+          {m.length > 0 && <div className="dk-big">{m.slice(0, 3).map((x, i) => <div key={x.label}><span className="dk-ic solid"><Icon d={["coins", "chart", "target"][i]} /></span><b>{x.value}</b><span>{x.label}</span></div>)}</div>}
+          {pts.length > 0 && <ul className="dk-ticks">{pts.slice(0, 3).map((p) => <li key={p}>{p}</li>)}</ul>}
+        </Frame>
+      );
+    case "competition": {
+      const rivals = k.rivals?.length ? k.rivals : (k.facts.competitors ? k.facts.competitors.split(/[,;]/).map((c) => ({ name: c.trim(), logo: null, where: "india" })).filter((c) => c.name) : []);
+      return (
+        <Frame k={k} s={s} n={n}>
+          <div className="dk-vs">
+            <div className="dk-vs-them"><em>Who else is building</em>
+              {rivals.length ? <div className="dk-logos">{rivals.slice(0, 6).map((r) => <span key={r.name}><RivalLogo r={r} /><b>{r.name}</b><small>{r.where === "global" ? "Global" : "India"}</small></span>)}</div>
+                : <div className="dk-logos">{["Spreadsheets and WhatsApp", "Agencies and consultants", "Large global tools"].map((x) => <span key={x}><i>•</i><b>{x}</b></span>)}</div>}
+            </div>
+            <div className="dk-vs-us"><em>Why {k.company} wins</em>{pts.slice(0, 3).map((p) => <span key={p}><b className="dk-tick">✓</b>{p}</span>)}</div>
+          </div>
+        </Frame>
+      );
+    }
     case "team": {
-      const team = k.facts.team.length ? k.facts.team : [{ name: k.founder, role: "Founder", line: "" }];
+      const team = k.facts.team.length ? k.facts.team : [{ name: k.founder, role: "Founder", line: k.founderLine ?? "" }];
+      const sample = !k.facts.team.length;
       return (
-        <div className="bd">
-          <Head k={k} n={n} label={title} />
-          <h2>{s.headline || `The team building ${k.company}`}</h2>
-          <div className="bd-team">{team.slice(0, 4).map((t) => <div key={t.name}><span className="bd-av">{initials(t.name)}</span><b>{t.name}</b><em>{t.role}</em><span>{t.line || "Your background in one line: where you worked, what you built"}</span></div>)}
-            {team.length < 3 && <div className="ph"><span className="bd-av ph">+</span><b>Co-founder or key hire</b><em>Role</em><span>Why they're the right person for this</span></div>}</div>
+        <Frame k={k} s={{ ...s, sample }} n={n}>
+          <div className="dk-team">{team.slice(0, 4).map((t) => <div key={t.name}><span className="dk-av">{initials(t.name)}</span><b>{t.name}</b><em>{t.role}</em><span>{t.line || "Where you worked, what you built, why you"}</span></div>)}
+            {sample && <div className="smp"><span className="dk-av">+</span><b>Priya Sharma</b><em>Co-founder, CTO</em><span>Ex-Razorpay engineering lead; built payments for 2M merchants</span></div>}</div>
+        </Frame>
+      );
+    }
+    case "ask": {
+      const bars = pts.map(share).filter(Boolean) as { label: string; pct: number }[];
+      const lines = pts.filter((p) => !share(p));
+      return (
+        <div className={`dk-ask${s.sample ? " is-sample" : ""}`}>
+          <div className="dk-ask-l"><span className="dk-cover-meta">The ask</span><b>{k.ask}</b><span>{k.stage} round</span></div>
+          <div className="dk-ask-r">
+            <h2>{s.headline}</h2>
+            {bars.length > 0 && <div className="dk-uof">{bars.map((x) => <div key={x.label}><span>{x.label}</span><i><b style={{ width: `${x.pct}%` }} /></i><em>{x.pct}%</em></div>)}</div>}
+            {lines.length > 0 && <ul className="dk-ticks light">{lines.slice(0, 3).map((p) => <li key={p}>{p}</li>)}</ul>}
+          </div>
+          <div className="dk-cover-foot"><span>{k.founder} · {k.company}{k.website ? ` · ${site(k.website)}` : ""}</span><span>Thank you</span></div>
+          {s.sample && <span className="dk-sample">Sample · replace with yours</span>}
         </div>
       );
     }
-    case "ask":
-      return (
-        <div className="bd bd-askslide">
-          <Head k={k} n={n} label={title} dark />
-          <div className="bd-ask">
-            <div><span className="bd-eyebrow">Raising</span><b className="bd-amount">{k.ask}</b><span className="bd-stage">{k.stage} round</span></div>
-            <div><h2>{s.headline || "What this round gets us to"}</h2>{pts.length ? <ul className="bd-list light">{pts.map((p) => <li key={p}>{p}</li>)}</ul> : (
-              <div className="bd-uof">{["Product and tech", "Sales and growth", "Team"].map((x) => <div key={x}><span>{x}</span><i><b /></i><em><Blank w={34} />%</em></div>)}<span className="bd-uof-n">Add your split and the milestone it reaches</span></div>
-            )}</div>
-          </div>
-          <div className="bd-foot dark"><span>{k.founder} · {k.company}{k.website ? ` · ${site(k.website)}` : ""}</span><span>Thank you</span></div>
-        </div>
-      );
-    default: { // problem, solution, model
-      if (s.key === "model" && !s.headline && !pts.length) return (
-        <div className="bd">
-          <Head k={k} n={n} label={title} />
-          <h2>How {k.company} makes money</h2>
-          <div className="bd-cards">
-            <div className="ph"><span className="bd-ic"><Icon d="coins" /></span><b>Price</b><span>₹ <Blank w={60} /> per <Blank w={60} /></span></div>
-            <div className="ph"><span className="bd-ic"><Icon d="check" /></span><b>Who pays</b><span><Blank w={150} /></span></div>
-            <div className="ph"><span className="bd-ic"><Icon d="chart" /></span><b>Margin and payback</b><span><Blank w={40} />% margin · <Blank w={40} /> months</span></div>
-          </div>
-          <Template />
-        </div>
-      );
-      const icons = s.key === "problem" ? ["alert", "clock", "coins"] : ["check", "bolt", "chart"];
-      const cards = pts.length ? <div className={`bd-cards${s.key === "problem" ? " pain" : ""}`}>{pts.slice(0, 3).map((p, i) => <div key={p}><span className="bd-ic"><Icon d={icons[i]} /></span><span>{p}</span></div>)}</div> : <ToAdd>Your {title.toLowerCase()}, in two or three lines.</ToAdd>;
-      return (
-        <div className="bd">
-          <Head k={k} n={n} label={title} />
-          <h2>{s.headline || <span className="bd-dim">Add your {title.toLowerCase()}</span>}</h2>
-          {m.length ? <div className="bd-split">{cards}<div className="bd-kpis col">{m.map((x) => <div key={x.label}><b>{x.value}</b><span>{x.label}</span></div>)}</div></div> : cards}
-        </div>
-      );
-    }
+    default:
+      return <Frame k={k} s={s} n={n}><ul className="dk-ticks">{pts.map((p) => <li key={p}>{p}</li>)}</ul></Frame>;
   }
-}
-
-function RivalLogo({ r }: { r: { name: string; logo: string | null } }) {
-  const [broken, setBroken] = useState(false);
-  return r.logo && !broken ? <img src={r.logo} alt="" referrerPolicy="no-referrer" onError={() => setBroken(true)} /> : <i>{initials(r.name)}</i>;
 }
 
 export function BrandSlide({ k, i }: { k: KitView; i: number }) {
@@ -170,12 +170,16 @@ export function BrandSlide({ k, i }: { k: KitView; i: number }) {
   return <Scaled w={960} h={540}><div className="bd-wrap" style={brandVars(k.brand)}><SlideBody k={k} s={s} n={i + 1} /></div></Scaled>;
 }
 
-/** The two-page teaser. Page 2 is what the full kit opens. */
+const Smp = ({ on }: { on?: boolean }) => (on ? <span className="bt-smp">Sample</span> : null);
+
+/** The two-page teaser. */
 export function BrandTeaser({ k, page }: { k: KitView; page: 1 | 2 }) {
   useEffect(() => loadBrandFont(k.brand.font, k.brand.fontCss), [k.brand.font, k.brand.fontCss]);
   const t = k.teaser;
   const slide = (key: string) => k.slides.find((s) => s.key === key);
-  const traction = slide("traction")?.metrics ?? [];
+  const traction = slide("traction");
+  const market = slide("market"), model = slide("model"), comp = slide("competition"), ask = slide("ask");
+  const team = k.facts.team.length ? k.facts.team : [{ name: k.founder, role: "Founder", line: k.founderLine ?? "" }];
   return (
     <Scaled w={794} h={1123}>
       <div className="bt" style={brandVars(k.brand)}>
@@ -184,7 +188,7 @@ export function BrandTeaser({ k, page }: { k: KitView; page: 1 | 2 }) {
           <div className="bt-body">
             <h1>{slide("cover")?.headline ?? ""}</h1>
             {t && <p className="bt-sum">{t.summary}</p>}
-            {traction.length > 0 && <div className="bt-kpis">{traction.map((x) => <div key={x.label}><b>{x.value}</b><span>{x.label}</span></div>)}</div>}
+            {traction && traction.metrics.length > 0 && <div className="bt-kpis">{traction.metrics.map((x) => <div key={x.label}><b>{x.value}</b><span>{x.label}</span></div>)}<Smp on={traction.sample} /></div>}
             <div className="bt-two">
               <section><em>The problem</em><p>{slide("problem")?.headline}</p><ul>{slide("problem")?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
               <section><em>Our solution</em><p>{slide("solution")?.headline}</p><ul>{slide("solution")?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
@@ -194,12 +198,14 @@ export function BrandTeaser({ k, page }: { k: KitView; page: 1 | 2 }) {
         ) : (
           <div className="bt-body">
             <div className="bt-two">
-              <section><em>Market</em><p>{slide("market")?.headline}</p><ul>{slide("market")?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
-              <section><em>Business model</em><p>{slide("model")?.headline}</p><ul>{slide("model")?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
+              <section><em>Market <Smp on={market?.sample} /></em><p>{market?.headline}</p>{market && market.metrics.length > 0 && <div className="bt-mini">{market.metrics.map((x, i) => <span key={x.label}><i>{["TAM", "SAM", "SOM"][i]}</i><b>{x.value}</b></span>)}</div>}</section>
+              <section><em>Business model <Smp on={model?.sample} /></em><p>{model?.headline}</p>{model && model.metrics.length > 0 ? <div className="bt-mini">{model.metrics.map((x) => <span key={x.label}><b>{x.value}</b><i>{x.label}</i></span>)}</div> : <ul>{model?.points.map((p) => <li key={p}>{p}</li>)}</ul>}</section>
             </div>
-            <section><em>Competition</em><p>{slide("competition")?.headline}</p></section>
-            <section><em>Team</em><div className="bt-team">{(k.facts.team.length ? k.facts.team : [{ name: k.founder, role: "Founder", line: "" }]).map((m) => <div key={m.name}><b>{m.name}</b><span>{m.role}</span><span>{m.line}</span></div>)}</div></section>
-            <section className="bt-ask"><em>The ask</em><b>{k.ask} · {k.stage}</b><ul>{slide("ask")?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
+            <section><em>Competition <Smp on={comp?.sample && !k.rivals?.length} /></em><p>{comp?.headline}</p>
+              {k.rivals?.length ? <div className="bt-rivals">{k.rivals.slice(0, 6).map((r) => <span key={r.name}>{r.name}<i>{r.where === "global" ? "Global" : "India"}</i></span>)}</div> : null}
+              <ul>{comp?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
+            <section><em>Team <Smp on={!k.facts.team.length && !k.founderLine} /></em><div className="bt-team">{team.map((m) => <div key={m.name}><b>{m.name}</b><span>{m.role}</span><span>{m.line}</span></div>)}</div></section>
+            <section className="bt-ask"><em>The ask <Smp on={ask?.sample} /></em><b>{k.ask} · {k.stage}</b><ul>{ask?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
           </div>
         )}
         <footer className="bt-foot"><span>{k.founder}, founder · {k.company}{k.website ? ` · ${site(k.website)}` : ""}</span><span>Confidential</span></footer>
