@@ -149,6 +149,26 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
         <div><b>{avg("valuable")}</b><span>avg "valuable" /5</span></div>
       </div>
 
+      <h2 className="dash-h">Would they pay? (all time)</h2>
+      {forms == null ? <div className="spinner" /> : forms.upgrades.length === 0 ? <p className="muted small">No full-access requests yet.</p> : <>
+        <div className="admin-funnel small-funnel">
+          {(["yes", "maybe", "no"] as const).map((k) => <div key={k}><b>{forms.upgrades.filter((u) => u.wouldPay === k).length}</b><span>would pay: {k}</span></div>)}
+          {[...new Set(forms.upgrades.map((u) => u.price).filter(Boolean))].map((p) => <div key={p}><b>{forms.upgrades.filter((u) => u.price === p).length}</b><span>{p}</span></div>)}
+        </div>
+        <div className="admin-table">
+          <div className="admin-tr head"><span>Founder · plan · would pay · price</span><span>Ratings</span><span>When</span></div>
+          {forms.upgrades.map((u) => (
+            <div className="admin-tr wide" key={u.at}>
+              <span><b>{u.company}</b> · {PLAN_LABEL[u.plan] ?? u.plan} · would pay <b className={u.wouldPay === "yes" ? "ok" : ""}>{u.wouldPay}</b>{u.price ? <> · <b>{u.price}</b></> : ""}{u.raisingWhen ? ` · raising ${u.raisingWhen.toLowerCase()}` : ""}
+                {u.liked && <><br /><span className="muted small">Wins: {u.liked}</span></>}{u.missing && <><br /><span className="muted small">Improve: {u.missing}</span></>}
+                {(u.email || u.phone) && <><br /><span className="small">{u.email && <a href={`mailto:${u.email}`}>{u.email}</a>}{u.phone ? ` · ${u.phone}` : ""}</span></>}</span>
+              <span>solves {u.solves}/5 · valuable {u.valuable}/5</span>
+              <span className="muted small">{when(u.at)}</span>
+            </div>
+          ))}
+        </div>
+      </>}
+
       <h2 className="dash-h">Raise Kit funnel</h2>
       <div className="admin-funnel">
         {kitSteps.map(([n, label], i) => <div key={label}><b>{n ?? "·"}</b><span>{label}</span>{i > 0 && n !== undefined && kitSteps[0][0] ? <i>{Math.round((n / (kitSteps[0][0] || 1)) * 100)}%</i> : null}</div>)}
@@ -185,7 +205,7 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
                 <span className="tag">{p.drafts} pitches written</span>
                 {p.sent > 0 && <span className="tag green">{p.sent} sent</span>}
                 {p.replied + p.meetings > 0 && <span className="tag gold">{p.replied} replied · {p.meetings} meetings</span>}
-                {p.request && <span className="tag violet">Wants {PLAN_LABEL[p.request.plan] ?? p.request.plan} · would pay {p.request.wouldPay} · {p.request.solves}/5 · {p.request.valuable}/5</span>}
+                {p.request && <span className="tag violet">Wants {PLAN_LABEL[p.request.plan] ?? p.request.plan} · would pay {p.request.wouldPay}{p.request.price ? ` · ${p.request.price}` : ""} · {p.request.solves}/5 · {p.request.valuable}/5</span>}
               </span>
             </div>
           ))}
@@ -306,7 +326,7 @@ const DEMO: Demo = {
   funnel: { visitors: 42, capped: false, steps: { signup_done: 9, emails_ready: 8, signed_in: 5, sent: 11 },
     events: { visit_landing: { n: 51, people: 40 }, click_go: { n: 19, people: 14 }, click_code: { n: 12, people: 10 }, click_request: { n: 4, people: 4 }, click_unlock: { n: 6, people: 5 }, click_gmail: { n: 14, people: 4 }, click_copy: { n: 3, people: 2 }, click_write: { n: 7, people: 3 }, click_upgrade: { n: 2, people: 2 }, click_soon: { n: 5, people: 3 } } },
   people: [
-    { at: T, company: "Kiln Labs", name: "Arjun Rao", sectors: ["Climate & Energy"], stage: "Seed", ask: "₹1–3 Cr", website: "kilnlabs.example.in", linkedin: null, code: "KIT", emails: "ready", signedIn: "arjun@kilnlabs.example.in", sent: 3, plan: false, replied: 1, meetings: 0, drafts: 5, kit: { status: "ready", deck: true, uploads: 1, brand: "#7B5CFF" }, request: { plan: "raise_kit", wouldPay: "yes", solves: 4, valuable: 5 }, welcome: true },
+    { at: T, company: "Kiln Labs", name: "Arjun Rao", sectors: ["Climate & Energy"], stage: "Seed", ask: "₹1–3 Cr", website: "kilnlabs.example.in", linkedin: null, code: "KIT", emails: "ready", signedIn: "arjun@kilnlabs.example.in", sent: 3, plan: false, replied: 1, meetings: 0, drafts: 5, kit: { status: "ready", deck: true, uploads: 1, brand: "#7B5CFF" }, request: { plan: "raise_kit", wouldPay: "yes", price: "₹15,000–25,000", solves: 4, valuable: 5 }, welcome: true },
     { at: T - 3600000, company: "Ledgerly", name: "Nisha Kulkarni", sectors: ["AI", "Fintech"], stage: "Pre-seed", ask: "₹50L–1 Cr", website: "ledgerly.example.in", linkedin: "https://linkedin.com/in/example", code: "TEST-ONE", emails: "ready", signedIn: "nisha@example.test", sent: 0, plan: false, replied: 0, meetings: 0, drafts: 3, kit: null, request: null, welcome: false },
     { at: T - 7200000, company: "Paniwala Labs", name: "Priya Menon", sectors: ["Agritech"], stage: "Pre-seed", ask: "₹25–50L", website: null, linkedin: null, code: "TEST-TWO", emails: "writing", signedIn: null, sent: 0, plan: false, replied: 0, meetings: 0, drafts: 0, kit: { status: "building", deck: false, uploads: 0, brand: "#2F6BFF" }, request: null, welcome: null },
   ],

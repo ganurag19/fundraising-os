@@ -118,7 +118,7 @@ export const people = query({
     emails: v.string(), signedIn: v.union(v.string(), v.null()), sent: v.number(), plan: v.boolean(),
     replied: v.number(), meetings: v.number(), drafts: v.number(),
     kit: v.union(v.null(), v.object({ status: v.string(), deck: v.boolean(), uploads: v.number(), brand: v.string() })),
-    request: v.union(v.null(), v.object({ plan: v.string(), wouldPay: v.string(), solves: v.number(), valuable: v.number() })),
+    request: v.union(v.null(), v.object({ plan: v.string(), wouldPay: v.string(), price: v.union(v.string(), v.null()), solves: v.number(), valuable: v.number() })),
     welcome: v.union(v.null(), v.boolean()), // welcome email sent (true), failed (false), not yet (null)
   }))),
   handler: async (ctx, { key, since }) => {
@@ -134,7 +134,7 @@ export const people = query({
       return {
         replied: ms.filter((m) => m.status === "replied").length, meetings: ms.filter((m) => m.status === "meeting").length, drafts: drafts.length,
         kit: kit ? { status: kit.status, deck: !!kit.deck, uploads: kit.uploads, brand: kit.brand.primary } : null,
-        request: req ? { plan: req.plan, wouldPay: req.wouldPay, solves: req.solves, valuable: req.valuable } : null,
+        request: req ? { plan: req.plan, wouldPay: req.wouldPay, price: req.price ?? null, solves: req.solves, valuable: req.valuable } : null,
         welcome: welcome ? welcome.ok : null,
         at: f._creationTime, company: f.company, name: f.name, sectors: f.sectors, stage: f.stage, ask: f.ask,
         website: f.website ?? null, linkedin: f.linkedin ?? null, code: f.inviteCode,

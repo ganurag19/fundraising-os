@@ -1386,3 +1386,4 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .k2-why-card{padding:28px 24px;gap:14px}
 .k2-why-card b{font-size:20px}
 .k2-why-card p{font-size:16px;line-height:1.6}
+.inapp-hint{margin:6px 0 0;max-width:46ch;font-size:13px;line-height:1.5;color:#7A4B06;background:rgba(245,181,68,.16);border:1px solid rgba(245,181,68,.45);border-radius:12px;padding:8px 12px;text-align:center}

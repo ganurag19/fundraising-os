@@ -8,6 +8,7 @@ import type { SheetMode } from "./InviteSheet";
 import { savedInviteCode, savePrefill } from "../lib/token";
 import { HeroBuild, InvestorCards, KitShowcase, PlanPicker, ProofStrip } from "./KitParts";
 import { COMPARE, PLANS } from "./plans";
+import InAppHint from "../components/InAppHint";
 
 // The main landing page (since 16 Oct; was the /kit draft): the Raise Kit landing, on Relay Studio's skeleton: one input, the product working on screen,
 // alternating "visual + one promise" sections, calm light theme. Example founder and investors are made up.
@@ -89,6 +90,7 @@ export default function KitLanding() {
         {input("big")}
         <span className="k4-coffee">{cup}All the heavy lifting of your first round, done over a cup of coffee.</span>
         <span className="k2-alt">No website yet? <button className="text-link" onClick={() => start()}>Tell us about your startup</button></span>
+        <InAppHint />
         <div className="k2-fan k5-fan" aria-hidden="true">
           <div className="f1 k2-mini deck"><span className="k5-tag">Deck · 9 slides</span><b>Kiln Labs</b><span>Seed · ₹3 Cr · in your brand</span></div>
           <div className="f2 k2-mini"><em>Fit 95</em><b>Verdant Arc</b><span>Backed GridLeaf at seed, 2025</span><span className="k5-src">Source: their portfolio page</span></div>

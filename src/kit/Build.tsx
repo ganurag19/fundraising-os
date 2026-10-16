@@ -11,6 +11,7 @@ import { freshVisitorToken, rememberInviteCode, savedInviteCode, visitorToken } 
 import { BrandSlide, BrandTeaser } from "./BrandDeck";
 import { SLIDE_TITLES } from "./kitTypes";
 import { useKitView } from "./useKitView";
+import InAppHint from "../components/InAppHint";
 import "./kit.css";
 
 // /build: the Raise Kit flow. Reading your website → Make it sharper (files, optional) → Confirm your facts → Building → Your kit.
@@ -488,6 +489,7 @@ function Reveal({ token }: { token: string }) {
       <p className="kb-cta-line"><b>{me.matchCount} investors</b> fit {me.company} · <b>{me.activeCount}</b> invested recently · <b>5 personal pitches</b> ready · your deck and teaser in your brand</p>
       <button className="btn white big" data-track="click_signin" disabled={busy} onClick={go}><GoogleG />{busy ? "Opening…" : isAuthenticated ? <>Open my dashboard <em className="kb-free">Free</em></> : <>Read and send my pitches <em className="kb-free">Free</em></>}</button>
       <span className="kb-dim">Saved to your Google account. Nothing is ever sent without you.</span>
+      <InAppHint />
     </div>
   );
   return (
