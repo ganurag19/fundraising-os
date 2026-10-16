@@ -269,12 +269,13 @@ const Review = z.object({
   questions: z.array(z.string()),
 });
 
+// max_tokens 7000: long real decks need room (3,500 cut a 30-page deck's review off, 16 Oct).
 /** Reviews one deck and saves it (to her account if she has one, else to her browser's code). True when saved. */
 async function runReview(ctx: ActionCtx, deck: Anthropic.Messages.DocumentBlockParam, facts: string, who: { token: string; founderId?: Id<"founders">; fileName: string }): Promise<boolean> {
   const note = `FACTS:\n${facts}\n\nReview the attached deck.${facts === "{}" ? " She hasn't confirmed any facts yet: judge the deck on what it says." : ""}`;
   const started = Date.now();
   try {
-    const res = await new Anthropic().messages.parse({ model: SONNET, max_tokens: 3500, system: DECK_REVIEW_SYSTEM, messages: [{ role: "user", content: [deck, { type: "text", text: note }] }], output_config: { format: zodOutputFormat(Review) } });
+    const res = await new Anthropic().messages.parse({ model: SONNET, max_tokens: 7000, system: DECK_REVIEW_SYSTEM, messages: [{ role: "user", content: [deck, { type: "text", text: note }] }], output_config: { format: zodOutputFormat(Review) } });
     const out = res.parsed_output;
     await logCall(ctx, { founderId: who.founderId, purpose: "kit_deck_review", model: SONNET, input: note, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
     if (!out) return false;

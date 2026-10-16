@@ -172,6 +172,7 @@ Return:
 - verdict: "raise_now" (strong enough to send this week), "raise_with_fixes" (send after the high-impact fixes below), or "build_traction_first" (the deck can be fixed, but the traction isn't yet enough for this stage and raise; say what milestone would change that).
 - verdictWhy: two sentences, plain and specific to this deck and her numbers.
 - strengths: 3 things that work, each under 14 words, specific to this deck.
+Keep it tight: every line short, no repetition between sections.
 - fixes: 5 to 8 fixes, most important first. Each { slide (the slide title or number as in the deck), issue (what an investor will think, under 20 words), fix (exactly what to change, under 25 words), impact (high, medium, low) }.
 - missing: what seed investors expect at her stage that the deck doesn't have (e.g. "Use of funds with milestones", "Competitor comparison"), each under 8 words. Empty if nothing important is missing.
 - thesis: { claim: the core bet the deck makes, in one sentence; tests: 4 to 6 stress tests an investor will push on, each { question, risk (high, medium, low), howToAnswer: how she should answer, using what's in the deck or what she still needs, under 30 words } }.
