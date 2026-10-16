@@ -21,7 +21,7 @@ import { useKitView } from "./useKitView";
 import InvLogo from "./InvLogo";
 import { COMPARE, PLANS } from "../landing/plans";
 import { Outreach } from "./Outreach";
-import { GlassPreview, UpgradeSheet } from "./Upgrade";
+import { GlassPreview, QuickRate, RateSheet, UpgradeSheet } from "./Upgrade";
 import "./kit.css";
 
 // /app: the Raise Kit dashboard, after Google sign-in. Home (her round at a glance, with what's still locked), Outreach,
@@ -59,6 +59,8 @@ export default function KitApp() {
   const [tab, setTab] = useState<Tab>(() => { const t = remember("fos_kit_tab2") as Tab | null; return t && ALL.some(([k]) => k === t) ? t : "home"; });
   const [more, setMore] = useState(false);
   const [upgrade, setUpgrade] = useState<string | null>(null);
+  const [rating, setRating] = useState<number | null>(null); // the "Rate your kit" form, with her one-tap score
+  const [qrOpen, setQrOpen] = useState(false); // the one-tap prompt is on screen: keep it until she closes it
   const [toast, setToast] = useState("");
   // Light by default, like the kit; her dark-mode choice is remembered (same switch as the classic dashboard).
   const [theme, setThemeState] = useState<Theme>(() => (remember("fos_kit_theme") === "dark" ? "dark" : "light"));
@@ -106,7 +108,7 @@ export default function KitApp() {
   if (!me) return <Navigate to="/" replace />;
   if (!me.unlocked && !preview) return <Opening />;
   // A founder from the classic sign-up has a list but no kit yet: same dashboard, with "Create your deck" where the kit goes.
-  const kk = kit ?? { status: "none", brand: { primary: "#3D7BFF" } as { primary: string; logo?: string }, requested: false };
+  const kk = kit ?? { status: "none", brand: { primary: "#3D7BFF" } as { primary: string; logo?: string }, requested: false, rated: false };
 
   const go = (t: Tab) => { setTab(t); setMore(false); remember("fos_kit_tab2", t); window.scrollTo(0, 0); };
   const sent = me.rows.filter((r) => r.status !== "new").length;
@@ -136,7 +138,7 @@ export default function KitApp() {
         <span className="nlbl">People</span>
         {PEOPLE.map(navItem)}
         <div className="side-foot">
-          {!full && <button className="ka-up" onClick={() => openUp()}>{kk.requested ? "✓ Founding access requested" : <>🔒 Unlock your full kit</>}</button>}
+          {!full && <button className="ka-up" onClick={() => openUp()}>{kk.requested ? "✓ Founding access requested" : <><span>🔒 Unlock your full kit</span><small>2 minutes · founding price</small></>}</button>}
           {themeBtn}
           <button className={`ka-me${tab === "settings" ? " on" : ""}`} onClick={() => go("settings")} aria-label="Your settings"><Face name={me.name} size={36} /><span><b>{me.name}</b><em>{me.gmail ?? ""}</em></span><i aria-hidden="true">⚙</i></button>
           <div className="foot-links"><FeedbackButton page="app" signedIn className="" /><button onClick={() => go("settings")}>Settings</button><button onClick={() => void signOut()}>Sign out</button></div>
@@ -170,14 +172,14 @@ export default function KitApp() {
               ? <><span>Your investors are here. <b>Create your deck and teaser</b> in your brand, in about 30 seconds.</span><Link className="ka-band-a" to="/build?edit=1">Create my deck →</Link></>
               : kk.requested
               ? <span>✓ Founding access requested. We'll be in touch about {me.company}'s full kit.</span>
-              : <><span>You're seeing <b>5 of {me.matchCount} investors</b> and <b>3 of 9 slides</b>.</span><button onClick={() => openUp()}>Unlock your full kit →</button></>}
+              : <><span>You're seeing <b>5 of {me.matchCount} investors</b> and <b>3 of 9 slides</b>.</span><button onClick={() => openUp()}>Unlock your full kit → <small>2 min · founding price</small></button></>}
           </div>
         )}
         <header className="reveal-head">
           <span className="kicker">{me.company} · {me.stage} · {me.ask}</span>
           <h1>{h1a} <span className="it">{h1b}</span></h1>
         </header>
-        {tab === "home" && <Home me={me} k={view ?? null} go={go} onUnlock={openUp} sent={sent} replies={replies} ready={ready} full={full} />}
+        {tab === "home" && <Home me={me} k={view ?? null} go={go} onUnlock={openUp} onRate={() => setRating(0)} rated={kk.rated} sent={sent} replies={replies} ready={ready} full={full} />}
         {tab === "outreach" && <Outreach me={me} token={token} onToast={setToast} onUnlock={() => openUp()} />}
         {tab === "plan" && <Plan me={me} go={go} />}
         {tab === "deck" && (view ? <Deck k={view} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
@@ -188,6 +190,8 @@ export default function KitApp() {
         {tab === "settings" && <Settings me={me} token={token} theme={theme} setTheme={setTheme} signOut={() => void signOut()} />}
       </main>
       {upgrade && <UpgradeSheet token={token} company={me.company} start={upgrade} onClose={() => setUpgrade(null)} />}
+      {rating !== null && <RateSheet token={token} company={me.company} start={rating} onClose={() => setRating(null)} />}
+      {(!kk.rated || qrOpen) && rating === null && !upgrade && <QuickRate token={token} onShow={setQrOpen} onMore={(n) => { setQrOpen(false); setRating(n); }} />}
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
   );
@@ -198,7 +202,7 @@ function UnlockBtn({ onUnlock, plan = "raise_kit", label = "Unlock" }: { onUnloc
 }
 
 /* ---------- Home: her round at a glance, and everything still locked ---------- */
-function Home({ me, k, go, onUnlock, sent, replies, ready, full }: { me: Me; k: KitView | null; go: (t: Tab) => void; onUnlock: (plan?: string) => void; sent: number; replies: number; ready: number; full: boolean }) {
+function Home({ me, k, go, onUnlock, onRate, rated, sent, replies, ready, full }: { me: Me; k: KitView | null; go: (t: Tab) => void; onUnlock: (plan?: string) => void; onRate: () => void; rated: boolean; sent: number; replies: number; ready: number; full: boolean }) {
   const top = me.rows.filter((r) => r.rank < 5);
   const locked = me.rows.filter((r) => r.locked);
   const more = Math.max(0, me.matchCount - 5);
@@ -218,6 +222,12 @@ function Home({ me, k, go, onUnlock, sent, replies, ready, full }: { me: Me; k: 
         <div className="kh-five">{top.map((r) => <span key={r.rank} className={r.status !== "new" ? "sent" : ""} title={r.displayName ?? ""}><InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={38} /><em>{r.status !== "new" ? "✓ Sent" : (r.displayName ?? "").split(" ")[0]}</em><Dial score={r.score} size={30} /></span>)}</div>
         <div className="kh-next-a">{topSent < top.length ? <button className="btn primary" onClick={() => go("outreach")}>Open my top 5 →</button> : <UnlockBtn onUnlock={onUnlock} label={`Unlock all ${me.matchCount}`} />}<span className="kb-dim">{topSent}/{top.length} sent</span></div>
       </section>
+
+      <button className={`kh-rate${rated ? " done" : ""}`} onClick={onRate}>
+        <span className="kh-rate-ic" aria-hidden="true">★</span>
+        <span><b>{rated ? "Thanks for your feedback" : "Rate your kit"}</b><em>{rated ? "Add more any time; we read every answer." : "60 seconds. Tell us what works and what to fix."}</em></span>
+        <span className="kh-rate-go">{rated ? "Add more →" : "Rate it →"}</span>
+      </button>
 
       {!full && (
         <div className="kh-fomo">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Scene from "./Scene";
@@ -101,6 +101,70 @@ export function GlassPreview({ badge, title, sub, stats, rows, cta, onCta, note 
         {note && <p className="up-fine">{note}</p>}
         <div className="up-actions"><button className="btn white" onClick={onCta}>{cta}</button></div>
       </div>
+    </div>
+  );
+}
+
+/** "Rate your kit · 60 sec": just the feedback, no plans and no price. */
+export function RateSheet({ token, company, onClose, start = 0 }: { token: string; company: string; onClose: () => void; start?: number }) {
+  const rate = useMutation(api.kit.rate);
+  const [a, setA] = useState({ useful: start, solves: 0, valuable: 0, liked: "", missing: "" });
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const set = <K extends keyof typeof a>(k: K, v: (typeof a)[K]) => setA((o) => ({ ...o, [k]: v }));
+  const send = async () => {
+    setBusy(true);
+    await rate({ token, useful: a.useful || undefined, solves: a.solves || undefined, valuable: a.valuable || undefined, liked: a.liked, missing: a.missing }).catch(() => null);
+    setBusy(false); setDone(true);
+  };
+  return (
+    <div className="up-scrim" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="rs-card theme-light rise" role="dialog" aria-modal="true" aria-label="Rate your kit">
+        <button className="up-x dark" onClick={onClose} aria-label="Close">✕</button>
+        {done ? (
+          <div className="up-done"><h2>Thank you. <em>Really.</em></h2><p>Every answer shapes what we build next for {company} and founders like you.</p><button className="btn primary" onClick={onClose}>Back to my kit</button></div>
+        ) : (
+          <>
+            <span className="kb-kicker">60 seconds · helps us a lot</span>
+            <h2>How's your kit so far?</h2>
+            <div className="up-form">
+              <Rate label="How useful is this for your raise?" value={a.useful} set={(n) => set("useful", n)} />
+              <Rate label="Does it solve your problem?" value={a.solves} set={(n) => set("solves", n)} />
+              <Rate label="How valuable is it to you?" value={a.valuable} set={(n) => set("valuable", n)} />
+              <label className="up-q"><span>What worked best?</span><textarea className="field" maxLength={600} placeholder="e.g. the reasons each investor fits" value={a.liked} onChange={(e) => set("liked", e.target.value)} /></label>
+              <label className="up-q"><span>What should we improve?</span><textarea className="field" maxLength={600} placeholder="Be blunt. It helps." value={a.missing} onChange={(e) => set("missing", e.target.value)} /></label>
+            </div>
+            <div className="up-actions"><button className="btn ghost" onClick={onClose}>Later</button><button className="btn primary" disabled={busy || !(a.useful || a.solves || a.valuable || a.liked.trim() || a.missing.trim())} onClick={send}>{busy ? "Sending…" : "Send feedback"}</button></div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Once, about 45 seconds into her first dashboard visit: one tap, 1–5. Then the longer form, if she likes. */
+export function QuickRate({ token, onMore, onShow }: { token: string; onMore: (n: number) => void; onShow: (open: boolean) => void }) {
+  const rate = useMutation(api.kit.rate);
+  const [show, setShow] = useState(false);
+  const [picked, setPicked] = useState(0);
+  useEffect(() => {
+    let seen = false;
+    try { seen = localStorage.getItem("fos_kit_quickrate") === "1"; } catch { /* private mode */ }
+    if (seen) return;
+    const t = setTimeout(() => { setShow(true); onShow(true); try { localStorage.setItem("fos_kit_quickrate", "1"); } catch { /* ignore */ } }, 45000);
+    return () => clearTimeout(t);
+  }, [onShow]);
+  const close = () => { setShow(false); onShow(false); };
+  if (!show) return null;
+  const pick = (n: number) => { setPicked(n); void rate({ token, useful: n }).catch(() => null); };
+  return (
+    <div className="qr rise" role="dialog" aria-label="Quick feedback">
+      <button className="qr-x" onClick={close} aria-label="Close">✕</button>
+      {picked ? (
+        <><b>Thank you!</b><span>Got 60 more seconds? Two more answers help us a lot.</span><div className="qr-a"><button className="btn primary sm" onClick={() => { setShow(false); onMore(picked); }}>Tell us more</button><button className="btn ghost sm" onClick={close}>Not now</button></div></>
+      ) : (
+        <><b>Quick favour?</b><span>How useful is FirstCheq for your raise?</span><div className="qr-n">{[1, 2, 3, 4, 5].map((n) => <button key={n} onClick={() => pick(n)} aria-label={`${n} out of 5`}>{n}</button>)}</div><div className="qr-scale"><span>Not useful</span><span>Very useful</span></div></>
+      )}
     </div>
   );
 }

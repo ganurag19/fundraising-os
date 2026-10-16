@@ -222,6 +222,16 @@ export default defineSchema({
     slide: v.optional(v.number()),
   }).index("by_kitId", ["kitId"]).index("by_requestId", ["requestId"]),
 
+  // Quick feedback from the kit dashboard (16 Oct): separate from "Request full access", so feedback isn't mistaken for intent to pay.
+  kitRatings: defineTable({
+    founderId: v.id("founders"),
+    useful: v.optional(v.number()), // 1–5, the one-tap prompt
+    solves: v.optional(v.number()), // 1–5
+    valuable: v.optional(v.number()), // 1–5
+    liked: v.optional(v.string()),
+    missing: v.optional(v.string()),
+  }).index("by_founderId", ["founderId"]),
+
   // "Request full access" from the kit dashboard: the plan she wants and her answers. No payment.
   upgradeRequests: defineTable({
     founderId: v.id("founders"),

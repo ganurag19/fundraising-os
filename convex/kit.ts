@@ -123,6 +123,7 @@ export const mine = query({
     brand: brandV, facts: factsV, deck: v.union(v.null(), v.array(slideV)),
     teaser: v.union(v.null(), v.object({ summary: v.string(), highlights: v.array(v.string()) })),
     requested: v.boolean(), // she has asked for full access
+    rated: v.boolean(), // she has given quick feedback
   })),
   handler: async (ctx, { token }) => {
     const f = await founderByToken(ctx, token);
@@ -131,7 +132,8 @@ export const mine = query({
     const kit = await ctx.db.query("kits").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first();
     if (!kit) return null;
     const requested = !!(await ctx.db.query("upgradeRequests").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first());
-    return { status: kit.status, brand: kit.brand, facts: kit.facts, deck: kit.deck ?? null, teaser: kit.teaser ?? null, requested };
+    const rated = !!(await ctx.db.query("kitRatings").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first());
+    return { status: kit.status, brand: kit.brand, facts: kit.facts, deck: kit.deck ?? null, teaser: kit.teaser ?? null, requested, rated };
   },
 });
 
@@ -266,5 +268,23 @@ export const removeTestFounder = internalMutation({
     if (code && code.uses > 0) await ctx.db.patch("inviteCodes", code._id, { uses: code.uses - 1 });
     await ctx.db.delete("founders", founderId);
     return { removed: n + 1 };
+  },
+});
+
+/** "Rate your kit": the one-tap usefulness score and the 60-second form. Merges into one row per founder. */
+export const rate = mutation({
+  args: { token: v.string(), useful: v.optional(v.number()), solves: v.optional(v.number()), valuable: v.optional(v.number()), liked: v.optional(v.string()), missing: v.optional(v.string()) },
+  returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
+  handler: async (ctx, a) => {
+    const f = await founderByToken(ctx, a.token);
+    if (!f) return { ok: false as const, error: "Please reload the page and try again." };
+    if (!(await limits.limit(ctx, "feedbackPerVisitor", { key: a.token })).ok) return { ok: false as const, error: "Thanks! That's plenty for now." };
+    const r = (n?: number) => (n === undefined ? undefined : Math.min(5, Math.max(1, Math.round(n))));
+    const row = { useful: r(a.useful), solves: r(a.solves), valuable: r(a.valuable), liked: short(a.liked, 600) || undefined, missing: short(a.missing, 600) || undefined };
+    const clean = Object.fromEntries(Object.entries(row).filter(([, v]) => v !== undefined));
+    const existing = await ctx.db.query("kitRatings").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first();
+    if (existing) await ctx.db.patch("kitRatings", existing._id, clean);
+    else { await ctx.db.insert("kitRatings", { founderId: f._id, ...clean }); await ctx.db.insert("steps", { step: "kit_rated" }); }
+    return { ok: true as const };
   },
 });

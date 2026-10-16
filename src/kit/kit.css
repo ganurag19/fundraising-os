@@ -586,3 +586,25 @@
 .kr-team{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px} .kr-team div{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px} .kr-team span{font-size:13px;color:var(--blue-ink);font-weight:600} .kr-team em{font-style:normal;font-size:13px;color:var(--fg2)}
 .kr-soon{display:flex;flex-direction:column;gap:10px} .kr-soon>div{display:flex;gap:12px;align-items:flex-start} .kr-soon>div>div{display:flex;flex-direction:column;gap:2px} .kr-soon span:not(.soon-tag):not(.kr-soon-ic){font-size:13.5px;color:var(--fg2)}
 .kr-soon-ic{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#7B5CFF,#C04FD8);color:#fff}
+/* Unlock: the line under it */
+.dash .side-foot .ka-up{display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2}
+.dash .side-foot .ka-up small{font-size:11px;font-weight:500;opacity:.85}
+.ka-band button small{display:block;font-size:10.5px;font-weight:500;opacity:.75}
+/* Rate your kit */
+.kh-rate{display:flex;gap:12px;align-items:center;width:100%;text-align:left;border:1px solid rgba(233,196,106,.55);background:linear-gradient(90deg,rgba(233,196,106,.16),var(--card) 60%);border-radius:18px;padding:12px 14px;cursor:pointer;color:var(--fg)}
+.kh-rate>span:nth-child(2){flex:1;display:flex;flex-direction:column} .kh-rate b{font-size:15px} .kh-rate em{font-style:normal;font-size:13px;color:var(--fg2)}
+.kh-rate-ic{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#F5B544,#E9C46A);color:#fff;font-size:17px}
+.kh-rate-go{flex:none;font-weight:700;font-size:13px;color:var(--blue-ink)}
+.kh-rate.done{border-color:var(--line);background:var(--card)}
+.rs-card{position:relative;width:min(560px,100%);background:#fff;color:#0E0F13;border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 40px 100px -30px rgba(0,0,0,.6)}
+.rs-card h2{margin:0;font:800 26px/1.15 var(--display)} .rs-card .up-form{padding:0;background:none}
+.rs-card .up-done h2 em{font-family:var(--serif);font-weight:400;color:var(--blue-ink)} .rs-card .up-done p{color:#3D4250}
+.up-x.dark{background:#F0F1F4;color:#0E0F13}
+/* The one-tap prompt */
+.qr{position:fixed;right:16px;bottom:16px;z-index:75;width:min(340px,calc(100% - 32px));background:#fff;color:#0E0F13;border:1px solid #E3E5EA;border-radius:18px;padding:14px 16px;box-shadow:0 30px 60px -20px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:6px}
+@media (max-width:900px){.qr{bottom:84px}}
+.qr b{font-size:15px} .qr span{font-size:13.5px;color:#3D4250}
+.qr-x{position:absolute;right:8px;top:8px;border:0;background:none;color:#677083;width:28px;height:28px}
+.qr-n{display:flex;gap:6px;margin-top:4px} .qr-n button{flex:1;height:40px;border-radius:12px;border:1px solid #D2D5DC;background:#fff;font-weight:700;color:#0E0F13} .qr-n button:hover{background:#2F6BFF;border-color:#2F6BFF;color:#fff}
+.qr-scale{display:flex;justify-content:space-between} .qr-scale span{font-size:11px;color:#9AA0AD}
+.qr-a{display:flex;gap:8px;margin-top:4px}

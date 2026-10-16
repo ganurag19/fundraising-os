@@ -102,3 +102,4 @@ Anurag may reorder.
 - 16 Oct: Pitch room live (firstcheq.ai/p/<slug>): access requests, approve/decline, views/slides/meet counted, founder emailed; deck uses the site's own Google Fonts link; 'Free' highlighted on reveal buttons.
 - 16 Oct: room link in every pitch and LinkedIn note; founder sees her own room; room sections (team, traction, coming soon: video, market, data room); upgrade nudge emails day 1 and day 4 (10 AM IST cron); new step headings; shorter why cards. Live.
 - 16 Oct: SalesRobot one-pager drafted and parked (docs/sell/SALESROBOT_PITCH.md); priority: friends test → ads → partnerships.
+- 16 Oct: quick feedback live: Rate your kit card on Home, one-tap 1–5 prompt after 45s (once), unlock button says 2 minutes · founding price; ratings in /admin apart from full-access requests.

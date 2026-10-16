@@ -108,6 +108,7 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
     [funnel ? st("kit_facts_confirmed") : undefined, "confirmed their facts"],
     [funnel ? st("kit_ready") : undefined, "got their kit"],
     [funnel ? st("signed_in") : undefined, "signed in with Google"],
+    [funnel ? st("kit_rated") : undefined, "gave quick feedback"],
     [funnel ? ev("click_swipe_send").people : undefined, "sent a pitch"],
     [funnel ? st("kit_upgrade_requested") : undefined, "asked for full access"],
     [funnel ? st("room_access_requested") : undefined, "investors asked to see a room"],
@@ -196,6 +197,16 @@ function Overview({ adminKey, onExpired, demo }: { adminKey: string; onExpired: 
         <h3 className="admin-h3">Request invite ({forms.invites.length})</h3>
         {forms.invites.length === 0 ? <p className="muted small">None yet.</p> : (
           <div className="admin-table">{forms.invites.map((w) => <div className="admin-tr wide" key={w.at + w.email}><span><b>{w.name}</b> · {w.company} · {w.stage}</span><a href={`mailto:${w.email}`}>{w.email}</a><span className="muted small">{when(w.at)}</span></div>)}</div>
+        )}
+        <h3 className="admin-h3">Raise Kit: quick feedback ({forms.ratings.length}){forms.ratings.some((r) => r.useful) ? ` · avg useful ${(forms.ratings.filter((r) => r.useful).reduce((a, r) => a + (r.useful ?? 0), 0) / forms.ratings.filter((r) => r.useful).length).toFixed(1)}/5` : ""}</h3>
+        {forms.ratings.length === 0 ? <p className="muted small">None yet.</p> : (
+          <div className="admin-table">{forms.ratings.map((r) => (
+            <div className="admin-tr wide" key={r.at}>
+              <span><b>{r.company}</b>{r.useful ? ` · useful ${r.useful}/5` : ""}{r.solves ? ` · solves ${r.solves}/5` : ""}{r.valuable ? ` · valuable ${r.valuable}/5` : ""}
+                {r.liked && <><br /><span className="muted small">Liked: {r.liked}</span></>}{r.missing && <><br /><span className="muted small">Improve: {r.missing}</span></>}</span>
+              <span /><span className="muted small">{when(r.at)}</span>
+            </div>
+          ))}</div>
         )}
         <h3 className="admin-h3">Raise Kit: full access requests ({forms.upgrades.length})</h3>
         {forms.upgrades.length === 0 ? <p className="muted small">None yet.</p> : (
@@ -300,6 +311,7 @@ const DEMO: Demo = {
     { at: T - 7200000, company: "Paniwala Labs", name: "Priya Menon", sectors: ["Agritech"], stage: "Pre-seed", ask: "₹25–50L", website: null, linkedin: null, code: "TEST-TWO", emails: "writing", signedIn: null, sent: 0, plan: false, replied: 0, meetings: 0, drafts: 0, kit: { status: "building", deck: false, uploads: 0, brand: "#2F6BFF" }, request: null, welcome: null },
   ],
   forms: {
+    ratings: [{ at: T - 1000000, company: "Kiln Labs", useful: 4, solves: 4, valuable: 5, liked: "The investor reasons", missing: "PowerPoint download" }],
     upgrades: [{ at: T - 2000000, company: "Kiln Labs", email: "arjun@kilnlabs.example.in", plan: "raise_kit", wouldPay: "yes", price: "₹15,000–25,000", solves: 4, valuable: 5, liked: "Pitches open on a real deal", missing: "Editable PowerPoint", raisingWhen: "Now", phone: null }],
     invites: [{ at: T, name: "Kabir Shah", email: "kabir@example.test", company: "Stackwise", stage: "Seed", status: "waiting" }],
     interest: [{ at: T - 5000000, name: "Arjun Rao", email: "arjun@kilnlabs.example.in", plan: "round_pass", note: null }],

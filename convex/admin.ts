@@ -155,6 +155,7 @@ export const forms = query({
     wants: v.array(v.object({ key: v.string(), n: v.number(), companies: v.array(v.string()) })),
     pmf: v.object({ very: v.number(), somewhat: v.number(), not: v.number(), benefits: v.array(v.object({ answer: v.string(), text: v.string(), company: v.string() })) }),
     ai: v.object({ calls: v.number(), failed: v.number(), byPurpose: v.record(v.string(), v.number()), lastErrors: v.array(v.object({ at: v.number(), purpose: v.string(), error: v.string() })) }),
+    ratings: v.array(v.object({ at: v.number(), company: v.string(), useful: v.union(v.number(), v.null()), solves: v.union(v.number(), v.null()), valuable: v.union(v.number(), v.null()), liked: v.union(v.string(), v.null()), missing: v.union(v.string(), v.null()) })),
     // Raise Kit "Request full access" (15 Oct): the plan and her answers
     upgrades: v.array(v.object({ at: v.number(), company: v.string(), email: v.union(v.string(), v.null()), plan: v.string(), wouldPay: v.string(), price: v.union(v.string(), v.null()), solves: v.number(), valuable: v.number(), liked: v.union(v.string(), v.null()), missing: v.union(v.string(), v.null()), raisingWhen: v.union(v.string(), v.null()), phone: v.union(v.string(), v.null()) })),
   })),
@@ -171,7 +172,9 @@ export const forms = query({
     for (const c of calls) count(byPurpose, c.purpose);
     const failed = calls.filter((c) => c.error);
     const ups = await ctx.db.query("upgradeRequests").order("desc").take(200); // all time: there are few
+    const rts = await ctx.db.query("kitRatings").order("desc").take(300);
     return {
+      ratings: await Promise.all(rts.map(async (x) => ({ at: x._creationTime, company: (await ctx.db.get("founders", x.founderId))?.company ?? "", useful: x.useful ?? null, solves: x.solves ?? null, valuable: x.valuable ?? null, liked: x.liked ?? null, missing: x.missing ?? null }))),
       upgrades: await Promise.all(ups.map(async (u) => ({
         at: u._creationTime, company: (await ctx.db.get("founders", u.founderId))?.company ?? "", email: u.email ?? null, plan: u.plan, wouldPay: u.wouldPay, price: u.price ?? null,
         solves: u.solves, valuable: u.valuable, liked: u.liked ?? null, missing: u.missing ?? null, raisingWhen: u.raisingWhen ?? null, phone: u.phone ?? null,

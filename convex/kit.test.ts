@@ -196,3 +196,19 @@ describe("Pitch room link in every pitch", () => {
     expect(noteWithRoom(long, room)).toBe(long); // would pass LinkedIn's 300 characters: left as it is
   });
 });
+
+describe("Quick feedback", () => {
+  test("one tap, then the longer form, merge into one row; kept apart from full-access requests", async () => {
+    const t = await setup();
+    await t.mutation(api.kit.confirm, { ...arjun, token: tokenA });
+    expect((await t.query(api.kit.mine, { token: tokenA }))?.rated).toBe(false);
+    expect(await t.mutation(api.kit.rate, { token: tokenA, useful: 4 })).toEqual({ ok: true });
+    expect(await t.mutation(api.kit.rate, { token: tokenA, solves: 9, liked: "The reasons", missing: "PowerPoint" })).toEqual({ ok: true });
+    const rows = await t.run((ctx) => ctx.db.query("kitRatings").collect());
+    expect(rows.length).toBe(1);
+    expect([rows[0].useful, rows[0].solves, rows[0].liked, rows[0].missing]).toEqual([4, 5, "The reasons", "PowerPoint"]);
+    expect((await t.query(api.kit.mine, { token: tokenA }))?.rated).toBe(true);
+    expect((await t.run((ctx) => ctx.db.query("upgradeRequests").collect())).length).toBe(0);
+    expect((await t.mutation(api.kit.rate, { token: tokenB, useful: 5 })).ok).toBe(false);
+  });
+});
