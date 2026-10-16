@@ -11,6 +11,7 @@ import { freshVisitorToken, rememberInviteCode, savedInviteCode, visitorToken } 
 import { BrandSlide, BrandTeaser } from "./BrandDeck";
 import { SLIDE_TITLES } from "./kitTypes";
 import { useKitView } from "./useKitView";
+import { ReviewResult } from "./Review";
 import InAppHint from "../components/InAppHint";
 import "./kit.css";
 
@@ -30,7 +31,7 @@ type Facts = {
   primary: string; accent: string; logo: string; font: string; fontCss: string;
 };
 const EMPTY: Facts = { company: "", website: "", name: "", linkedin: "", sectors: [], stage: "", ask: "", oneLiner: "", founderLine: "", traction: "", problem: "", product: "", forWho: "", customers: "", market: "", businessModel: "", competitors: "", useOfFunds: "", whyNow: "", team: [], primary: "#3D7BFF", accent: "", logo: "", font: "", fontCss: "" };
-type Step = "site" | "reading" | "enrich" | "confirm" | "building" | "reveal";
+type Step = "site" | "deck" | "review" | "reading" | "enrich" | "confirm" | "building" | "reveal";
 type Found = { palette: string[]; numbers: string[]; problemOptions: string[]; productOptions: string[] };
 
 const SAVE = "fos_kit_draft";
@@ -50,7 +51,7 @@ export default function Build() {
   const navigate = useNavigate();
   const [saved] = useState(load);
   // Her site from /kit goes straight to reading; a reload mid-flow picks up where she was.
-  const [step, setStep] = useState<Step>(() => params.get("site") && !params.has("edit") ? "reading" : saved?.step === "building" || saved?.step === "reveal" ? "site" : saved?.step ?? "site");
+  const [step, setStep] = useState<Step>(() => params.get("start") === "deck" ? "deck" : params.get("site") && !params.has("edit") ? "reading" : saved?.step === "building" || saved?.step === "reveal" ? "site" : saved?.step ?? "site");
   const [f, setF] = useState<Facts>(() => params.get("site") ? { ...EMPTY, website: params.get("site") ?? "" } : saved?.f ?? EMPTY);
   const [found, setFound] = useState<Found>(() => (!params.get("site") && saved?.found) || { palette: [], numbers: [], problemOptions: [], productOptions: [] });
   const set = <K extends keyof Facts>(k: K, val: Facts[K]) => setF((o) => ({ ...o, [k]: val }));
@@ -59,7 +60,7 @@ export default function Build() {
   useEffect(() => { try { sessionStorage.setItem(SAVE, JSON.stringify({ step, f, found })); } catch { /* private mode */ } }, [step, f, found]);
 
   // This browser holds a list saved to a Google account she isn't signed into, or a classic list with no kit: start fresh.
-  const stale = me !== undefined && kit !== undefined && !!me && ((me.claimed && !isAuthenticated && !isLoading) || (!kit && step === "reading" && !!params.get("site")));
+  const stale = me !== undefined && kit !== undefined && !!me && ((me.claimed && !isAuthenticated && !isLoading) || (!kit && ((step === "reading" && !!params.get("site")) || (step === "deck" && params.get("start") === "deck"))));
   useEffect(() => { if (stale) { freshVisitorToken(); location.reload(); } }, [stale]);
   // "Edit my facts" from the dashboard: start from what's saved (adjusted during render, once).
   const editing = params.has("edit");
@@ -76,12 +77,12 @@ export default function Build() {
     setStep("confirm");
   }
   // Coming back with a kit already built: signed in goes to the dashboard, otherwise the reveal.
-  const built = !!kit?.deck && me?.emailsStatus === "ready" && !editing && step !== "building" && step !== "confirm";
+  const built = !!kit?.deck && me?.emailsStatus === "ready" && !editing && !["building", "confirm", "deck", "review"].includes(step);
   const toApp = built && isAuthenticated && !!me?.unlocked;
   if (built && !toApp && step !== "reveal") setStep("reveal");
   useEffect(() => { if (toApp) navigate("/app"); }, [toApp, navigate]);
 
-  const pct = { site: 8, reading: 22, enrich: 42, confirm: 64, building: 86, reveal: 100 }[step];
+  const pct = { site: 8, deck: 12, review: 36, reading: 22, enrich: 42, confirm: 64, building: 86, reveal: 100 }[step];
   return (
     <main className="theme-light kbx">
       <header className="kb-top">
@@ -92,7 +93,9 @@ export default function Build() {
       <div className="kb-main">
         {(me === undefined || kit === undefined || stale) && <div className="spinner" />}
         {me !== undefined && kit !== undefined && !stale && <>
-        {step === "site" && <SiteStep f={f} set={set} onRead={() => setStep("reading")} onSkip={() => setStep("enrich")} />}
+        {step === "site" && <SiteStep f={f} set={set} onRead={() => setStep("reading")} onSkip={() => setStep("enrich")} onDeck={() => setStep("deck")} />}
+        {step === "deck" && <DeckStart token={token} setF={setF} onReviewed={() => setStep("review")} onSkip={() => setStep(f.company ? "confirm" : "site")} />}
+        {step === "review" && <ReviewStep token={token} company={f.company} onBuild={() => setStep("confirm")} />}
         {step === "reading" && <Reading token={token} f={f} setF={setF} setFound={setFound} onDone={() => setStep("enrich")} />}
         {step === "enrich" && <Enrich token={token} f={f} setF={setF} onDone={() => setStep("confirm")} onBack={() => setStep("site")} />}
         {step === "confirm" && <Confirm token={token} f={f} set={set} setF={setF} found={found} onBuilt={() => setStep("building")} onBack={() => setStep("enrich")} />}
@@ -105,7 +108,7 @@ export default function Build() {
 }
 
 /* ---------- Step 0: her website ---------- */
-function SiteStep({ f, set, onRead, onSkip }: { f: Facts; set: <K extends keyof Facts>(k: K, v: Facts[K]) => void; onRead: () => void; onSkip: () => void }) {
+function SiteStep({ f, set, onRead, onSkip, onDeck }: { f: Facts; set: <K extends keyof Facts>(k: K, v: Facts[K]) => void; onRead: () => void; onSkip: () => void; onDeck: () => void }) {
   return (
     <section className="kb-step rise">
       <span className="kb-kicker">Step 1 of 4 · Your website</span>
@@ -116,7 +119,8 @@ function SiteStep({ f, set, onRead, onSkip }: { f: Facts; set: <K extends keyof 
         <input autoFocus value={f.website.replace(/^https?:\/\//, "").replace(/^www\./, "")} onChange={(e) => set("website", e.target.value)} placeholder="yourstartup.in" aria-label="Your website" autoCapitalize="none" inputMode="url" />
         <button className="btn primary" type="submit" disabled={!f.website.trim()}>Read my website</button>
       </form>
-      <button className="text-link kb-skip" onClick={onSkip}>No website yet? Start with your deck or a few facts</button>
+      <button className="text-link kb-skip" onClick={onDeck}>Have a deck? Start with your deck instead →</button>
+      <button className="text-link kb-skip" onClick={onSkip}>No website or deck yet? Start with a few facts</button>
     </section>
   );
 }
@@ -197,11 +201,85 @@ function Scanner({ host, shown }: { host: string; shown: number }) {
 }
 const Find = ({ label, value, d }: { label: string; value: string; d: number }) => <div className="kb-find" style={{ animationDelay: `${d * 0.15}s` }}><em>{label}</em><span>{value}</span></div>;
 
+type DocOut = { founderName: string; founderLine: string; companyName: string; oneLiner: string; problem: string; product: string; forWho: string; revenue: string; customers: string; customersNamed: string; traction: string; team: Member[]; market: string; businessModel: string; competitors: string; useOfFunds: string; whyNow: string; stage: string };
+/** Files fill what the site didn't say, and their numbers win (her deck is more exact than her site). */
+function mergeDocs(o: Facts, out: DocOut): Facts {
+  return {
+    ...o, name: o.name || out.founderName, founderLine: o.founderLine || out.founderLine, company: o.company || out.companyName,
+    oneLiner: o.oneLiner || out.oneLiner, problem: o.problem || out.problem, product: o.product || out.product, forWho: o.forWho || out.forWho,
+    traction: out.traction || [out.revenue, out.customers].filter(Boolean).join(", ") || o.traction, customers: out.customersNamed || o.customers,
+    team: out.team.length ? out.team : o.team, market: out.market || o.market, businessModel: out.businessModel || o.businessModel,
+    competitors: out.competitors || o.competitors, useOfFunds: out.useOfFunds || o.useOfFunds, whyNow: out.whyNow || o.whyNow,
+    stage: STAGES.includes(out.stage) ? out.stage : o.stage,
+  };
+}
+
+/* ---------- Start with your deck: upload, review, then build the raise from it ---------- */
+function DeckStart({ token, setF, onReviewed, onSkip }: { token: string; setF: React.Dispatch<React.SetStateAction<Facts>>; onReviewed: () => void; onSkip: () => void }) {
+  const uploadUrl = useMutation(api.kit.uploadUrl);
+  const readDocs = useAction(api.kitAi.readDocs);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function go(file: File | undefined) {
+    if (!file) return;
+    setError("");
+    if (file.type !== "application/pdf") { setError("Please upload your deck as a PDF (in PowerPoint or Google Slides: File → Download → PDF)."); return; }
+    if (file.size > 15 * 1024 * 1024) { setError("That file is over 15 MB. Try a smaller PDF."); return; }
+    setBusy(true);
+    try {
+      const u = await uploadUrl({ token });
+      if (!u.ok) { setError(u.error); setBusy(false); return; }
+      const r = await fetch(u.url, { method: "POST", headers: { "Content-Type": "application/pdf" }, body: file });
+      const { storageId } = (await r.json()) as { storageId: Id<"_storage"> };
+      const out = await readDocs({ token, files: [storageId], review: file.name });
+      setBusy(false);
+      if (!out.ok) { setError(out.error); return; }
+      setF((o) => mergeDocs(o, out));
+      if (out.reviewed) onReviewed();
+      else { setError("We read your deck but couldn't finish the review this time. You can still build your raise from it."); }
+    } catch { setBusy(false); setError("Couldn't upload that. Check your connection and try again."); }
+  }
+  return (
+    <section className="kb-step rise">
+      <span className="kb-kicker">Start with your deck</span>
+      <h1>Get your deck reviewed <em>like an investor would.</em></h1>
+      <p className="kb-help">Upload the deck you have. In about 30 seconds: your readiness score, whether to raise now or build traction first, and the fixes that matter most. Then turn it into your raise.</p>
+      {busy ? (
+        <div className="rv-wait kb-deckwait">{["Reading your deck, slide by slide", "Checking it against what seed investors look for", "Stress-testing your thesis", "Pulling out your facts for your raise"].map((x, i) => <span key={x} style={{ animationDelay: `${i * 6}s` }}>✓ {x}</span>)}</div>
+      ) : (
+        <label className="rv-drop"><input type="file" accept="application/pdf" onChange={(e) => void go(e.target.files?.[0])} /><b>Upload my deck (PDF)</b><span>Up to 15 MB. Read once, then deleted. Never shown to anyone.</span></label>
+      )}
+      {error && <><p className="err" role="alert">{error}</p>{/couldn't finish/.test(error) && <button className="btn primary" onClick={onSkip}>Build my raise from it →</button>}</>}
+      {!busy && <button className="text-link kb-skip" onClick={onSkip}>No deck? Start with your website instead</button>}
+    </section>
+  );
+}
+
+/** Her review, right after the upload: the aha, then the bridge into her raise. */
+function ReviewStep({ token, company, onBuild }: { token: string; company: string; onBuild: () => void }) {
+  const review = useQuery(api.kit.myReview, { token });
+  if (review === undefined) return <div className="spinner" />;
+  if (!review) return <section className="kb-step center"><p className="kb-note">Your review isn't ready yet. You can still build your raise from your deck.</p><button className="btn primary" onClick={onBuild}>Build my raise →</button></section>;
+  return (
+    <section className="kb-reveal rise">
+      <span className="kb-kicker gold">Your deck review</span>
+      <h1>{company || "Your deck"}, <em>reviewed.</em></h1>
+      <div className="rv"><ReviewResult review={review} onUnlock={onBuild} hideCta /></div>
+      <div className="kb-cta kb-bridge">
+        <p className="kb-cta-line"><b>Now turn this deck into your raise:</b> active investors who fit you, a personal pitch to each, your deck and teaser in your brand, a private pitch room, and the full review (every fix, every stress test) in your dashboard.</p>
+        <button className="btn primary big" onClick={onBuild}>Build my raise from this deck →</button>
+        <span className="kb-dim">We've filled in your facts from the deck. You check them next.</span>
+      </div>
+    </section>
+  );
+}
+
 /* ---------- Step 2: Make it sharper (optional): deck, CV, LinkedIn PDF ---------- */
 function Enrich({ token, f, setF, onDone, onBack }: { token: string; f: Facts; setF: React.Dispatch<React.SetStateAction<Facts>>; onDone: () => void; onBack: () => void }) {
   const uploadUrl = useMutation(api.kit.uploadUrl);
   const readDocs = useAction(api.kitAi.readDocs);
   const [files, setFiles] = useState<File[]>([]);
+  const [alsoReview, setAlsoReview] = useState(true); // the first file is her deck: review it too (free)
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const pick = (list: FileList | null) => {
@@ -223,19 +301,12 @@ function Enrich({ token, f, setF, onDone, onBack }: { token: string; f: Facts; s
         if (!r.ok) throw new Error("upload");
         ids.push(((await r.json()) as { storageId: Id<"_storage"> }).storageId);
       }
-      setBusy("Reading your files…");
-      const out = await readDocs({ token, files: ids });
+      setBusy(alsoReview ? "Reading and reviewing your deck…" : "Reading your files…");
+      const out = await readDocs({ token, files: ids, review: alsoReview ? files[0]?.name ?? "deck.pdf" : undefined });
       setBusy("");
       if (!out.ok) { setError(out.error); return; }
       // Files fill what the site didn't say, and their numbers win (her deck is more exact than her site).
-      setF((o) => ({
-        ...o, name: o.name || out.founderName, founderLine: o.founderLine || out.founderLine, company: o.company || out.companyName,
-        oneLiner: o.oneLiner || out.oneLiner, problem: o.problem || out.problem, product: o.product || out.product, forWho: o.forWho || out.forWho,
-        traction: out.traction || [out.revenue, out.customers].filter(Boolean).join(", ") || o.traction, customers: out.customersNamed || o.customers,
-        team: out.team.length ? out.team : o.team, market: out.market || o.market, businessModel: out.businessModel || o.businessModel,
-        competitors: out.competitors || o.competitors, useOfFunds: out.useOfFunds || o.useOfFunds, whyNow: out.whyNow || o.whyNow,
-        stage: STAGES.includes(out.stage) ? out.stage : o.stage,
-      }));
+      setF((o) => mergeDocs(o, out));
       onDone();
     } catch {
       setBusy(""); setError("Couldn't upload that. Check your connection and try again, or skip this step.");
@@ -252,6 +323,7 @@ function Enrich({ token, f, setF, onDone, onBack }: { token: string; f: Facts; s
         <span>Pitch deck · CV · LinkedIn PDF · one-pager. Up to 3, 15 MB each.</span>
       </label>
       {files.length > 0 && <ul className="kb-files">{files.map((x, i) => <li key={x.name + i}><span>📄 {x.name}</span><button aria-label={`Remove ${x.name}`} onClick={() => setFiles((o) => o.filter((_, j) => j !== i))}>✕</button></li>)}</ul>}
+      {files.length > 0 && <label className="kb-check"><input type="checkbox" checked={alsoReview} onChange={(e) => setAlsoReview(e.target.checked)} /><span><b>Also review my deck, free</b> (the first file): readiness score, raise now or build traction first, and the top fixes. It'll be in your dashboard.</span></label>}
       <p className="kb-fine">LinkedIn: open your profile → More → Save to PDF. We read your files once, then delete them. They're never shown to anyone.</p>
       {error && <p className="err" role="alert">{error}</p>}
       <div className="kb-actions">
@@ -503,6 +575,8 @@ function Reveal({ token }: { token: string }) {
         <div><b>5</b><span>personal pitches ready</span></div>
       </div>
 
+      <RevealReview token={token} />
+
       <h2>Your top 5, <em>with a pitch written to each.</em></h2>
       <p className="kb-help">Tap an investor to see why they fit, the score behind it, and the pitch we wrote them.</p>
       <div className="kb-picks2">
@@ -529,6 +603,19 @@ function Reveal({ token }: { token: string }) {
       {cta}
       <div className={`kb-stick${ctaSeen ? " gone" : ""}`}><button className="btn white" disabled={busy} onClick={go}><GoogleG />{busy ? "Opening…" : isAuthenticated ? <>Open my dashboard <em className="kb-free">Free</em></> : <>Read and send my pitches <em className="kb-free">Free</em></>}</button></div>
     </section>
+  );
+}
+
+/** If she uploaded her deck: the score and verdict, with the full review waiting in her dashboard. */
+function RevealReview({ token }: { token: string }) {
+  const r = useQuery(api.kit.myReview, { token });
+  if (!r) return null;
+  const label = { raise_now: "Ready to raise", raise_with_fixes: "Raise after these fixes", build_traction_first: "Build more traction first" }[r.verdict];
+  return (
+    <div className="kb-rvmini">
+      <div className="rv-score" style={{ "--p": r.score } as React.CSSProperties}><b>{r.score}</b><span>/100</span></div>
+      <div><span className="kb-kicker">Your deck review</span><b>{label}</b><span>{r.fixes[0] ? `Top fix: ${r.fixes[0].fix}` : r.verdictWhy}</span><em>Your full review is in your dashboard.</em></div>
+    </div>
   );
 }
 

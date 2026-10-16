@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import type { FunctionReturnType } from "convex/server";
 
 // Deck and pitch review: her own deck, read once (then deleted), reviewed like a seed investor would before a first call.
 // Free: score, verdict, strengths and the top 3 fixes. The rest (every fix, thesis stress test, missing pieces, investor questions) with full access.
@@ -57,10 +58,21 @@ export function DeckReview({ token, onUnlock }: { token: string; onUnlock: () =>
       </div>
     );
   }
+  return (
+    <div className="rv">
+      <ReviewResult review={review} onUnlock={onUnlock} />
+      <button className="btn ghost sm" onClick={() => setAgain(true)}>Review a new version of my deck</button>
+    </div>
+  );
+}
+
+type ReviewData = NonNullable<FunctionReturnType<typeof api.kit.myReview>>;
+/** The review itself: score, verdict, what works, fixes, thesis stress test, missing pieces, questions (locked parts ask to unlock). */
+export function ReviewResult({ review, onUnlock, unlockLabel = "🔒 Unlock the full review", unlockLine = "Every fix, every stress test, what's missing, and the questions you'll face, with full access.", hideCta = false }: { review: ReviewData; onUnlock: () => void; unlockLabel?: string; unlockLine?: string; hideCta?: boolean }) {
   const [vLabel, vTone] = VERDICT[review.verdict];
   const lockedN = review.locked.fixes + review.locked.tests + review.locked.missing + review.locked.questions;
   return (
-    <div className="rv">
+    <>
       <section className="rv-top">
         <div className="rv-score" style={{ "--p": review.score } as React.CSSProperties}><b>{review.score}</b><span>/100</span></div>
         <div><span className={`rv-verdict ${vTone}`}>{vLabel}</span><p>{review.verdictWhy}</p><span className="kb-dim">{review.fileName} · reviewed {new Date(review.at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span></div>
@@ -81,9 +93,8 @@ export function DeckReview({ token, onUnlock }: { token: string; onUnlock: () =>
       )}
       {(review.missing.length > 0 || review.locked.missing > 0) && <section className="rv-card"><h3>Missing for your stage</h3>{review.missing.length ? <ul>{review.missing.map((m) => <li key={m}>{m}</li>)}</ul> : <Locked line={`${review.locked.missing} things seed investors expect`} onUnlock={onUnlock} />}</section>}
       {(review.questions.length > 0 || review.locked.questions > 0) && <section className="rv-card"><h3>Questions you'll be asked</h3>{review.questions.length ? <ol>{review.questions.map((q) => <li key={q}>{q}</li>)}</ol> : <Locked line={`The ${review.locked.questions} questions investors will most likely ask`} onUnlock={onUnlock} />}</section>}
-      {lockedN > 0 && <div className="rv-cta"><b>See the full review</b><span>Every fix, every stress test, what's missing, and the questions you'll face, with full access.</span><button className="btn primary" onClick={onUnlock}>🔒 Unlock the full review</button></div>}
-      <button className="btn ghost sm" onClick={() => setAgain(true)}>Review a new version of my deck</button>
-    </div>
+      {lockedN > 0 && !hideCta && <div className="rv-cta"><b>See the full review</b><span>{unlockLine}</span><button className="btn primary" onClick={onUnlock}>{unlockLabel}</button></div>}
+    </>
   );
 }
 

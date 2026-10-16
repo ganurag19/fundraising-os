@@ -1399,3 +1399,4 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .k6-fix em,.k6-test em{font:600 10px/1.2 var(--mono);font-style:normal;text-transform:uppercase;color:var(--muted)} .k6-fix span,.k6-test span{color:var(--fg2)}
 .k6-not{font-weight:600;color:var(--fg)!important}
 .k6-hero-link{font-size:14px;color:var(--fg2);text-decoration:none;border:1px solid rgba(123,92,255,.3);background:rgba(123,92,255,.07);border-radius:999px;padding:7px 14px} .k6-hero-link b{color:var(--blue-ink)}
+.k6-hero-link{cursor:pointer;font:inherit;font-size:14px} .k6-cta{align-self:flex-start;margin-top:6px}

@@ -178,6 +178,6 @@ Return:
 - questions: the 5 questions investors will most likely ask after reading this deck, specific to it.
 
 Rules:
-- Base everything on what the deck and FACTS actually say. Quote her numbers exactly; never invent a number, customer, competitor or market size. If something isn't in the deck, say it's missing; don't fill it in.
+- Base everything on what the deck and FACTS actually say. Quote her numbers exactly (write "Rs" or "INR" amounts with ₹); never invent a number, customer, competitor or market size. If something isn't in the deck, say it's missing; don't fill it in.
 - No generic advice that would fit any deck ("tell a compelling story"). Every point must point at something in this deck.
 - Plain Indian English, ₹ for money. Never promise funding or meetings. Don't say or hint that AI wrote this.`;

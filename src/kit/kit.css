@@ -648,3 +648,11 @@
 .bd-feats{gap:14px} .bd-feats div{font-size:21px;padding:16px 18px}
 .bd-list{font-size:20px;gap:12px}
 .bd-kpis b{font-size:56px}
+/* Deck-first */
+.kb-deckwait{padding:8px 0}
+.kb-bridge{position:static;background:linear-gradient(135deg,rgba(47,107,255,.10),rgba(192,79,216,.10));border:1px solid rgba(123,92,255,.25);margin-top:6px}
+.kb-check{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;font-size:14px;color:var(--fg2);cursor:pointer}
+.kb-check input{margin-top:3px;width:18px;height:18px;accent-color:#7B5CFF} .kb-check b{color:var(--fg)}
+.kb-rvmini{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid rgba(123,92,255,.3);border-radius:18px;padding:14px}
+.kb-rvmini>div:last-child{display:flex;flex-direction:column;gap:2px} .kb-rvmini b{font-size:16px} .kb-rvmini span:not(.kb-kicker){font-size:13.5px;color:var(--fg2)} .kb-rvmini em{font-style:normal;font-size:12.5px;color:var(--blue-ink);font-weight:600}
+.kb-rvmini .rv-score{width:76px;height:76px;padding-top:22px} .kb-rvmini .rv-score b{font-size:24px}

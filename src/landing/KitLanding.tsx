@@ -60,6 +60,13 @@ export default function KitLanding() {
     if (code) q.set("code", code);
     navigate(`/build${q.toString() ? `?${q}` : ""}`);
   };
+  // Door 2: start with her deck (upload, review, then build the raise from it).
+  const startDeck = () => {
+    const q = new URLSearchParams({ start: "deck" });
+    const code = new URLSearchParams(location.search).get("code");
+    if (code) q.set("code", code);
+    navigate(`/build?${q}`);
+  };
   const tryLive = () => {
     setSoon(false);
     if (site.trim()) savePrefill({ first: site.trim(), sectors: [], stage: "", ask: "" });
@@ -91,7 +98,7 @@ export default function KitLanding() {
         {input("big")}
         <span className="k4-coffee">{cup}All the heavy lifting of your first round, done over a cup of coffee.</span>
         <span className="k2-alt">No website yet? <button className="text-link" onClick={() => start()}>Tell us about your startup</button></span>
-        <a className="k6-hero-link" href="#review">✓ Already have a deck? <b>Get it reviewed like an investor would →</b></a>
+        <button className="k6-hero-link" onClick={() => startDeck()}>✓ Have a deck? <b>Start with your deck, get it reviewed free →</b></button>
         <InAppHint />
         <div className="k2-fan k5-fan" aria-hidden="true">
           <div className="f1 k2-mini deck"><span className="k5-tag">Deck · 9 slides</span><b>Kiln Labs</b><span>Seed · ₹3 Cr · in your brand</span></div>
@@ -130,7 +137,7 @@ export default function KitLanding() {
             <p className="muted small">Example review of a made-up startup.</p>
           </div>
         </div>
-        <div className="k2-copy"><span className="k2-k">Already have a deck?</span><h2>Get it reviewed<br />like an investor would.</h2><p>Upload your deck. We read it the way a seed investor does before a first call, then tell you plainly: your readiness score, whether to raise now or build traction first, the weak points slide by slide with exactly what to fix, your thesis stress-tested, and the questions you'll face.</p><p className="k6-not">Not a template. A second pair of eyes on <b>your</b> deck.</p></div>
+        <div className="k2-copy"><span className="k2-k">Already have a deck?</span><h2>Get it reviewed<br />like an investor would.</h2><p>Upload your deck. We read it the way a seed investor does before a first call, then tell you plainly: your readiness score, whether to raise now or build traction first, the weak points slide by slide with exactly what to fix, your thesis stress-tested, and the questions you'll face.</p><p className="k6-not">Not a template. A second pair of eyes on <b>your</b> deck.</p><button className="btn primary k6-cta" onClick={() => startDeck()}>Review my deck, free →</button></div>
       </section>
 
       {/* 3: who's investing in you */}

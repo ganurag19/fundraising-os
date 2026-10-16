@@ -224,7 +224,8 @@ export default defineSchema({
 
   // Deck and pitch review (16 Oct): her own deck, read once (then deleted), reviewed like a seed investor would.
   deckReviews: defineTable({
-    founderId: v.id("founders"),
+    founderId: v.optional(v.id("founders")), // set once she has a record (deck-first visitors review before that)
+    token: v.optional(v.string()), // her browser's code, so a review before sign-up follows her into her kit
     fileName: v.string(),
     score: v.number(), // 0–100, investor-readiness of this deck
     verdict: v.union(v.literal("raise_now"), v.literal("raise_with_fixes"), v.literal("build_traction_first")),
@@ -234,7 +235,7 @@ export default defineSchema({
     missing: v.array(v.string()),
     thesis: v.object({ claim: v.string(), tests: v.array(v.object({ question: v.string(), risk: v.union(v.literal("high"), v.literal("medium"), v.literal("low")), howToAnswer: v.string() })) }),
     questions: v.array(v.string()),
-  }).index("by_founderId", ["founderId"]),
+  }).index("by_founderId", ["founderId"]).index("by_token", ["token"]),
 
   // Quick feedback from the kit dashboard (16 Oct): separate from "Request full access", so feedback isn't mistaken for intent to pay.
   kitRatings: defineTable({

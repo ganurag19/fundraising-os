@@ -233,3 +233,21 @@ describe("Deck review", () => {
     expect(await t.query(api.kit.myReview, { token: tokenA })).toBeNull(); // signed out
   });
 });
+
+describe("Start with your deck", () => {
+  test("a review made before sign-up shows for her browser, and moves to her record when she confirms", async () => {
+    const t = await setup();
+    await t.mutation(internal.kit.saveReview, { token: tokenA, fileName: "deck.pdf", score: 52, verdict: "raise_with_fixes", verdictWhy: "Good start.", strengths: ["Clear problem"], fixes: [{ slide: "Traction", issue: "No trend", fix: "Chart it", impact: "high" }], missing: [], thesis: { claim: "Kilns pay", tests: [] }, questions: [] });
+    expect((await t.query(api.kit.myReview, { token: tokenA }))?.score).toBe(52);
+    expect(await t.query(api.kit.myReview, { token: tokenB })).toBeNull();
+    await t.mutation(api.kit.confirm, { ...arjun, token: tokenA });
+    const r = await t.run(async (ctx) => (await ctx.db.query("deckReviews").collect())[0]);
+    const f = await t.run(async (ctx) => (await ctx.db.query("founders").collect())[0]);
+    expect(r.founderId).toBe(f._id);
+    // once saved to Google, only that account sees it
+    const userId = await t.run((ctx) => ctx.db.insert("users", { email: "arjun@kilnlabs.example.in" }));
+    await t.withIdentity({ subject: `${userId}|s1` }).mutation(api.founders.claim, { token: tokenA });
+    expect(await t.query(api.kit.myReview, { token: tokenA })).toBeNull();
+    expect((await t.withIdentity({ subject: `${userId}|s1` }).query(api.kit.myReview, { token: tokenA }))?.score).toBe(52);
+  });
+});

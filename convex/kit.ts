@@ -105,6 +105,8 @@ export const confirm = mutation({
       const id = await ctx.db.insert("founders", { token: a.token, inviteCode: code, ...profile, emailsStatus: "none" });
       f = await ctx.db.get("founders", id);
       await ctx.db.insert("steps", { step: "signup_done" });
+      // A review she got before signing up (Start with your deck) moves to her record.
+      for (const r of await ctx.db.query("deckReviews").withIndex("by_token", (q) => q.eq("token", a.token)).take(10)) if (!r.founderId) await ctx.db.patch("deckReviews", r._id, { founderId: id });
     }
     if (!f) return { ok: false as const, error: "Please reload the page and try again." };
     const kit = await ctx.db.query("kits").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first();
@@ -294,7 +296,7 @@ const testV = v.object({ question: v.string(), risk: v.union(v.literal("high"), 
 const verdictV = v.union(v.literal("raise_now"), v.literal("raise_with_fixes"), v.literal("build_traction_first"));
 
 export const saveReview = internalMutation({
-  args: { founderId: v.id("founders"), fileName: v.string(), score: v.number(), verdict: verdictV, verdictWhy: v.string(), strengths: v.array(v.string()), fixes: v.array(fixV), missing: v.array(v.string()), thesis: v.object({ claim: v.string(), tests: v.array(testV) }), questions: v.array(v.string()) },
+  args: { founderId: v.optional(v.id("founders")), token: v.optional(v.string()), fileName: v.string(), score: v.number(), verdict: verdictV, verdictWhy: v.string(), strengths: v.array(v.string()), fixes: v.array(fixV), missing: v.array(v.string()), thesis: v.object({ claim: v.string(), tests: v.array(testV) }), questions: v.array(v.string()) },
   returns: v.null(),
   handler: async (ctx, a) => {
     await ctx.db.insert("deckReviews", a);
@@ -303,7 +305,8 @@ export const saveReview = internalMutation({
   },
 });
 
-/** Her latest deck review. Free: the score, verdict, strengths and top 3 fixes; the rest with full access (counts shown). */
+/** Her latest deck review: from her account once she's signed in, or from this browser before that (deck-first).
+ *  Free: the score, verdict, strengths and top 3 fixes; the rest with full access (counts shown). */
 export const myReview = query({
   args: { token: v.string() },
   returns: v.union(v.null(), v.object({
@@ -312,11 +315,13 @@ export const myReview = query({
     locked: v.object({ fixes: v.number(), missing: v.number(), tests: v.number(), questions: v.number() }),
   })),
   handler: async (ctx, { token }) => {
+    if (!TOKEN.test(token)) return null;
     const f = await founderByToken(ctx, token);
-    if (!f || !(await isUnlocked(ctx, f))) return null;
-    const r = await ctx.db.query("deckReviews").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).order("desc").first();
+    if (f?.userId && !(await isUnlocked(ctx, f))) return null; // saved to an account: only that account
+    const byFounder = f ? await ctx.db.query("deckReviews").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).order("desc").first() : null;
+    const r = byFounder ?? (await ctx.db.query("deckReviews").withIndex("by_token", (q) => q.eq("token", token)).order("desc").first());
     if (!r) return null;
-    const full = f.plan === "round_pass";
+    const full = f?.plan === "round_pass";
     return {
       at: r._creationTime, fileName: r.fileName, score: r.score, verdict: r.verdict, verdictWhy: r.verdictWhy, strengths: r.strengths,
       fixes: full ? r.fixes : r.fixes.slice(0, 3), missing: full ? r.missing : [], thesis: full ? r.thesis : { claim: r.thesis.claim, tests: r.thesis.tests.slice(0, 1) },

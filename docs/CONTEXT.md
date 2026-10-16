@@ -105,3 +105,4 @@ Anurag may reorder.
 - 16 Oct: quick feedback live: Rate your kit card on Home, one-tap 1–5 prompt after 45s (once), unlock button says 2 minutes · founding price; ratings in /admin apart from full-access requests.
 - 16 Oct: fixed sign-in on a new device (sent home before the account's startup loaded); accounts with no startup get a clear start screen. Live.
 - 16 Oct: Deck and pitch review live (upload her deck: score, raise now or traction first, fixes, thesis stress test, questions; free = top 3 fixes); prominent on landing (section + hero link + FAQ + plans) and dashboard (Home tile + nav); interest chips; leaner deck slides; Apurv's feedback parked in PLAN.
+- 16 Oct: Start with your deck live (/build?start=deck: upload → facts + review before sign-in → Build my raise from this deck); deck review also on the website path's upload step; review card on the reveal; landing hero button and section CTA.

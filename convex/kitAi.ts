@@ -196,22 +196,23 @@ const DocFacts = z.object({
 });
 type DocFactsT = z.infer<typeof DocFacts>;
 const docOut = v.object({
-  ok: v.literal(true), founderName: v.string(), founderLine: v.string(), companyName: v.string(), oneLiner: v.string(), problem: v.string(), product: v.string(), forWho: v.string(),
+  ok: v.literal(true), reviewed: v.boolean(), founderName: v.string(), founderLine: v.string(), companyName: v.string(), oneLiner: v.string(), problem: v.string(), product: v.string(), forWho: v.string(),
   revenue: v.string(), customers: v.string(), customersNamed: v.string(), traction: v.string(),
   team: v.array(v.object({ name: v.string(), role: v.string(), line: v.string() })),
   market: v.string(), businessModel: v.string(), competitors: v.string(), useOfFunds: v.string(), whyNow: v.string(), stage: v.string(), raising: v.string(),
 });
 
-/** Reads up to 3 PDFs once, returns the facts for her to confirm, and deletes the files whatever happens. */
+/** Reads up to 3 PDFs once, returns the facts for her to confirm, and deletes the files whatever happens.
+ *  review: the first file is her deck; also review it like an investor would (no sign-in needed; saved to her browser). */
 export const readDocs = action({
-  args: { token: v.string(), files: v.array(v.id("_storage")) },
+  args: { token: v.string(), files: v.array(v.id("_storage")), review: v.optional(v.string()) },
   returns: v.union(docOut, v.object({ ok: v.literal(false), error: v.string() })),
-  handler: async (ctx, { token, files }): Promise<({ ok: true } & DocFactsT) | { ok: false; error: string }> => {
+  handler: async (ctx, { token, files, review }): Promise<({ ok: true; reviewed: boolean } & DocFactsT) | { ok: false; error: string }> => {
     const ids = files.slice(0, 3);
     try {
       if (!TOKEN.test(token) || !ids.length) return { ok: false as const, error: "Please reload the page and try again." };
       if (!(await limits.limit(ctx, "docReadsPerVisitor", { key: token })).ok) return { ok: false as const, error: "We've read enough files for today. Fill in your facts on the next screen." };
-      const blocks: Anthropic.Messages.ContentBlockParam[] = [];
+      const blocks: Anthropic.Messages.DocumentBlockParam[] = [];
       let total = 0;
       for (const id of ids) {
         const info: { size: number; contentType: string | null } | null = await ctx.runQuery(internal.kit.fileInfo, { id });
@@ -223,26 +224,39 @@ export const readDocs = action({
         if (blob) blocks.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: Buffer.from(await blob.arrayBuffer()).toString("base64") } });
       }
       if (!blocks.length) return { ok: false as const, error: "We couldn't open those files. Fill in your facts on the next screen." };
-      if (!(await limits.limit(ctx, "aiCallsGlobal", { count: 1 })).ok) return { ok: false as const, error: BUSY };
-      const started = Date.now();
-      const note = `${blocks.length} PDF file(s) from the founder. Pull out the facts.`;
-      try {
-        const res = await new Anthropic().messages.parse({ model: HAIKU, max_tokens: 2000, system: DOC_FACTS_SYSTEM, messages: [{ role: "user", content: [...blocks, { type: "text", text: note }] }], output_config: { format: zodOutputFormat(DocFacts) } });
-        const out = res.parsed_output;
-        await logCall(ctx, { purpose: "kit_read_docs", model: HAIKU, input: note, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
-        if (!out) return { ok: false as const, error: "We couldn't read those files. Fill in your facts on the next screen." };
-        await ctx.runMutation(internal.kit.logStep, { step: "kit_enriched" });
-        return { ok: true as const, ...out, team: out.team.slice(0, 4) };
-      } catch (e) {
-        await logCall(ctx, { purpose: "kit_read_docs", model: HAIKU, input: note, output: "", started, error: errText(e) });
-        return { ok: false as const, error: BUSY };
-      }
+      // The review (Sonnet) is capped per browser and app-wide, since it runs before sign-in.
+      const wantReview = !!review && (await limits.limit(ctx, "deckReviewsPerVisitor", { key: token })).ok && (await limits.limit(ctx, "deckReviewsGlobal")).ok;
+      if (!(await limits.limit(ctx, "aiCallsGlobal", { count: wantReview ? 2 : 1 })).ok) return { ok: false as const, error: BUSY };
+      const f: Doc<"founders"> | null = await ctx.runQuery(internal.founders.founderForAction, { token });
+      const [facts, reviewed] = await Promise.all([
+        docFacts(ctx, blocks),
+        wantReview ? runReview(ctx, blocks[0], "{}", { token, founderId: f?._id, fileName: review ?? "deck.pdf" }) : Promise.resolve(false),
+      ]);
+      if (!facts) return reviewed ? { ok: true as const, reviewed: true, ...EMPTY_FACTS } : { ok: false as const, error: "We couldn't read those files. Fill in your facts on the next screen." };
+      await ctx.runMutation(internal.kit.logStep, { step: "kit_enriched" });
+      return { ok: true as const, reviewed, ...facts, team: facts.team.slice(0, 4) };
     } finally {
       // Read once, never kept (Privacy).
       await Promise.all(ids.map((id) => ctx.storage.delete(id).catch(() => undefined)));
     }
   },
 });
+
+const EMPTY_FACTS: DocFactsT = { founderName: "", founderLine: "", companyName: "", oneLiner: "", problem: "", product: "", forWho: "", revenue: "", customers: "", customersNamed: "", traction: "", team: [], market: "", businessModel: "", competitors: "", useOfFunds: "", whyNow: "", stage: "", raising: "" };
+
+async function docFacts(ctx: ActionCtx, blocks: Anthropic.Messages.DocumentBlockParam[]): Promise<DocFactsT | null> {
+  const started = Date.now();
+  const note = `${blocks.length} PDF file(s) from the founder. Pull out the facts.`;
+  try {
+    const res = await new Anthropic().messages.parse({ model: HAIKU, max_tokens: 2000, system: DOC_FACTS_SYSTEM, messages: [{ role: "user", content: [...blocks, { type: "text", text: note }] }], output_config: { format: zodOutputFormat(DocFacts) } });
+    const out = res.parsed_output;
+    await logCall(ctx, { purpose: "kit_read_docs", model: HAIKU, input: note, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
+    return out ?? null;
+  } catch (e) {
+    await logCall(ctx, { purpose: "kit_read_docs", model: HAIKU, input: note, output: "", started, error: errText(e) });
+    return null;
+  }
+}
 
 /* ---------- Deck and pitch review: her own deck, read once, reviewed like a seed investor would ---------- */
 
@@ -255,6 +269,32 @@ const Review = z.object({
   questions: z.array(z.string()),
 });
 
+/** Reviews one deck and saves it (to her account if she has one, else to her browser's code). True when saved. */
+async function runReview(ctx: ActionCtx, deck: Anthropic.Messages.DocumentBlockParam, facts: string, who: { token: string; founderId?: Id<"founders">; fileName: string }): Promise<boolean> {
+  const note = `FACTS:\n${facts}\n\nReview the attached deck.${facts === "{}" ? " She hasn't confirmed any facts yet: judge the deck on what it says." : ""}`;
+  const started = Date.now();
+  try {
+    const res = await new Anthropic().messages.parse({ model: SONNET, max_tokens: 3500, system: DECK_REVIEW_SYSTEM, messages: [{ role: "user", content: [deck, { type: "text", text: note }] }], output_config: { format: zodOutputFormat(Review) } });
+    const out = res.parsed_output;
+    await logCall(ctx, { founderId: who.founderId, purpose: "kit_deck_review", model: SONNET, input: note, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
+    if (!out) return false;
+    const t = (x: string, n: number) => x.trim().slice(0, n);
+    await ctx.runMutation(internal.kit.saveReview, {
+      founderId: who.founderId, token: who.token, fileName: t(who.fileName, 120) || "deck.pdf", score: Math.max(0, Math.min(100, Math.round(out.score))), verdict: out.verdict, verdictWhy: t(out.verdictWhy, 500),
+      strengths: out.strengths.slice(0, 4).map((x) => t(x, 160)),
+      fixes: out.fixes.slice(0, 8).map((x) => ({ slide: t(x.slide, 60), issue: t(x.issue, 220), fix: t(x.fix, 260), impact: x.impact })),
+      missing: out.missing.slice(0, 6).map((x) => t(x, 80)),
+      thesis: { claim: t(out.thesis.claim, 300), tests: out.thesis.tests.slice(0, 6).map((x) => ({ question: t(x.question, 220), risk: x.risk, howToAnswer: t(x.howToAnswer, 300) })) },
+      questions: out.questions.slice(0, 5).map((x) => t(x, 220)),
+    });
+    return true;
+  } catch (e) {
+    await logCall(ctx, { founderId: who.founderId, purpose: "kit_deck_review", model: SONNET, input: note, output: "", started, error: errText(e) });
+    return false;
+  }
+}
+
+/** From the dashboard (signed in): review a new version of her deck, against her confirmed facts. */
 export const reviewDeck = action({
   args: { token: v.string(), file: v.id("_storage"), fileName: v.string() },
   returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
@@ -271,31 +311,8 @@ export const reviewDeck = action({
       const blob = await ctx.storage.get(file);
       if (!blob) return { ok: false as const, error: "We couldn't open that file. Try again." };
       const facts = JSON.stringify({ company: f.company, stage: f.stage, raising: f.ask, sectors: f.sectors, oneLiner: f.oneLiner, traction: f.traction });
-      const note = `FACTS:\n${facts}\n\nReview the attached deck.`;
-      const started = Date.now();
-      try {
-        const res = await new Anthropic().messages.parse({
-          model: SONNET, max_tokens: 3500, system: DECK_REVIEW_SYSTEM,
-          messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: Buffer.from(await blob.arrayBuffer()).toString("base64") } }, { type: "text", text: note }] }],
-          output_config: { format: zodOutputFormat(Review) },
-        });
-        const out = res.parsed_output;
-        await logCall(ctx, { founderId: f._id, purpose: "kit_deck_review", model: SONNET, input: note, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
-        if (!out) return { ok: false as const, error: BUSY };
-        const t = (s: string, n: number) => s.trim().slice(0, n);
-        await ctx.runMutation(internal.kit.saveReview, {
-          founderId: f._id, fileName: t(fileName, 120) || "deck.pdf", score: Math.max(0, Math.min(100, Math.round(out.score))), verdict: out.verdict, verdictWhy: t(out.verdictWhy, 500),
-          strengths: out.strengths.slice(0, 4).map((x) => t(x, 160)),
-          fixes: out.fixes.slice(0, 8).map((x) => ({ slide: t(x.slide, 60), issue: t(x.issue, 220), fix: t(x.fix, 260), impact: x.impact })),
-          missing: out.missing.slice(0, 6).map((x) => t(x, 80)),
-          thesis: { claim: t(out.thesis.claim, 300), tests: out.thesis.tests.slice(0, 6).map((x) => ({ question: t(x.question, 220), risk: x.risk, howToAnswer: t(x.howToAnswer, 300) })) },
-          questions: out.questions.slice(0, 5).map((x) => t(x, 220)),
-        });
-        return { ok: true as const };
-      } catch (e) {
-        await logCall(ctx, { founderId: f._id, purpose: "kit_deck_review", model: SONNET, input: note, output: "", started, error: errText(e) });
-        return { ok: false as const, error: BUSY };
-      }
+      const ok = await runReview(ctx, { type: "document", source: { type: "base64", media_type: "application/pdf", data: Buffer.from(await blob.arrayBuffer()).toString("base64") } }, facts, { token, founderId: f._id, fileName });
+      return ok ? { ok: true as const } : { ok: false as const, error: BUSY };
     } finally {
       await ctx.storage.delete(file).catch(() => undefined); // read once, never kept
     }
