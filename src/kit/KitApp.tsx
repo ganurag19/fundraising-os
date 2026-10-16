@@ -19,6 +19,7 @@ import { SLIDE_TITLES } from "./kitTypes";
 import type { KitView } from "./kitTypes";
 import { useKitView } from "./useKitView";
 import InvLogo from "./InvLogo";
+import { DeckReview } from "./Review";
 import { COMPARE, PLANS } from "../landing/plans";
 import { Outreach } from "./Outreach";
 import { GlassPreview, QuickRate, RateSheet, UpgradeSheet } from "./Upgrade";
@@ -28,14 +29,14 @@ import "./kit.css";
 // Raise plan, Deck, Teaser, what's coming (Investor Q&A, Market & competition, Data room, Founders circle) and Profile.
 // Free shows part of the kit; every locked piece asks for full access.
 
-type Tab = "home" | "outreach" | "plan" | "deck" | "teaser" | "qa" | "market" | "dataroom" | "circle" | "profile" | "plans" | "settings";
+type Tab = "home" | "outreach" | "plan" | "review" | "deck" | "teaser" | "qa" | "market" | "dataroom" | "circle" | "profile" | "plans" | "settings";
 type Nav = [Tab, string, string, boolean];
 const RAISE: Nav[] = [["home", "Home", "◎", false], ["outreach", "Investors", "★", false], ["plan", "Game plan", "➚", false]];
-const KIT: Nav[] = [["deck", "Deck", "▭", false], ["teaser", "Teaser", "▤", false], ["qa", "Investor Q&A", "❝", true], ["market", "Market & competition", "⚔", true], ["dataroom", "Data room", "▦", true]];
+const KIT: Nav[] = [["review", "Deck review", "✓", false], ["deck", "Deck", "▭", false], ["teaser", "Teaser", "▤", false], ["qa", "Investor Q&A", "❝", true], ["market", "Market & competition", "⚔", true], ["dataroom", "Data room", "▦", true]];
 const PEOPLE: Nav[] = [["circle", "Founders circle", "✦", true], ["profile", "Pitch profile", "◐", false], ["plans", "Plans and upgrade", "◆", false]];
 const ALL: Nav[] = [...RAISE, ...KIT, ...PEOPLE, ["settings", "Settings", "⚙", false]];
 const TITLES: Record<Tab, [string, string]> = {
-  home: ["Your round,", "at a glance."], outreach: ["Your investors", "and outreach."], plan: ["Your", "game plan."], deck: ["Your deck,", "in your brand."], teaser: ["Your", "teaser."],
+  home: ["Your round,", "at a glance."], outreach: ["Your investors", "and outreach."], plan: ["Your", "game plan."], review: ["Your deck,", "reviewed like an investor would."], deck: ["Your deck,", "in your brand."], teaser: ["Your", "teaser."],
   qa: ["They will ask.", "Be ready."], market: ["Know your", "market."], dataroom: ["Your", "data room."], circle: ["Founders who've", "been there."], profile: ["Your", "pitch profile."], plans: ["Pick how much help", "you want."], settings: ["Your", "settings."],
 };
 const FREE_SLIDES = 3; // cover, problem, solution open; the rest with full access
@@ -186,6 +187,7 @@ export default function KitApp() {
         {tab === "home" && <Home me={me} k={view ?? null} go={go} onUnlock={openUp} onRate={() => setRating(0)} rated={kk.rated} sent={sent} replies={replies} ready={ready} full={full} />}
         {tab === "outreach" && <Outreach me={me} token={token} onToast={setToast} onUnlock={() => openUp()} />}
         {tab === "plan" && <Plan me={me} go={go} />}
+        {tab === "review" && <DeckReview token={token} onUnlock={() => openUp()} />}
         {tab === "deck" && (view ? <Deck k={view} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
         {tab === "teaser" && (view ? <TeaserTab k={view} onUnlock={() => openUp()} /> : <Pending status={kk.status} />)}
         {(tab === "qa" || tab === "market" || tab === "dataroom" || tab === "circle") && <Soon tab={tab} company={me.company} onToast={setToast} />}
@@ -226,6 +228,14 @@ function Home({ me, k, go, onUnlock, onRate, rated, sent, replies, ready, full }
         <div className="kh-five">{top.map((r) => <span key={r.rank} className={r.status !== "new" ? "sent" : ""} title={r.displayName ?? ""}><InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={38} /><em>{r.status !== "new" ? "✓ Sent" : (r.displayName ?? "").split(" ")[0]}</em><Dial score={r.score} size={30} /></span>)}</div>
         <div className="kh-next-a">{topSent < top.length ? <button className="btn primary" onClick={() => go("outreach")}>Open my top 5 →</button> : <UnlockBtn onUnlock={onUnlock} label={`Unlock all ${me.matchCount}`} />}<span className="kb-dim">{topSent}/{top.length} sent</span></div>
       </section>
+
+      <button className="kh-review" onClick={() => go("review")}>
+        <span className="kh-review-ic" aria-hidden="true">✓</span>
+        <span><b>Already have a deck? Get it reviewed like an investor would.</b><em>Readiness score, raise now or build traction first, slide-by-slide fixes, and your thesis stress-tested. About 30 seconds.</em></span>
+        <span className="kh-rate-go">Review my deck →</span>
+      </button>
+
+      <Interests />
 
       <button className={`kh-rate${rated ? " done" : ""}`} onClick={onRate}>
         <span className="kh-rate-ic" aria-hidden="true">★</span>
@@ -557,5 +567,28 @@ function CompanySwitch({ me, brand, onToast, compact = false }: { me: Me; brand:
         </div>
       )}
     </div>
+  );
+}
+
+/** "What would help you most?": a few ideas she can tick. Each tap is counted on /admin. */
+const INTERESTS: [string, string][] = [
+  ["kit_interview", "Investor interview prep"], ["kit_intros", "Warm intros to investors"], ["kit_profiles", "Richer investor profiles"],
+  ["kit_deckfix", "An expert to fix my deck with me"], ["kit_global", "Global investors, beyond India"],
+];
+function Interests() {
+  const want = useMutation(api.track.want);
+  const [picked, setPicked] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem("fos_kit_interests") ?? "[]"); } catch { return []; } });
+  const pick = (k: string) => {
+    if (picked.includes(k)) return;
+    const next = [...picked, k];
+    setPicked(next);
+    try { localStorage.setItem("fos_kit_interests", JSON.stringify(next)); } catch { /* ignore */ }
+    void want({ token: visitorToken(), key: k }).catch(() => null);
+  };
+  return (
+    <section className="kh-int">
+      <div><b>What would help you most next?</b><span>Tap any. We build what founders ask for.</span></div>
+      <div className="kh-int-chips">{INTERESTS.map(([k, l]) => <button key={k} aria-pressed={picked.includes(k)} onClick={() => pick(k)}>{picked.includes(k) ? "✓ " : "+ "}{l}</button>)}</div>
+    </section>
   );
 }

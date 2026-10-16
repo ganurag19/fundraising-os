@@ -288,3 +288,40 @@ export const rate = mutation({
     return { ok: true as const };
   },
 });
+
+const fixV = v.object({ slide: v.string(), issue: v.string(), fix: v.string(), impact: v.union(v.literal("high"), v.literal("medium"), v.literal("low")) });
+const testV = v.object({ question: v.string(), risk: v.union(v.literal("high"), v.literal("medium"), v.literal("low")), howToAnswer: v.string() });
+const verdictV = v.union(v.literal("raise_now"), v.literal("raise_with_fixes"), v.literal("build_traction_first"));
+
+export const saveReview = internalMutation({
+  args: { founderId: v.id("founders"), fileName: v.string(), score: v.number(), verdict: verdictV, verdictWhy: v.string(), strengths: v.array(v.string()), fixes: v.array(fixV), missing: v.array(v.string()), thesis: v.object({ claim: v.string(), tests: v.array(testV) }), questions: v.array(v.string()) },
+  returns: v.null(),
+  handler: async (ctx, a) => {
+    await ctx.db.insert("deckReviews", a);
+    await ctx.db.insert("steps", { step: "deck_reviewed" });
+    return null;
+  },
+});
+
+/** Her latest deck review. Free: the score, verdict, strengths and top 3 fixes; the rest with full access (counts shown). */
+export const myReview = query({
+  args: { token: v.string() },
+  returns: v.union(v.null(), v.object({
+    at: v.number(), fileName: v.string(), score: v.number(), verdict: verdictV, verdictWhy: v.string(), strengths: v.array(v.string()),
+    fixes: v.array(fixV), missing: v.array(v.string()), thesis: v.union(v.null(), v.object({ claim: v.string(), tests: v.array(testV) })), questions: v.array(v.string()),
+    locked: v.object({ fixes: v.number(), missing: v.number(), tests: v.number(), questions: v.number() }),
+  })),
+  handler: async (ctx, { token }) => {
+    const f = await founderByToken(ctx, token);
+    if (!f || !(await isUnlocked(ctx, f))) return null;
+    const r = await ctx.db.query("deckReviews").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).order("desc").first();
+    if (!r) return null;
+    const full = f.plan === "round_pass";
+    return {
+      at: r._creationTime, fileName: r.fileName, score: r.score, verdict: r.verdict, verdictWhy: r.verdictWhy, strengths: r.strengths,
+      fixes: full ? r.fixes : r.fixes.slice(0, 3), missing: full ? r.missing : [], thesis: full ? r.thesis : { claim: r.thesis.claim, tests: r.thesis.tests.slice(0, 1) },
+      questions: full ? r.questions : [],
+      locked: full ? { fixes: 0, missing: 0, tests: 0, questions: 0 } : { fixes: Math.max(0, r.fixes.length - 3), missing: r.missing.length, tests: Math.max(0, r.thesis.tests.length - 1), questions: r.questions.length },
+    };
+  },
+});

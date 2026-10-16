@@ -33,6 +33,7 @@ function WhyIcon({ k }: { k: "data" | "engine" | "templates" | "circle" }) {
 }
 
 const FAQ: [string, string][] = [
+  ["Isn't an AI deck just generic?", "That's why the review matters. Upload the deck you already have and we review it like a seed investor would: what works, what to fix slide by slide, your thesis stress-tested, and whether to raise now or build traction first. Your deck, your numbers, no templates."],
   ["What do I need to start?", "Your website, or a few lines about your startup. Add an old deck or your CV if you have one, check the facts we found, and your kit is built. About 5 minutes."],
   ["Is the deck really in my brand?", "Yes. We take your logo, colours and fonts from your website and build the deck from our templates. You can edit every slide."],
   ["Do you make up numbers?", "Never. The kit uses your numbers. Market size and competition come with sources; anything we can't source is marked for you to fill in."],
@@ -90,6 +91,7 @@ export default function KitLanding() {
         {input("big")}
         <span className="k4-coffee">{cup}All the heavy lifting of your first round, done over a cup of coffee.</span>
         <span className="k2-alt">No website yet? <button className="text-link" onClick={() => start()}>Tell us about your startup</button></span>
+        <a className="k6-hero-link" href="#review">✓ Already have a deck? <b>Get it reviewed like an investor would →</b></a>
         <InAppHint />
         <div className="k2-fan k5-fan" aria-hidden="true">
           <div className="f1 k2-mini deck"><span className="k5-tag">Deck · 9 slides</span><b>Kiln Labs</b><span>Seed · ₹3 Cr · in your brand</span></div>
@@ -115,6 +117,20 @@ export default function KitLanding() {
       <section className="k2-row flip">
         <div className="k2-visual"><KitShowcase /></div>
         <div className="k2-copy"><span className="k2-k">Step 2</span><h2>Everything an investor will ask for.<br />Made for you, in minutes.</h2><p>A 9-slide deck in your brand, a two-page teaser, the 20 questions investors will ask with your answers drafted, and a data room checklist. Your numbers only; gaps are marked, never made up.</p></div>
+      </section>
+
+      {/* 2b: deck and pitch review */}
+      <section className="k2-row k6-review" id="review">
+        <div className="k2-visual">
+          <div className="k6-rv" aria-label="Example review of a made-up startup's deck">
+            <div className="k6-rv-top"><div className="k6-ring"><b>46</b><span>/100</span></div><div><span className="k6-verdict">Raise after these fixes</span><p>62 paying kilns is real traction for seed. The deck hides it: no growth chart, no sourced market, no use of funds.</p></div></div>
+            <div className="k6-fix high"><em>High impact · Traction</em><b>"Up from 9 in March" has no trend or date.</b><span>→ Chart paying kilns month by month, with churn.</span></div>
+            <div className="k6-fix high"><em>High impact · Problem</em><b>"Coal is 40% of cost" has no source or ₹ loss.</b><span>→ Show a typical kiln's monthly coal bill and what 18% saves.</span></div>
+            <div className="k6-test"><em>Thesis stress test · high risk</em><b>Does it really cut coal use, and by how much?</b><span>Answer with before-and-after numbers from two named kilns.</span></div>
+            <p className="muted small">Example review of a made-up startup.</p>
+          </div>
+        </div>
+        <div className="k2-copy"><span className="k2-k">Already have a deck?</span><h2>Get it reviewed<br />like an investor would.</h2><p>Upload your deck. We read it the way a seed investor does before a first call, then tell you plainly: your readiness score, whether to raise now or build traction first, the weak points slide by slide with exactly what to fix, your thesis stress-tested, and the questions you'll face.</p><p className="k6-not">Not a template. A second pair of eyes on <b>your</b> deck.</p></div>
       </section>
 
       {/* 3: who's investing in you */}

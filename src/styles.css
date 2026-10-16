@@ -1387,3 +1387,15 @@ textarea.field.body-edit{min-height:300px;line-height:1.55;font-size:14px;field-
 .k2-why-card b{font-size:20px}
 .k2-why-card p{font-size:16px;line-height:1.6}
 .inapp-hint{margin:6px 0 0;max-width:46ch;font-size:13px;line-height:1.5;color:#7A4B06;background:rgba(245,181,68,.16);border:1px solid rgba(245,181,68,.45);border-radius:12px;padding:8px 12px;text-align:center}
+/* /kit: Deck and pitch review section */
+.k6-review .k2-visual{background:linear-gradient(135deg,#1B1650,#2F2380 55%,#5B2A86)}
+.k6-rv{width:min(460px,100%);background:#fff;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 30px 60px -30px rgba(0,0,0,.6);text-align:left}
+.k6-rv-top{display:flex;gap:14px;align-items:center} .k6-rv-top p{margin:4px 0 0;font-size:13.5px;color:var(--fg2);line-height:1.45}
+.k6-ring{flex:none;width:74px;height:74px;border-radius:50%;background:conic-gradient(#7B5CFF 46%,#EEE9F8 0);display:flex;align-items:baseline;justify-content:center;padding-top:24px;position:relative}
+.k6-ring::before{content:"";position:absolute;inset:7px;border-radius:50%;background:#fff} .k6-ring b,.k6-ring span{position:relative} .k6-ring b{font:800 24px/1 var(--display)} .k6-ring span{font-size:11px;color:var(--muted)}
+.k6-verdict{font:700 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--amber);background:var(--amber-soft);border-radius:7px;padding:5px 8px}
+.k6-fix,.k6-test{border:1px solid var(--line);border-left:4px solid var(--red);border-radius:12px;padding:9px 11px;display:flex;flex-direction:column;gap:2px;font-size:13px;animation:kbIn .5s ease both}
+.k6-fix:nth-of-type(3){animation-delay:.15s} .k6-test{border-left-color:#7B5CFF;animation-delay:.3s}
+.k6-fix em,.k6-test em{font:600 10px/1.2 var(--mono);font-style:normal;text-transform:uppercase;color:var(--muted)} .k6-fix span,.k6-test span{color:var(--fg2)}
+.k6-not{font-weight:600;color:var(--fg)!important}
+.k6-hero-link{font-size:14px;color:var(--fg2);text-decoration:none;border:1px solid rgba(123,92,255,.3);background:rgba(123,92,255,.07);border-radius:999px;padding:7px 14px} .k6-hero-link b{color:var(--blue-ink)}

@@ -212,3 +212,24 @@ describe("Quick feedback", () => {
     expect((await t.mutation(api.kit.rate, { token: tokenB, useful: 5 })).ok).toBe(false);
   });
 });
+
+describe("Deck review", () => {
+  test("free shows the score, verdict, strengths and top 3 fixes; the rest stays on the server", async () => {
+    const t = await setup();
+    await t.mutation(api.kit.confirm, { ...arjun, token: tokenA });
+    const userId = await t.run((ctx) => ctx.db.insert("users", { email: "arjun@kilnlabs.example.in" }));
+    const arjunIn = t.withIdentity({ subject: `${userId}|s1` });
+    await arjunIn.mutation(api.founders.claim, { token: tokenA });
+    const founderId = await t.run(async (ctx) => (await ctx.db.query("founders").collect())[0]._id);
+    const fix = (n: number) => ({ slide: `Slide ${n}`, issue: `Issue ${n}`, fix: `Fix ${n}`, impact: "high" as const });
+    await t.mutation(internal.kit.saveReview, {
+      founderId, fileName: "kiln.pdf", score: 46, verdict: "raise_with_fixes", verdictWhy: "Real traction, hidden.", strengths: ["62 paying kilns"],
+      fixes: [1, 2, 3, 4, 5].map(fix), missing: ["Use of funds"], thesis: { claim: "Kilns will pay", tests: [{ question: "Q1", risk: "high", howToAnswer: "A1" }, { question: "Q2", risk: "low", howToAnswer: "A2" }] },
+      questions: ["What is your churn?"],
+    });
+    const r = await arjunIn.query(api.kit.myReview, { token: tokenA });
+    expect([r?.score, r?.verdict, r?.fixes.length, r?.thesis?.tests.length, r?.missing, r?.questions]).toEqual([46, "raise_with_fixes", 3, 1, [], []]);
+    expect(r?.locked).toEqual({ fixes: 2, missing: 1, tests: 1, questions: 1 });
+    expect(await t.query(api.kit.myReview, { token: tokenA })).toBeNull(); // signed out
+  });
+});

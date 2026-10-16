@@ -8,7 +8,8 @@ import type { ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { normaliseUrl } from "./lib/links";
-import { DECK_SYSTEM, DOC_FACTS_SYSTEM, KIT_SECTORS, SITE_FACTS_SYSTEM } from "./lib/prompt";
+import { DECK_REVIEW_SYSTEM, DECK_SYSTEM, DOC_FACTS_SYSTEM, KIT_SECTORS, SITE_FACTS_SYSTEM } from "./lib/prompt";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { cleanDeck, deckProblems } from "./lib/checks";
 import { pageText } from "./suggest";
 import { firstEmails } from "./write";
@@ -239,6 +240,64 @@ export const readDocs = action({
     } finally {
       // Read once, never kept (Privacy).
       await Promise.all(ids.map((id) => ctx.storage.delete(id).catch(() => undefined)));
+    }
+  },
+});
+
+/* ---------- Deck and pitch review: her own deck, read once, reviewed like a seed investor would ---------- */
+
+const Review = z.object({
+  score: z.number(), verdict: z.enum(["raise_now", "raise_with_fixes", "build_traction_first"]), verdictWhy: z.string(),
+  strengths: z.array(z.string()),
+  fixes: z.array(z.object({ slide: z.string(), issue: z.string(), fix: z.string(), impact: z.enum(["high", "medium", "low"]) })),
+  missing: z.array(z.string()),
+  thesis: z.object({ claim: z.string(), tests: z.array(z.object({ question: z.string(), risk: z.enum(["high", "medium", "low"]), howToAnswer: z.string() })) }),
+  questions: z.array(z.string()),
+});
+
+export const reviewDeck = action({
+  args: { token: v.string(), file: v.id("_storage"), fileName: v.string() },
+  returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), error: v.string() })),
+  handler: async (ctx, { token, file, fileName }): Promise<{ ok: true } | { ok: false; error: string }> => {
+    try {
+      const userId = await getAuthUserId(ctx);
+      const f: Doc<"founders"> | null = await ctx.runQuery(internal.founders.founderForAction, { token });
+      if (!f || !userId || f.userId !== userId) return { ok: false as const, error: "Please sign in to review your deck." };
+      const info: { size: number; contentType: string | null } | null = await ctx.runQuery(internal.kit.fileInfo, { id: file });
+      if (!info || info.contentType !== "application/pdf") return { ok: false as const, error: "Please upload your deck as a PDF." };
+      if (info.size > MAX_FILE) return { ok: false as const, error: "That file is over 15 MB. Try a smaller PDF." };
+      if (!(await limits.limit(ctx, "deckReviewsPerFounder", { key: f._id })).ok) return { ok: false as const, error: "That's 3 reviews today. Come back tomorrow." };
+      if (!(await limits.limit(ctx, "aiCallsGlobal", { count: 1 })).ok) return { ok: false as const, error: BUSY };
+      const blob = await ctx.storage.get(file);
+      if (!blob) return { ok: false as const, error: "We couldn't open that file. Try again." };
+      const facts = JSON.stringify({ company: f.company, stage: f.stage, raising: f.ask, sectors: f.sectors, oneLiner: f.oneLiner, traction: f.traction });
+      const note = `FACTS:\n${facts}\n\nReview the attached deck.`;
+      const started = Date.now();
+      try {
+        const res = await new Anthropic().messages.parse({
+          model: SONNET, max_tokens: 3500, system: DECK_REVIEW_SYSTEM,
+          messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: Buffer.from(await blob.arrayBuffer()).toString("base64") } }, { type: "text", text: note }] }],
+          output_config: { format: zodOutputFormat(Review) },
+        });
+        const out = res.parsed_output;
+        await logCall(ctx, { founderId: f._id, purpose: "kit_deck_review", model: SONNET, input: note, output: out ? JSON.stringify(out) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
+        if (!out) return { ok: false as const, error: BUSY };
+        const t = (s: string, n: number) => s.trim().slice(0, n);
+        await ctx.runMutation(internal.kit.saveReview, {
+          founderId: f._id, fileName: t(fileName, 120) || "deck.pdf", score: Math.max(0, Math.min(100, Math.round(out.score))), verdict: out.verdict, verdictWhy: t(out.verdictWhy, 500),
+          strengths: out.strengths.slice(0, 4).map((x) => t(x, 160)),
+          fixes: out.fixes.slice(0, 8).map((x) => ({ slide: t(x.slide, 60), issue: t(x.issue, 220), fix: t(x.fix, 260), impact: x.impact })),
+          missing: out.missing.slice(0, 6).map((x) => t(x, 80)),
+          thesis: { claim: t(out.thesis.claim, 300), tests: out.thesis.tests.slice(0, 6).map((x) => ({ question: t(x.question, 220), risk: x.risk, howToAnswer: t(x.howToAnswer, 300) })) },
+          questions: out.questions.slice(0, 5).map((x) => t(x, 220)),
+        });
+        return { ok: true as const };
+      } catch (e) {
+        await logCall(ctx, { founderId: f._id, purpose: "kit_deck_review", model: SONNET, input: note, output: "", started, error: errText(e) });
+        return { ok: false as const, error: BUSY };
+      }
+    } finally {
+      await ctx.storage.delete(file).catch(() => undefined); // read once, never kept
     }
   },
 });

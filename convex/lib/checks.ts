@@ -120,7 +120,7 @@ export function cleanDeck(slides: Slide[], teaser: { summary: string; highlights
   const ok = new Set([...numbers(factsText), ...allowed]);
   const clean = (s: string) => !badNumber(s, ok) && !HYPE.some((h) => s.toLowerCase().includes(h));
   const out = slides.map((sl) => {
-    const points = sl.points.filter(clean).slice(0, 4);
+    const points = sl.points.filter(clean).slice(0, 3);
     return { key: sl.key, headline: clean(sl.headline) ? sl.headline : points[0] ?? "", points, metrics: sl.metrics.filter((m) => clean(`${m.value} ${m.label}`)).slice(0, 3) };
   });
   const sentences = teaser.summary.split(/(?<=[.!?])\s+/).filter(clean);
