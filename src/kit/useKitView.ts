@@ -16,7 +16,7 @@ export function useKitView(token: string): KitView | null | undefined {
     if (!me || !kit || !kit.deck) return null;
     // The first build writes 5 slides; team comes from her facts; the rest are templates for her numbers.
     const slides = withSamples(ORDER.map((key) => kit.deck?.find((x) => x.key === key) ?? { key, headline: "", points: [], metrics: [] }), { company: me.company, facts: kit.facts });
-    return { company: me.company, founder: me.name, founderLine: me.profile.founderLine || undefined, stage: me.stage, ask: me.ask, website: me.website, brand: kit.brand, slides, teaser: kit.teaser, facts: kit.facts,
+    return { company: me.company, founder: me.name, founderLine: me.profile.founderLine || undefined, stage: me.stage, ask: me.ask, website: me.website, brand: kit.brand, theme: kit.theme, slides, teaser: kit.teaser, facts: kit.facts,
       rivals: market?.competitors.map((c) => ({ name: c.name, logo: c.logo ?? null, where: c.where })) };
   }, [me, kit, market]);
 }

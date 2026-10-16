@@ -20,6 +20,7 @@ export async function downloadPptx(k: KitView, made: boolean): Promise<void> {
   const p = /^#[0-9a-f]{6}$/i.test(k.brand.primary) ? k.brand.primary : "#3D7BFF";
   const C = { p: hex(p), d: hex(mix(p, -0.62)), s: hex(mix(p, 0.86)), t: hex(mix(p, 0.94)), m: hex(mix(p, -0.25)), i: hex(inkOn(p)), a: hex(k.brand.accent && /^#[0-9a-f]{6}$/i.test(k.brand.accent) ? k.brand.accent : mix(p, 0.35)) };
   const HF = k.brand.font || "Arial", BF = "Arial";
+  const minimal = k.theme === "minimal"; // Minimal exports as itself; Bold and Editorial export in the Classic layout
   type S = ReturnType<typeof pptx.addSlide>;
   const text = (sl: S, t: string, x: number, y: number, w: number, h: number, o: Record<string, unknown> = {}) =>
     sl.addText(t, { x: X(x), y: X(y), w: X(w), h: X(h), fontFace: BF, fontSize: 12, color: C.d, margin: 0, valign: "top", ...o });
@@ -35,12 +36,12 @@ export async function downloadPptx(k: KitView, made: boolean): Promise<void> {
   const frame = (s: Slide, n: number) => {
     const sl = pptx.addSlide();
     sl.background = { color: "FFFFFF" };
-    sl.addShape(pptx.ShapeType.ellipse, { x: X(680), y: X(340), w: X(420), h: X(420), fill: { color: C.t }, line: { color: C.t, width: 0 } });
-    text(sl, s.headline, 40, 66, 700, 70, { fontFace: HF, fontSize: PT(30), bold: true, color: C.d, valign: "top", fit: "shrink" });
+    if (!minimal) sl.addShape(pptx.ShapeType.ellipse, { x: X(680), y: X(340), w: X(420), h: X(420), fill: { color: C.t }, line: { color: C.t, width: 0 } });
+    text(sl, s.headline, 40, 66, 700, 70, { fontFace: HF, fontSize: PT(minimal ? 32 : 30), bold: !minimal, color: minimal ? "111111" : C.d, valign: "top", fit: "shrink" });
     [0, 1, 2, 3].forEach((i) => sl.addShape(pptx.ShapeType.ellipse, { x: X(40 + i * 12), y: X(144), w: X(7), h: X(7), fill: { color: C.p, transparency: i > 1 ? 60 : 0 }, line: { color: C.p, width: 0 } }));
     text(sl, k.company.toUpperCase(), 720, 34, 200, 16, { fontSize: 8, bold: true, color: C.m, align: "right", charSpacing: 1 });
-    sl.addShape(pptx.ShapeType.pentagon, { x: X(40), y: X(30), w: X(150), h: X(26), fill: { color: C.p }, line: { color: C.p, width: 0 } });
-    text(sl, SECTION[s.key] ?? SLIDE_TITLES[s.key], 52, 30, 130, 26, { fontSize: 8.5, bold: true, color: C.i, valign: "middle", charSpacing: 1 });
+    if (!minimal) sl.addShape(pptx.ShapeType.pentagon, { x: X(40), y: X(30), w: X(150), h: X(26), fill: { color: C.p }, line: { color: C.p, width: 0 } });
+    text(sl, SECTION[s.key] ?? SLIDE_TITLES[s.key], minimal ? 40 : 52, 30, 200, 26, { fontSize: 8.5, bold: true, color: minimal ? C.p : C.i, valign: "middle", charSpacing: minimal ? 3 : 1 });
     sl.addShape(pptx.ShapeType.ellipse, { x: X(904), y: X(490), w: X(30), h: X(30), fill: { color: C.d }, line: { color: C.d, width: 0 } });
     text(sl, String(n).padStart(2, "0"), 904, 490, 30, 30, { fontSize: 8, bold: true, color: "FFFFFF", align: "center", valign: "middle" });
     sampleTag(sl, s);
@@ -50,6 +51,17 @@ export async function downloadPptx(k: KitView, made: boolean): Promise<void> {
 
   k.slides.forEach((s, idx) => {
     const n = idx + 1, pts = s.points, m = s.metrics;
+    if (s.key === "cover" && minimal) {
+      const sl = pptx.addSlide();
+      sl.background = { color: "FFFFFF" };
+      sl.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: X(14), h: X(540), fill: { color: C.p }, line: { color: C.p, width: 0 } });
+      text(sl, k.company, 52, 150, 760, 100, { fontFace: HF, fontSize: PT(84), color: "111111", valign: "bottom", fit: "shrink" });
+      text(sl, s.headline, 52, 262, 620, 70, { fontSize: PT(22), color: "333333" });
+      text(sl, `${k.stage.toUpperCase()} ROUND · RAISING ${k.ask.toUpperCase()}`, 52, 380, 600, 18, { fontSize: 9, bold: true, color: C.p, charSpacing: 1.5 });
+      text(sl, `${k.founder}, founder`, 52, 498, 500, 16, { fontSize: 8.5, color: "777777" });
+      madeTag(sl, false);
+      return;
+    }
     if (s.key === "cover") {
       const sl = pptx.addSlide();
       sl.background = { color: C.d };

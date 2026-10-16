@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { founderByToken, isUnlocked } from "./founders";
-import { freeSlug } from "./kit";
+import { freeSlug, themeV } from "./kit";
 import { send } from "./notify";
 import { limits } from "./limits";
 
@@ -24,7 +24,7 @@ const brandV = v.object({ primary: v.string(), accent: v.optional(v.string()), l
 export const page = query({
   args: { slug: v.string(), viewer: v.string() },
   returns: v.union(v.null(), v.object({
-    company: v.string(), founder: v.string(), oneLiner: v.string(), stage: v.string(), ask: v.string(), website: v.union(v.string(), v.null()), brand: brandV,
+    company: v.string(), founder: v.string(), oneLiner: v.string(), stage: v.string(), ask: v.string(), website: v.union(v.string(), v.null()), brand: brandV, theme: themeV,
     state: v.union(v.literal("none"), v.literal("pending"), v.literal("approved"), v.literal("declined"), v.literal("owner")), // owner: she's looking at her own room
     content: v.union(v.null(), v.object({
       slides: v.array(slideV), teaser: v.union(v.null(), v.object({ summary: v.string(), highlights: v.array(v.string()) })),
@@ -47,7 +47,7 @@ export const page = query({
     }
     return {
       company: f.company, founder: f.name, oneLiner: f.oneLiner ?? "", stage: f.stage, ask: f.ask, website: f.website ?? null,
-      brand: kit.brand, state, content,
+      brand: kit.brand, theme: kit.theme ?? "classic", state, content,
     };
   },
 });

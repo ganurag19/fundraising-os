@@ -52,6 +52,10 @@ export default defineSchema({
     linkedin: v.optional(v.string()), // public LinkedIn profile of the person (or the firm), from the research; never guessed
     logo: v.optional(v.string()), // the fund's logo from its own site (touch icon, icon or social image), found once for a founder's top picks
     logoChecked: v.optional(v.number()), // when we last looked, so a site without one isn't fetched again
+    // Partners and team as listed on the fund's own website (17 Oct): name, role, photo URL from that page, and the page.
+    // Never from LinkedIn. Looked up once per investor for founders' top picks.
+    team: v.optional(v.array(v.object({ name: v.string(), role: v.string(), photo: v.optional(v.string()), source: v.string() }))),
+    teamChecked: v.optional(v.number()),
     retired: v.optional(v.boolean()), // dropped from the research (stopped investing, failed checks): kept for existing lists, never matched again
   }).index("by_seedId", ["seedId"]),
 
@@ -189,6 +193,7 @@ export default defineSchema({
     status: v.union(v.literal("building"), v.literal("ready"), v.literal("failed")),
     brand: v.object({ primary: v.string(), accent: v.optional(v.string()), logo: v.optional(v.string()), font: v.optional(v.string()), fontCss: v.optional(v.string()) }),
     slug: v.optional(v.string()), // her pitch room: firstcheq.ai/p/<slug>
+    theme: v.optional(v.union(v.literal("classic"), v.literal("minimal"), v.literal("bold"), v.literal("editorial"))), // her deck's look (17 Oct)
     facts: v.object({
       problem: v.optional(v.string()), product: v.optional(v.string()), forWho: v.optional(v.string()),
       customers: v.optional(v.string()), // named customers or partners, her words

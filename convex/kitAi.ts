@@ -211,6 +211,74 @@ export const logos = action({
   },
 });
 
+/* ---------- 1b. Her top picks' people: partners and team from each fund's own website (never LinkedIn) ---------- */
+
+const TeamOut = z.object({ people: z.array(z.object({ name: z.string(), role: z.string(), photo: z.string() })) });
+const TEAM_SYSTEM = `You read one investment firm's own web page and list the people the page itself names as its partners or investment team. You get PAGE (the page text) and IMAGES (numbered images on the page with their alt text).
+Return people: up to 8, partners and investment team first, then others named on the page as team. For each: name exactly as written on the page; role as written (e.g. "Managing Partner"), or "" if none; photo: the number of the image that is clearly that person's photo (its alt text or file name matches them), as a string, or "" if unsure.
+Only people the page names as working at this firm. Never portfolio founders, advisors of other companies, testimonials or authors of blog posts. If the page names nobody, return an empty list.`;
+
+/** Links on a page that look like its team page, same site only. */
+function teamLinks(html: string, base: string): string[] {
+  const host = new URL(base).hostname.replace(/^www\./, "");
+  const out: string[] = [];
+  for (const m of html.matchAll(/<a\b[^>]*href=["']([^"'#]+)["'][^>]*>([\s\S]{0,120}?)<\/a>/gi)) {
+    const href = abs(m[1], base);
+    if (!href || new URL(href).hostname.replace(/^www\./, "") !== host) continue;
+    if (/(team|people|partners|our-team|who-we-are|about)/i.test(href + " " + m[2].replace(/<[^>]+>/g, ""))) out.push(href.replace(/\/$/, ""));
+  }
+  const rank = (u: string) => (/team|people|partners/i.test(u) ? 0 : 1);
+  return [...new Set(out)].sort((a, b) => rank(a) - rank(b)).slice(0, 2);
+}
+
+export const teams = action({
+  args: { token: v.string() },
+  returns: v.number(),
+  handler: async (ctx, { token }): Promise<number> => {
+    if (!TOKEN.test(token)) return 0;
+    const todo: { id: Id<"investors">; website: string; name: string }[] = await ctx.runQuery(internal.kit.topForTeams, { token });
+    if (!todo.length || !(await limits.limit(ctx, "teamLooksPerVisitor", { key: token })).ok) return 0;
+    if (!(await limits.limit(ctx, "aiCallsGlobal", { count: todo.length })).ok) return 0;
+    let found = 0;
+    await Promise.all(todo.map(async (t) => {
+      const team = await readTeam(ctx, t.website, t.name).catch(() => []);
+      if (team.length) found++;
+      await ctx.runMutation(internal.kit.saveTeam, { id: t.id, team });
+    }));
+    return found;
+  },
+});
+
+async function readTeam(ctx: ActionCtx, website: string, name: string) {
+  const url = normaliseUrl(website);
+  const home = url ? await fetchSite(url) : null;
+  if (!home) return [];
+  // Their team page if the home page links one, else the home page itself.
+  let page = home;
+  for (const link of teamLinks(home.text, home.url)) {
+    const p = await fetchText(link, "text/html", MAX_HTML);
+    if (p && p.text.length > 1500) { page = p; break; }
+  }
+  const text = pageText(page.text);
+  const imgs = [...page.text.matchAll(/<img\b[^>]*>/gi)].map((m) => ({ src: abs(attr(m[0], "src") ?? attr(m[0], "data-src"), page.url), alt: (attr(m[0], "alt") ?? "").slice(0, 80) }))
+    .filter((x): x is { src: string; alt: string } => !!x.src && !/\.svg(\?|$)/i.test(x.src)).slice(0, 80);
+  const input = `FIRM: ${name}\n\nPAGE:\n${text.slice(0, 12000)}\n\nIMAGES:\n${imgs.map((x, i) => `${i + 1}. ${x.alt} | ${x.src.split("/").pop()?.slice(0, 60)}`).join("\n")}`;
+  const started = Date.now();
+  try {
+    const res = await new Anthropic().messages.parse({ model: HAIKU, max_tokens: 1200, system: TEAM_SYSTEM, messages: [{ role: "user", content: input }], output_config: { format: zodOutputFormat(TeamOut) } });
+    await logCall(ctx, { purpose: "investor_team", model: HAIKU, input, output: res.parsed_output ? JSON.stringify(res.parsed_output) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
+    const low = text.toLowerCase();
+    // Keep only people the page really names; a photo only if it is one of the page's own images.
+    return (res.parsed_output?.people ?? [])
+      .filter((p) => p.name.trim().length > 2 && low.includes(p.name.trim().toLowerCase()))
+      .slice(0, 8)
+      .map((p) => { const img = imgs[Number(p.photo) - 1]; return { name: p.name.trim().slice(0, 80), role: p.role.trim().slice(0, 80), photo: img?.src, source: page.url }; });
+  } catch (e) {
+    await logCall(ctx, { purpose: "investor_team", model: HAIKU, input, output: "", started, error: errText(e) });
+    return [];
+  }
+}
+
 /* ---------- 2. Enrich: her deck, CV or LinkedIn PDF ---------- */
 
 const DocFacts = z.object({

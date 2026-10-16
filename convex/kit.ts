@@ -7,6 +7,8 @@ import { normaliseLinkedin, normaliseUrl } from "./lib/links";
 import { companyCase, founderByToken, isUnlocked, nameCase } from "./founders";
 import { limits } from "./limits";
 
+export const themeV = v.union(v.literal("classic"), v.literal("minimal"), v.literal("bold"), v.literal("editorial"));
+
 // The Raise Kit (15 Oct): /build reads her site and files, she confirms her facts, we build her kit.
 // Every function finds her from her own token (AGENTS.md section 3).
 
@@ -126,6 +128,7 @@ export const mine = query({
     teaser: v.union(v.null(), v.object({ summary: v.string(), highlights: v.array(v.string()) })),
     requested: v.boolean(), // she has asked for full access
     rated: v.boolean(), // she has given quick feedback
+    theme: themeV,
   })),
   handler: async (ctx, { token }) => {
     const f = await founderByToken(ctx, token);
@@ -135,7 +138,22 @@ export const mine = query({
     if (!kit) return null;
     const requested = !!(await ctx.db.query("upgradeRequests").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first());
     const rated = !!(await ctx.db.query("kitRatings").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first());
-    return { status: kit.status, brand: kit.brand, facts: kit.facts, deck: kit.deck ?? null, teaser: kit.teaser ?? null, requested, rated };
+    return { status: kit.status, brand: kit.brand, facts: kit.facts, deck: kit.deck ?? null, teaser: kit.teaser ?? null, requested, rated, theme: kit.theme ?? "classic" };
+  },
+});
+
+/** Her deck's look: Classic, Minimal, Bold or Editorial. */
+export const setTheme = mutation({
+  args: { token: v.string(), theme: themeV },
+  returns: v.boolean(),
+  handler: async (ctx, { token, theme }) => {
+    if (!TOKEN.test(token)) return false;
+    const f = await founderByToken(ctx, token);
+    if (!f || (f.userId && !(await isUnlocked(ctx, f)))) return false;
+    const kit = await ctx.db.query("kits").withIndex("by_founderId", (q) => q.eq("founderId", f._id)).first();
+    if (!kit) return false;
+    await ctx.db.patch("kits", kit._id, { theme });
+    return true;
   },
 });
 
@@ -240,6 +258,32 @@ export const saveLogo = internalMutation({
   returns: v.null(),
   handler: async (ctx, { id, logo }) => {
     await ctx.db.patch("investors", id, { logo: logo ?? undefined, logoChecked: Date.now() });
+    return null;
+  },
+});
+
+/** Her top picks whose fund team we haven't looked up yet (funds, networks and programmes with a site; angels have no team page). */
+export const topForTeams = internalQuery({
+  args: { token: v.string() },
+  returns: v.array(v.object({ id: v.id("investors"), website: v.string(), name: v.string() })),
+  handler: async (ctx, { token }) => {
+    const f = await founderByToken(ctx, token);
+    if (!f) return [];
+    const ms = await ctx.db.query("matches").withIndex("by_founder_and_rank", (q) => q.eq("founderId", f._id).lt("rank", 5)).take(5);
+    const out = [];
+    for (const m of ms) {
+      const inv = await ctx.db.get("investors", m.investorId);
+      if (inv && inv.website && !inv.teamChecked && !inv.retired && inv.kind !== "angel") out.push({ id: inv._id, website: inv.website, name: inv.displayName });
+    }
+    return out;
+  },
+});
+
+export const saveTeam = internalMutation({
+  args: { id: v.id("investors"), team: v.array(v.object({ name: v.string(), role: v.string(), photo: v.optional(v.string()), source: v.string() })) },
+  returns: v.null(),
+  handler: async (ctx, { id, team }) => {
+    await ctx.db.patch("investors", id, { team: team.length ? team : undefined, teamChecked: Date.now() });
     return null;
   },
 });

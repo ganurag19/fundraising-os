@@ -167,48 +167,69 @@ export function BrandSlide({ k, i }: { k: KitView; i: number }) {
   useEffect(() => loadBrandFont(k.brand.font, k.brand.fontCss), [k.brand.font, k.brand.fontCss]);
   const s = k.slides[i];
   if (!s) return null;
-  return <Scaled w={960} h={540}><div className="bd-wrap" style={brandVars(k.brand)}><SlideBody k={k} s={s} n={i + 1} /></div></Scaled>;
+  return <Scaled w={960} h={540}><div className={`bd-wrap th-${k.theme ?? "classic"}`} style={brandVars(k.brand)}><SlideBody k={k} s={s} n={i + 1} /></div></Scaled>;
 }
 
-const Smp = ({ on }: { on?: boolean }) => (on ? <span className="bt-smp">Sample</span> : null);
+const Smp = ({ on }: { on?: boolean }) => (on ? <span className="t2-smp">Sample</span> : null);
 
-/** The two-page teaser. */
+/** The two-page teaser (17 Oct): a formal document. Black text, numbered sections and sub-sections, her colour only as a rule. */
 export function BrandTeaser({ k, page }: { k: KitView; page: 1 | 2 }) {
   useEffect(() => loadBrandFont(k.brand.font, k.brand.fontCss), [k.brand.font, k.brand.fontCss]);
   const t = k.teaser;
   const slide = (key: string) => k.slides.find((s) => s.key === key);
-  const traction = slide("traction");
+  const cover = slide("cover"), problem = slide("problem"), solution = slide("solution"), traction = slide("traction");
   const market = slide("market"), model = slide("model"), comp = slide("competition"), ask = slide("ask");
   const team = k.facts.team.length ? k.facts.team : [{ name: k.founder, role: "Founder", line: k.founderLine ?? "" }];
+  const asks = (ask?.points ?? []).map(share);
   return (
     <Scaled w={794} h={1123}>
-      <div className="bt" style={brandVars(k.brand)}>
-        <header className="bt-band"><Mark k={k} light /><div><b>{k.company}</b><span>{k.stage} · raising {k.ask}</span></div><span className="bt-pg">{page} / 2</span></header>
+      <div className="t2" style={brandVars(k.brand)}>
+        <header className="t2-head">
+          <div className="t2-brand"><Mark k={k} /><b>{k.company}</b></div>
+          <span>Investor teaser · Confidential · {MONTH} · {page}/2</span>
+        </header>
         {page === 1 ? (
-          <div className="bt-body">
-            <h1>{slide("cover")?.headline ?? ""}</h1>
-            {t && <p className="bt-sum">{t.summary}</p>}
-            {traction && traction.metrics.length > 0 && <div className="bt-kpis">{traction.metrics.map((x) => <div key={x.label}><b>{x.value}</b><span>{x.label}</span></div>)}<Smp on={traction.sample} /></div>}
-            <div className="bt-two">
-              <section><em>The problem</em><p>{slide("problem")?.headline}</p><ul>{slide("problem")?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
-              <section><em>Our solution</em><p>{slide("solution")?.headline}</p><ul>{slide("solution")?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
-            </div>
-            {t && t.highlights.length > 0 && <section className="bt-hi"><em>Highlights</em><ul>{t.highlights.map((h) => <li key={h}>{h}</li>)}</ul></section>}
+          <div className="t2-body">
+            <h1>{k.company}</h1>
+            <p className="t2-lede">{cover?.headline}</p>
+            <table className="t2-kv"><tbody>
+              <tr><th>Stage</th><td>{k.stage}</td><th>Raising</th><td>{k.ask}</td></tr>
+              <tr><th>Founder</th><td>{k.founder}</td><th>Website</th><td>{site(k.website) || "—"}</td></tr>
+            </tbody></table>
+            {t && <section><h2><i>1</i>Summary</h2><p>{t.summary}</p></section>}
+            <section><h2><i>2</i>Problem and solution</h2>
+              <h3>2.1 The problem</h3><p>{problem?.headline}</p><ul>{problem?.points.map((p) => <li key={p}>{p}</li>)}</ul>
+              <h3>2.2 Our solution</h3><p>{solution?.headline}</p><ul>{solution?.points.map((p) => <li key={p}>{p}</li>)}</ul>
+            </section>
+            {traction && <section><h2><i>3</i>Traction <Smp on={traction.sample} /></h2><p>{traction.headline}</p>
+              {traction.metrics.length > 0 && <table className="t2-tbl"><tbody>{traction.metrics.map((x) => <tr key={x.label}><td>{x.label}</td><td className="n">{x.value}</td></tr>)}</tbody></table>}
+            </section>}
+            {t && t.highlights.length > 0 && <section><h2><i>4</i>Highlights</h2><ul>{t.highlights.slice(0, 3).map((h) => <li key={h}>{h}</li>)}</ul></section>}
           </div>
         ) : (
-          <div className="bt-body">
-            <div className="bt-two">
-              <section><em>Market <Smp on={market?.sample} /></em><p>{market?.headline}</p>{market && market.metrics.length > 0 && <div className="bt-mini">{market.metrics.map((x, i) => <span key={x.label}><i>{["TAM", "SAM", "SOM"][i]}</i><b>{x.value}</b></span>)}</div>}</section>
-              <section><em>Business model <Smp on={model?.sample} /></em><p>{model?.headline}</p>{model && model.metrics.length > 0 ? <div className="bt-mini">{model.metrics.map((x) => <span key={x.label}><b>{x.value}</b><i>{x.label}</i></span>)}</div> : <ul>{model?.points.map((p) => <li key={p}>{p}</li>)}</ul>}</section>
-            </div>
-            <section><em>Competition <Smp on={comp?.sample && !k.rivals?.length} /></em><p>{comp?.headline}</p>
-              {k.rivals?.length ? <div className="bt-rivals">{k.rivals.slice(0, 6).map((r) => <span key={r.name}>{r.name}<i>{r.where === "global" ? "Global" : "India"}</i></span>)}</div> : null}
-              <ul>{comp?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
-            <section><em>Team <Smp on={!k.facts.team.length && !k.founderLine} /></em><div className="bt-team">{team.map((m) => <div key={m.name}><b>{m.name}</b><span>{m.role}</span><span>{m.line}</span></div>)}</div></section>
-            <section className="bt-ask"><em>The ask <Smp on={ask?.sample} /></em><b>{k.ask} · {k.stage}</b><ul>{ask?.points.map((p) => <li key={p}>{p}</li>)}</ul></section>
+          <div className="t2-body">
+            <section><h2><i>5</i>Market <Smp on={market?.sample} /></h2><p>{market?.headline}</p>
+              {market && market.metrics.length > 0 && <table className="t2-tbl"><tbody>{market.metrics.map((x, i) => <tr key={x.label}><td className="k">{["TAM", "SAM", "SOM"][i]}</td><td>{x.label}</td><td className="n">{x.value}</td></tr>)}</tbody></table>}
+              {market?.points[0] && market.metrics.length > 0 && <p className="t2-note">{market.points[0]}</p>}
+            </section>
+            <section><h2><i>6</i>Business model <Smp on={model?.sample} /></h2><p>{model?.headline}</p>
+              {model && model.metrics.length > 0 && <table className="t2-tbl"><tbody>{model.metrics.map((x) => <tr key={x.label}><td>{x.label}</td><td className="n">{x.value}</td></tr>)}</tbody></table>}
+              {model && model.points.length > 0 && <ul>{model.points.map((p) => <li key={p}>{p}</li>)}</ul>}
+            </section>
+            <section><h2><i>7</i>Competition <Smp on={comp?.sample} /></h2>
+              {k.rivals?.length ? <><h3>7.1 Others building in this space</h3><p>{k.rivals.slice(0, 6).map((r) => `${r.name} (${r.where === "global" ? "global" : "India"})`).join(", ")}.</p></> : null}
+              <h3>{k.rivals?.length ? "7.2" : "7.1"} Why {k.company} wins</h3><ul>{comp?.points.map((p) => <li key={p}>{p}</li>)}</ul>
+            </section>
+            <section><h2><i>8</i>Team <Smp on={!k.facts.team.length && !k.founderLine} /></h2>
+              <table className="t2-tbl"><tbody>{team.map((m) => <tr key={m.name}><td className="k">{m.name}</td><td>{m.role}</td><td>{m.line}</td></tr>)}</tbody></table>
+            </section>
+            <section><h2><i>9</i>The ask <Smp on={ask?.sample} /></h2><p><b>{k.ask}</b>, {k.stage} round. {ask?.headline}</p>
+              {asks.some(Boolean) && <table className="t2-tbl"><tbody>{asks.map((x, i) => x && <tr key={i}><td>{x.label}</td><td className="n">{x.pct}%</td></tr>)}</tbody></table>}
+              <ul>{(ask?.points ?? []).filter((p) => !share(p)).map((p) => <li key={p}>{p}</li>)}</ul>
+            </section>
           </div>
         )}
-        <footer className="bt-foot"><span>{k.founder}, founder · {k.company}{k.website ? ` · ${site(k.website)}` : ""}</span><span>Confidential</span></footer>
+        <footer className="t2-foot"><span>{k.founder}, founder · {k.company}{k.website ? ` · ${site(k.website)}` : ""}</span><span>Confidential. Not an offer of securities.</span></footer>
       </div>
     </Scaled>
   );

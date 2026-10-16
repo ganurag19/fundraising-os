@@ -15,8 +15,8 @@ import type { Theme } from "../lib/theme";
 import { adoptToken, freshVisitorToken, visitorToken } from "../lib/token";
 import { QADoc, MarketDoc, DataRoomDoc } from "../landing/SampleDocs";
 import { BrandSlide, BrandTeaser } from "./BrandDeck";
-import { SLIDE_TITLES } from "./kitTypes";
-import type { KitView } from "./kitTypes";
+import { SLIDE_TITLES, THEMES } from "./kitTypes";
+import type { KitView, Theme as DeckTheme } from "./kitTypes";
 import { useKitView } from "./useKitView";
 import { PrintKit } from "./PrintKit";
 import { missingFacts } from "./deckSample";
@@ -79,6 +79,14 @@ export default function KitApp() {
     looked.current = true;
     void logos({ token }).catch(() => 0);
   }, [me, logos, token]);
+  // Their teams, from each fund's own site (once per investor; the server skips any it has already looked at).
+  const teams = useAction(api.kitAi.teams);
+  const teamed = useRef(false);
+  useEffect(() => {
+    if (teamed.current || !me || !me.unlocked || !me.rows.some((r) => r.rank < 5 && r.website && r.kind !== "angel" && !r.profile?.team.length)) return;
+    teamed.current = true;
+    void teams({ token }).catch(() => 0);
+  }, [me, teams, token]);
   // Back from Google: move her kit and list to her account (once). One Google account holds one startup.
   const conflict = isAuthenticated && !!me && !me.unlocked && !!mine && mine.token !== token && !switching ? `This Google account already holds ${mine.company}'s list.` : "";
   useEffect(() => {
@@ -191,7 +199,7 @@ export default function KitApp() {
         {tab === "outreach" && <Outreach me={me} token={token} onToast={setToast} onUnlock={() => openUp()} />}
         {tab === "plan" && <Plan me={me} go={go} />}
         {tab === "review" && <DeckReview token={token} onUnlock={() => openUp()} />}
-        {tab === "deck" && (view ? <Deck k={view} full={full} /> : <Pending status={kk.status} />)}
+        {tab === "deck" && (view ? <Deck k={view} full={full} token={token} /> : <Pending status={kk.status} />)}
         {tab === "teaser" && (view ? <TeaserTab k={view} full={full} /> : <Pending status={kk.status} />)}
         {tab === "market" && <MarketTab token={token} company={me.company} sector={sectorWord(me.sectors[0])} onUnlock={() => openUp()} />}
         {(tab === "qa" || tab === "dataroom" || tab === "circle") && <Soon tab={tab} company={me.company} onToast={setToast} />}
@@ -385,12 +393,17 @@ function MissingBlock({ k }: { k: KitView }) {
     </section>
   );
 }
-function Deck({ k, full }: { k: KitView; full: boolean }) {
+function Deck({ k: base, full, token }: { k: KitView; full: boolean; token: string }) {
   const [cur, setCur] = useState(0);
+  const saveTheme = useMutation(api.kit.setTheme);
+  const [theme, setThemeLocal] = useState<DeckTheme | null>(null);
+  const k: KitView = theme ? { ...base, theme } : base;
+  const pick = (t: DeckTheme) => { setThemeLocal(t); void saveTheme({ token, theme: t }).catch(() => null); };
   const samples = k.slides.filter((s) => s.sample).length;
   return (
     <div className="kz">
       <div className="kz-top"><span><b>{k.slides.length - samples} slides from your facts</b>{samples ? ` · ${samples} with sample content` : ""}</span><Downloads k={k} full={full} /></div>
+      <div className="kz-themes" role="radiogroup" aria-label="Deck design">{THEMES.map((t) => <button key={t.key} role="radio" aria-checked={(k.theme ?? "classic") === t.key} className={(k.theme ?? "classic") === t.key ? "on" : ""} onClick={() => pick(t.key)}><BrandSlide k={{ ...k, theme: t.key }} i={Math.min(cur, k.slides.length - 1) || 1} /><b>{t.name}</b><span>{t.line}</span></button>)}</div>
       <div className="kz-main"><div className="kz-slide"><BrandSlide k={k} i={cur} /></div></div>
       <div className="kz-bar"><span>{cur + 1} / {k.slides.length} · {SLIDE_TITLES[k.slides[cur]?.key]}{k.slides[cur]?.sample ? " · sample" : ""}</span><div><button className="btn ghost sm" disabled={cur === 0} onClick={() => setCur((c) => c - 1)}>←</button><button className="btn ghost sm" disabled={cur === k.slides.length - 1} onClick={() => setCur((c) => c + 1)}>→</button></div></div>
       <div className="kz-thumbs">{k.slides.map((s, i) => <button key={s.key} className={`${i === cur ? "on" : ""}${s.sample ? " tp" : ""}`} onClick={() => setCur(i)} aria-label={`Slide ${i + 1}: ${SLIDE_TITLES[s.key]}`}><BrandSlide k={k} i={i} /><span>{SLIDE_TITLES[s.key]}{s.sample ? " · sample" : ""}</span></button>)}</div>

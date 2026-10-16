@@ -162,3 +162,19 @@ export function dealToShow(
   if (d) return { company: d.company, year: d.year ?? null, round: d.round ?? null, inHers: !!mine };
   return inv.portfolio[0] ? { company: inv.portfolio[0], year: null, round: null, inHers: false } : null;
 }
+
+/** Her view of one investor's record (17 Oct): where their deals go, at what stage, and the deals themselves. Facts from the record only. */
+const SECTOR_LABEL: Record<string, string> = Object.fromEntries(Object.entries(SECTOR_KEYS).map(([label, key]) => [key, label]));
+const STAGE_LABEL: Record<string, string> = Object.fromEntries(Object.entries(STAGE_KEYS).map(([label, key]) => [key, label]));
+const pretty = (k: string) => { const w = k.replace(/_/g, " ").replace(/\bgeneral\b/i, "").trim(); return w.length <= 3 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1); };
+export function investorProfile(inv: { sectors: string[]; stages: string[]; thesis?: string; portfolio: string[]; recent: { company: string; year?: number; round?: string; sector?: string }[] }, roundName: (r: string) => string) {
+  const count = (xs: string[]) => Object.entries(xs.reduce<Record<string, number>>((a, x) => ({ ...a, [x]: (a[x] ?? 0) + 1 }), {})).map(([label, n]) => ({ label, n })).sort((a, b) => b.n - a.n);
+  return {
+    sectorMix: count(inv.recent.filter((r) => r.sector).map((r) => SECTOR_LABEL[r.sector!] ?? pretty(r.sector!))).slice(0, 5),
+    stageMix: count(inv.recent.filter((r) => r.round).map((r) => roundName(r.round!))).slice(0, 4),
+    focus: inv.sectors.map((s) => SECTOR_LABEL[s] ?? pretty(s)).slice(0, 6),
+    stages: inv.stages.map((s) => STAGE_LABEL[s] ?? pretty(s)),
+    deals: [...inv.recent].sort((a, b) => (b.year ?? 0) - (a.year ?? 0)).slice(0, 6).map((r) => ({ company: r.company, year: r.year ?? null, round: r.round ? roundName(r.round) : null, sector: r.sector ? SECTOR_LABEL[r.sector] ?? pretty(r.sector) : null })),
+    portfolio: inv.portfolio.slice(0, 10), portfolioCount: inv.portfolio.length, thesis: inv.thesis ? inv.thesis.slice(0, 320) : null,
+  };
+}

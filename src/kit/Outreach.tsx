@@ -2,11 +2,12 @@ import { useMemo, useRef, useState } from "react";
 import { useAction, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Dial } from "../components/Art";
-import { Pipeline, StatusMenu } from "../components/Investor";
+import { Pipeline } from "../components/Investor";
 import { copyOut, openInGmail } from "../lib/send";
 import type { Me, Row } from "../components/Investor";
 import { cheque } from "../lib/investor";
 import InvLogo from "./InvLogo";
+import { InvestorSheet } from "./InvestorSheet";
 
 // Outreach: one investor at a time as a card. Swipe right (or Send) opens the pitch in her Gmail and marks it sent;
 // swipe left (or Skip) moves it to the back. Nothing leaves without her pressing send in Gmail.
@@ -57,6 +58,7 @@ function Stack({ r, next, me, token, onToast, onUnlock, onSkip, left }: { r: Row
   const [dx, setDx] = useState(0);
   const [out, setOut] = useState<"left" | "right" | null>(null);
   const [why, setWhy] = useState(false);
+  const [sheet, setSheet] = useState(false);
   const [tab, setTab] = useState<"email" | "linkedin">("email");
   const [edit, setEdit] = useState<{ subject: string; body: string } | null>(null);
   const [writing, setWriting] = useState(false);
@@ -122,6 +124,7 @@ function Stack({ r, next, me, token, onToast, onUnlock, onSkip, left }: { r: Row
           </div>
           <span className="ko-left">{left} left</span>
         </header>
+        <button className="ko-prof" onClick={() => setSheet(true)}>See their profile, deals and team ›</button>
         <div className="kc-facts">
           <span><em>Recent deal</em>{r.deal ? `${r.deal.company}${r.deal.round ? ` · ${r.deal.round}` : ""}${r.deal.year ? ` · ${r.deal.year}` : ""}` : "None on record"}</span>
           <span><em>Cheque</em>{cheque(r) || "Not published"}</span>
@@ -167,6 +170,7 @@ function Stack({ r, next, me, token, onToast, onUnlock, onSkip, left }: { r: Row
           <button className="btn primary" data-track="click_swipe_send" disabled={!canSend} onClick={send}>{applyOnly ? "Apply ✓" : "Send ✓"}</button>
         </div>
       </article>
+      {sheet && <InvestorSheet r={r} me={me} token={token} onClose={() => setSheet(false)} onToast={onToast} onUnlock={() => { setSheet(false); onUnlock(); }} onCard={() => setSheet(false)} />}
       <p className="muted small center ko-hint">Swipe right to send from your Gmail, left for later. Or use the buttons.</p>
     </div>
   );
@@ -191,6 +195,7 @@ function List({ me, token, onToast, onOpen, onUnlock }: { me: Me; token: string;
         : sort === "leads" ? Number(b.leadsRounds) - Number(a.leadsRounds) || a.rank - b.rank
           : a.rank - b.rank);
   const lockedN = todo.filter((r) => r.locked).length;
+  const openRow = open === null ? null : me.rows.find((r) => r.rank === open) ?? null;
   if (!todo.length && type !== "all") return <div className="ko-list"><div className="empty"><b>None of this type on your list yet.</b><button className="btn ghost sm" onClick={() => setType("all")}>Show all</button></div></div>;
   return (
     <div className="ko-list">
@@ -200,50 +205,21 @@ function List({ me, token, onToast, onOpen, onUnlock }: { me: Me; token: string;
         <div className="ko-types" role="tablist" aria-label="Investor type">{TYPES.filter(([, , ks]) => !ks.length || count(ks) > 0).map(([k, label, ks]) => <button key={k} role="tab" aria-selected={type === k} onClick={() => setType(k)}>{label}<i>{count(ks)}</i></button>)}</div>
         <label className="ko-sort">Sort<select value={sort} onChange={(e) => setSort(e.target.value)}>{SORTS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
       </div>
+      {openRow && <InvestorSheet r={openRow} me={me} token={token} onClose={() => setOpen(null)} onToast={onToast} onUnlock={() => { setOpen(null); onUnlock(); }} onCard={(r) => { setOpen(null); onOpen(r); }} />}
+      <p className="ko-tip">Tap any investor to see their profile, team and your pitch.</p>
       <div className="ko-legend"><span className="t5">Top 5 · pitch ready</span><span className="op">Next 15 · named, free</span><span className="lk">🔒 Email, pitch and the rest: full kit</span></div>
       <div className="ko-rows">
-        {todo.map((r) => r.locked ? (
-          <div className={`ko-li locked${r.rank < 20 ? " named" : ""}`} key={r.rank}>
+        {todo.map((r) => (
+          <button key={r.rank} className={`ko-row2${r.rank < 5 ? " top" : ""}${r.locked ? " locked" : ""}${r.retired ? " retired" : ""}`} onClick={() => setOpen(r.rank)}>
             <Dial score={r.score} size={40} />
-            {r.rank < 20 && <InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={32} />}
-            <div className="ko-li-main"><b>{r.displayName}</b><span>{r.reason ?? "Fits your sector, stage and round."}{r.deal ? ` · Backed ${r.deal.company}${r.deal.year ? ` (${r.deal.year})` : ""}` : ""}{r.city ? ` · ${r.city}` : ""}</span></div>
-            <button className="btn primary sm" onClick={onUnlock}>🔒 {r.rank < 20 ? "Email & pitch" : "Unlock"}</button>
-          </div>
-        ) : (
-          <div className={`ko-li${r.rank < 5 ? " top" : ""}${r.retired ? " retired" : ""}${open === r.rank ? " open" : ""}`} key={r.rank}>
-            <button className="ko-li-h" aria-expanded={open === r.rank} onClick={() => setOpen(open === r.rank ? null : r.rank)}>
-              <Dial score={r.score} size={40} />
-              {r.rank < 5 && <InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={32} />}
-              <span className="ko-li-main"><b>{r.displayName}{r.rank < 5 && <span className="ko-top5">Top 5</span>}</b><span>{r.retired ? "No longer active" : r.draft?.hook ?? r.reason ?? ""}</span></span>
-              <span className="ko-chev" aria-hidden="true">{open === r.rank ? "▴" : "▾"}</span>
-            </button>
-            <div className="ko-li-a">
-              <span className={`ko-li-tag${r.draft ? " ok" : ""}`}>{r.draft ? "Pitch ready" : "Write pitch"}</span>
-              {!r.retired && <button className="btn primary sm" onClick={() => onOpen(r)}>Open as card</button>}
-              <StatusMenu r={r} token={token} onToast={onToast} />
-            </div>
-            {open === r.rank && <RowDetail r={r} />}
-          </div>
+            {r.rank < 20 ? <InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={34} /> : <span className="ko-mask" aria-hidden="true">🔒</span>}
+            <span className="ko-li-main"><b>{r.displayName}{r.rank < 5 && <span className="ko-top5">Top 5</span>}</b><span>{r.retired ? "No longer active" : r.draft?.hook ?? r.reason ?? "Fits your sector, stage and round."}</span></span>
+            <span className={`ko-li-tag${r.draft ? " ok" : ""}${r.locked ? " lk" : ""}`}>{r.status !== "new" ? "✓ Sent" : r.draft ? "Pitch ready" : r.locked ? (r.rank < 20 ? "🔒 Email & pitch" : "🔒 Full kit") : "Write pitch"}</span>
+            <span className="ko-go" aria-hidden="true">›</span>
+          </button>
         ))}
       </div>
     </div>
   );
 }
 
-/** The drop-down under a list row: who, why, the score, sources and the pitch. */
-function RowDetail({ r }: { r: Row }) {
-  const person = r.person && r.person !== r.displayName ? r.person : null;
-  return (
-    <div className="ko-detail">
-      <p className="ko-who-line">{[person, r.title, KIND[r.kind] ?? "Investor", r.city].filter(Boolean).join(" · ")}{r.website && <> · <a href={r.website} target="_blank" rel="noreferrer">{site(r.website)} ↗</a></>}</p>
-      <div className="kc-facts">
-        <span><em>Recent deal</em>{r.deal ? `${r.deal.company}${r.deal.round ? ` · ${r.deal.round}` : ""}${r.deal.year ? ` · ${r.deal.year}` : ""}` : "None on record"}</span>
-        <span><em>Cheque</em>{cheque(r) || "Not published"}</span>
-      </div>
-      {r.draft ? <div className="kb-why2"><em>Why they fit you</em><ul>{r.draft.whyFit.map((x) => <li key={x}>{x}</li>)}</ul>{r.draft.watchOut.map((x) => <p key={x}>Watch out: {x}</p>)}</div> : r.reason && <div className="kb-why2"><em>Why they fit you</em><p className="plain">{r.reason}</p></div>}
-      {r.parts.length > 0 && <div className="kb-score"><em>Fit Score {r.score}, part by part</em>{r.parts.map((p) => <div key={p.key}><span>{p.label}</span><span className="kb-sbar"><i style={{ width: `${(p.got / Math.max(1, p.max)) * 100}%` }} /></span><b>{p.got}/{p.max}</b></div>)}</div>}
-      {r.sourceUrls.length > 0 && <span className="muted small">Sources: {r.sourceUrls.slice(0, 2).map(site).join(" · ")}{r.lastChecked ? ` · checked ${r.lastChecked}` : ""}</span>}
-      {r.draft && <div className="kc-msg"><span className="muted small">To {r.email ?? "their team"}</span><b style={{ display: "block", marginTop: 4 }}>{r.draft.subject}</b><p>{r.draft.body}</p></div>}
-    </div>
-  );
-}

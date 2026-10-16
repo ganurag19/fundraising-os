@@ -99,7 +99,7 @@ function Open({ slug, viewer, room, content, owner }: { slug: string; viewer: st
   const [cur, setCur] = useState(0);
   const [met, setMet] = useState(content.met);
   const seen = useRef(new Set<number>());
-  const k: KitView = { company: room.company, founder: room.founder, stage: room.stage, ask: room.ask, website: room.website, brand: room.brand, slides: content.slides, teaser: content.teaser, facts: { team: content.team } };
+  const k: KitView = { company: room.company, founder: room.founder, stage: room.stage, ask: room.ask, website: room.website, brand: room.brand, theme: room.theme, slides: content.slides, teaser: content.teaser, facts: { team: content.team } };
   // One view per visit, and each slide the first time it's shown.
   useEffect(() => { void track({ slug, viewer, kind: "view" }); }, [track, slug, viewer]);
   useEffect(() => {

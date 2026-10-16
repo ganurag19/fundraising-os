@@ -34,7 +34,7 @@ Also return, all from INVESTOR facts only, and never repeating each other:
 - whyFit: exactly 2 bullets, each under 12 words, each a different fact from reason. Prefer named deals, cheque size against her round, or who leads; "lists climate as a sector" only if nothing better exists.
 - watchOut: exactly 1 bullet under 14 words: the real risk in the facts (cheque size vs her round, no recent deal on record, broad generalist, stage at the edge). Don't repeat whyFit.
 - factsUsed: every investor fact the email itself relies on, as {text, field}. field must be one of: ${FACT_FIELDS.join(", ")}.
-- linkedin: a LinkedIn connection note to the same investor, at most 280 characters including spaces (LinkedIn's limit is 300). "Hi <first name>," (INVESTOR.person's first name; if there is no person, just "Hi,"), then the same hook in a few words, what FOUNDER.company does with one of her numbers, then a light ask such as sharing the deck. No links, no subject; sign off with FOUNDER.name's first name only. Same hard rules as the email, and don't reuse the email's sentences.
+- linkedin: a short, plain LinkedIn connection note to the same investor, at most 200 characters including spaces. Exactly three short sentences: "Hi <first name>," (INVESTOR.person's first name; if there is no person, just "Hi,") then the hook in under 8 words; what FOUNDER.company does in under 12 words, with one of her numbers if it fits; "Happy to share our deck?" Sign off with FOUNDER.name's first name only. No links, no subject, no jargon. Same hard rules as the email, and don't reuse the email's sentences.
 
 Good example (hook from a recent deal):
 Subject: After GridLeaf, kilns are next
@@ -107,9 +107,10 @@ Return reasons: one item per investor, { i, reason }.
 
 export const NOTE_SYSTEM = `You write a LinkedIn connection note from an Indian founder to one investor. You get FOUNDER, INVESTOR (the only facts we have about them) and EMAIL (the cold email she is sending them).
 
-Return linkedin: at most 280 characters including spaces (LinkedIn's limit is 300).
-- "Hi <first name>," using INVESTOR.person's first name; if there is no person, just "Hi,".
-- The same hook as EMAIL, in a few words; what FOUNDER.company does, with one of her numbers; a light ask such as sharing the deck.
+Return linkedin: a short, plain note, at most 200 characters including spaces. Exactly three short sentences:
+- "Hi <first name>," using INVESTOR.person's first name (if there is no person, just "Hi,"), then the same hook as EMAIL in under 8 words.
+- What FOUNDER.company does in under 12 words, with one of her numbers if it fits.
+- "Happy to share our deck?"
 - Sign off with FOUNDER.name's first name only. No links, no subject.
 - Only facts from FOUNDER and INVESTOR. Never invent a deal, number or mutual connection. Keep FOUNDER.company exactly as given. Don't reuse EMAIL's sentences.
 - Never write "I hope this finds you well", "game-changing", "disrupt", "reach out" or any hype, and never say or hint that AI wrote it.`;
