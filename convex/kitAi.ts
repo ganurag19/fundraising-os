@@ -45,7 +45,7 @@ const SiteFacts = z.object({
 
 async function fetchText(url: string, accept: string, max: number): Promise<{ text: string; url: string } | null> {
   try {
-    const res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(7000), headers: { "user-agent": "FirstCheq/1.0 (reads the founder's own site once, on her request)", accept } });
+    const res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(9000), headers: { "user-agent": "Mozilla/5.0 (compatible; FirstCheq/1.0; reads the founder's own site once, on her request)", accept, "accept-language": "en-IN,en;q=0.9" } });
     if (!res.ok) return null;
     const final = normaliseUrl(res.url); // redirects must still land on a public site
     if (!final) return null;
@@ -53,6 +53,30 @@ async function fetchText(url: string, accept: string, max: number): Promise<{ te
   } catch {
     return null;
   }
+}
+
+/** Her site's home page, however the domain is set up. Many sites only answer on one of "example.in" and
+ *  "www.example.in", or park the bare domain on a tiny forwarding page (a meta refresh or a script redirect).
+ *  So: try the address, follow a page-level redirect, and fall back to the www (or bare) version. */
+export async function fetchSite(url: string): Promise<{ text: string; url: string } | null> {
+  const tryOne = async (u: string) => {
+    const page = await fetchText(u, "text/html", MAX_HTML);
+    if (!page) return null;
+    if (page.text.length > 1500) return page;
+    // a forwarding page: <meta http-equiv="refresh" content="0;url=..."> or location.href / location.replace(...)
+    const to = page.text.match(/http-equiv=["']?refresh["']?[^>]*content=["'][^"']*url=([^"'>\s]+)/i)?.[1]
+      ?? page.text.match(/location(?:\.href)?\s*(?:=|\.replace\(|\.assign\()\s*["']([^"']+)["']/i)?.[1];
+    const next = to ? normaliseUrl(new URL(to, page.url).href) : null;
+    if (next && next !== u) { const real = await fetchText(next, "text/html", MAX_HTML); if (real) return real; }
+    return page;
+  };
+  const first = await tryOne(url);
+  if (first && first.text.length > 1500) return first;
+  const host = new URL(url).hostname;
+  const alt = normaliseUrl(url.replace(host, host.startsWith("www.") ? host.slice(4) : `www.${host}`));
+  const second = alt ? await tryOne(alt) : null;
+  if (second && (!first || second.text.length > first.text.length)) return second;
+  return first;
 }
 
 const abs = (href: string | undefined, base: string) => {
@@ -127,7 +151,7 @@ export const readSite = action({
     const url = normaliseUrl(website);
     if (!url) return { ok: false as const, error: "That website doesn't look right. Try something like kilnlabs.in." };
     if (!(await limits.limit(ctx, "websiteReadsPerVisitor", { key: token })).ok) return { ok: false as const, error: "We've read enough sites for today. Fill in your facts by hand on the next screens." };
-    const page = await fetchText(url, "text/html", MAX_HTML);
+    const page = await fetchSite(url);
     if (!page) return { ok: false as const, error: "We couldn't open that website. Check the address, or fill in your facts by hand." };
     let text = pageText(page.text);
     if (text.length < 400) { const about = await fetchText(new URL(page.url).origin + "/about", "text/html", MAX_HTML); if (about) text += "\n" + pageText(about.text); }
@@ -177,7 +201,7 @@ export const logos = action({
     let found = 0;
     await Promise.all(todo.map(async (t) => {
       const url = normaliseUrl(t.website);
-      const page = url ? await fetchText(url, "text/html", MAX_HTML) : null;
+      const page = url ? await fetchSite(url) : null;
       const logo = page ? logoFrom(page.text, page.url) : null;
       if (logo) found++;
       await ctx.runMutation(internal.kit.saveLogo, { id: t.id, logo });
