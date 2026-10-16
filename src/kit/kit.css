@@ -917,7 +917,7 @@
 .kd-dl{display:flex;gap:6px;flex:none}
 .kd-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--card);color:var(--fg);border-radius:10px;padding:6px 10px;font:600 12.5px/1 var(--body,inherit);cursor:pointer}
 .kd-btn svg{width:18px;height:18px;color:var(--blue-ink,#2F6BFF)} .kd-btn:hover{border-color:var(--blue-ink,#2F6BFF)} .kd-btn:disabled{opacity:.6;cursor:default}
-.kd-dl.compact .kd-btn span{display:none} .kd-dl.compact .kd-btn{padding:6px}
+.kd-dl.compact .kd-btn{padding:7px 10px;font-size:12.5px;gap:4px}
 .kd-miss{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:10px 18px;align-items:start;background:#FFF8E6;border:1px solid #F2D58A;border-radius:16px;padding:14px 16px;margin-top:14px;color:#3D2E00}
 .kd-miss>div{display:flex;flex-direction:column;gap:4px} .kd-miss b{font-size:15px} .kd-miss span{font-size:13px;line-height:1.45;color:#5C4500}
 .kd-miss ul{margin:0;padding-left:18px;font-size:13px;line-height:1.6;color:#5C4500}
@@ -933,3 +933,4 @@
 .dk-hl .dk-tab{display:inline-block;margin-bottom:12px}
 .dk-hl h2{font-size:31px}
 @media (max-width:700px){.kh.calm .kh-five{flex-wrap:nowrap;gap:4px} .kh.calm .kh-five>span{width:auto;flex:1;min-width:0}}
+.kd-btn svg{width:16px;height:16px} .kd-btn span{font-weight:700;letter-spacing:.02em}

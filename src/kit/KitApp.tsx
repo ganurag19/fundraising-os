@@ -357,7 +357,7 @@ function Plan({ me, go }: { me: Me; go: (t: Tab) => void }) {
 }
 
 /* ---------- Deck: every slide open; slides without her facts show marked samples ---------- */
-const FileIc = ({ t }: { t: string }) => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" strokeWidth="1.6" /><text x="12" y="17.5" textAnchor="middle" fontSize="6.4" fontWeight="800" fill="currentColor">{t}</text></svg>;
+const DlIc = () => <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14" /></svg>;
 /** PDF and PowerPoint, one tap each. */
 function Downloads({ k, full, what = "deck", compact = false }: { k: KitView; full: boolean; what?: "deck" | "teaser"; compact?: boolean }) {
   const [printing, setPrinting] = useState(false);
@@ -366,8 +366,8 @@ function Downloads({ k, full, what = "deck", compact = false }: { k: KitView; fu
   const pptx = () => { setPpt(true); void import("./pptx").then((x) => x.downloadPptx(k, !full)).catch(() => null).finally(() => setPpt(false)); };
   return (
     <div className={`kd-dl${compact ? " compact" : ""}`} onClick={(e) => e.stopPropagation()}>
-      <button className="kd-btn" onClick={() => setPrinting(true)} disabled={printing} title="Download PDF"><FileIc t="PDF" /><span>{printing ? "Preparing…" : "PDF"}</span></button>
-      {what === "deck" && <button className="kd-btn" onClick={pptx} disabled={ppt} title="Download PowerPoint"><FileIc t="PPT" /><span>{ppt ? "Building…" : "PowerPoint"}</span></button>}
+      <button className="kd-btn" onClick={() => setPrinting(true)} disabled={printing} title="Download PDF"><DlIc /><span>{printing ? "…" : "PDF"}</span></button>
+      {what === "deck" && <button className="kd-btn" onClick={pptx} disabled={ppt} title="Download PowerPoint"><DlIc /><span>{ppt ? "…" : compact ? "PPT" : "PowerPoint"}</span></button>}
       {printing && <PrintKit k={k} what={what} made={!full} onDone={done} />}
     </div>
   );
