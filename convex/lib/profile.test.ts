@@ -13,3 +13,12 @@ describe("investor profile", () => {
     expect([p.focus, p.stages, p.portfolioCount]).toEqual([["Climate & Energy", "Tech"], ["Seed"], 2]);
   });
 });
+
+describe("team order", () => {
+  test("the contact on our record first, then founders and partners, then the rest", async () => {
+    const { orderTeam } = await import("./match");
+    const t = [{ name: "Made Up Analyst", role: "Analyst" }, { name: "Made Up Partner", role: "Partner" }, { name: "Made Up Founder", role: "Founder & General Partner" }];
+    expect(orderTeam(t).map((x) => x.role)).toEqual(["Founder & General Partner", "Partner", "Analyst"]);
+    expect(orderTeam(t, "Made Up Analyst")[0].name).toBe("Made Up Analyst");
+  });
+});

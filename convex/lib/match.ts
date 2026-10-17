@@ -178,3 +178,14 @@ export function investorProfile(inv: { sectors: string[]; stages: string[]; thes
     portfolio: inv.portfolio.slice(0, 10), portfolioCount: inv.portfolio.length, thesis: inv.thesis ? inv.thesis.slice(0, 320) : null,
   };
 }
+
+/** Their team, decision-makers first (and the contact on our record first of all). */
+export function orderTeam<T extends { name: string; role: string; photo?: string | null }>(team: T[], contact?: string | null): T[] {
+  const rank = (t: T) => {
+    const r = t.role.toLowerCase();
+    const named = contact && contact.toLowerCase().split(/\s+/).filter((w) => w.length > 1).every((w) => t.name.toLowerCase().includes(w)) ? -10 : 0;
+    const role = /managing partner|general partner|founding partner|founder|\bgp\b|ceo|chief executive/.test(r) ? 0 : /partner|principal|director|head/.test(r) ? 1 : /associate|analyst|manager/.test(r) ? 3 : 2;
+    return named + role + (t.photo ? 0 : 0.5);
+  };
+  return [...team].sort((a, b) => rank(a) - rank(b));
+}

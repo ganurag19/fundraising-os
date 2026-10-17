@@ -7,6 +7,7 @@ import { normaliseLinkedin, normaliseUrl } from "./lib/links";
 import { companyCase, founderByToken, isUnlocked, nameCase } from "./founders";
 import { limits } from "./limits";
 
+const teamTodoV = v.object({ id: v.id("investors"), website: v.string(), name: v.string(), person: v.union(v.string(), v.null()), kind: v.string() });
 export const themeV = v.union(v.literal("classic"), v.literal("minimal"), v.literal("bold"), v.literal("editorial"));
 
 // The Raise Kit (15 Oct): /build reads her site and files, she confirms her facts, we build her kit.
@@ -265,7 +266,7 @@ export const saveLogo = internalMutation({
 /** Her top picks whose fund team we haven't looked up yet (funds, networks and programmes with a site; angels have no team page). */
 export const topForTeams = internalQuery({
   args: { token: v.string() },
-  returns: v.array(v.object({ id: v.id("investors"), website: v.string(), name: v.string() })),
+  returns: v.array(teamTodoV),
   handler: async (ctx, { token }) => {
     const f = await founderByToken(ctx, token);
     if (!f) return [];
@@ -273,9 +274,23 @@ export const topForTeams = internalQuery({
     const out = [];
     for (const m of ms) {
       const inv = await ctx.db.get("investors", m.investorId);
-      if (inv && inv.website && !inv.teamChecked && !inv.retired && inv.kind !== "angel") out.push({ id: inv._id, website: inv.website, name: inv.displayName });
+      if (inv && inv.website && !inv.teamChecked && !inv.retired) out.push({ id: inv._id, website: inv.website, name: inv.displayName, person: inv.person ?? null, kind: inv.kind });
     }
     return out;
+  },
+});
+
+/** A page of investors whose team we haven't looked up yet, for the one-off backfill. Looked-up ones drop out
+ *  of the filter, so we stay on a page until it has nothing left, then move to the next. */
+export const teamsToCheck = internalQuery({
+  args: { after: v.union(v.string(), v.null()), n: v.number() },
+  returns: v.object({ items: v.array(teamTodoV), after: v.union(v.string(), v.null()), finished: v.boolean() }),
+  handler: async (ctx, { after, n }) => {
+    const res = await ctx.db.query("investors").paginate({ cursor: after, numItems: 40 });
+    const items = res.page.filter((inv) => inv.website && !inv.teamChecked && !inv.retired).slice(0, n)
+      .map((inv) => ({ id: inv._id, website: inv.website!, name: inv.displayName, person: inv.person ?? null, kind: inv.kind }));
+    const full = items.length === n;
+    return { items, after: full ? after : res.continueCursor, finished: !full && res.isDone };
   },
 });
 

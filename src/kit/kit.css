@@ -1105,3 +1105,11 @@
 .kz-themes b{font-size:13px;padding:0 4px} .kz-themes span{font-size:11.5px;color:var(--muted);padding:0 4px 4px}
 .th-editorial .dk-pg{left:auto;right:24px}
 .t2-body{gap:12px} .t2 p,.t2 ul{font-size:13px;line-height:1.5} .t2 h2{font-size:14px} .t2-lede{font-size:15.5px}
+
+/* ---------- Partner faces (17 Oct) ---------- */
+.pf{position:relative;flex:none;display:inline-grid;place-items:center;border-radius:50%}
+.pf>img:first-child{width:100%;height:100%;border-radius:50%;object-fit:cover;background:var(--card2);box-shadow:0 0 0 2px var(--card)}
+.pf .inv-logo,.pf>svg{position:absolute;right:-3px;bottom:-3px;border-radius:6px;background:#fff;box-shadow:0 0 0 2px var(--card)}
+.pf.none{background:var(--card2);color:var(--fg2);font-weight:800}
+.ko-who-p{font-size:12.5px;color:var(--fg2);font-weight:600}
+.is-pp{font-weight:700;color:var(--fg)}

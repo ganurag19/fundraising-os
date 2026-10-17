@@ -13,6 +13,8 @@ import { SLIDE_TITLES } from "./kitTypes";
 import { useKitView } from "./useKitView";
 import { ReviewResult } from "./Review";
 import InAppHint from "../components/InAppHint";
+import { PartnerFace } from "./PartnerFace";
+import { pitchLine } from "./partner";
 import "./kit.css";
 
 // /build: the Raise Kit flow. Reading your website → Make it sharper (files, optional) → Confirm your facts → Building → Your kit.
@@ -628,8 +630,9 @@ function PickPeek({ r, open, onToggle, onUnlock, signedIn }: { r: Row; open: boo
   return (
     <article className={`kb-pick${open ? " open" : ""}`}>
       <button className="kb-pick-h" aria-expanded={open} onClick={onToggle}>
-        <Dial score={r.score} size={46} />
-        <span className="kb-pick-who"><b>{r.displayName}</b><span>{[person, r.title, r.city].filter(Boolean).join(" · ")}</span><em>{d.hook ?? d.reason}</em></span>
+        <PartnerFace face={r.face} logo={r.logo} name={r.displayName ?? ""} kind={r.kind} size={50} />
+        <span className="kb-pick-who"><b>{r.displayName}</b><span>{r.face ? `Pitch ${pitchLine(r.face)}` : [person, r.title, r.city].filter(Boolean).join(" · ")}</span><em>{d.hook ?? d.reason}</em></span>
+        <Dial score={r.score} size={42} />
         <span className="kb-chev" aria-hidden="true">{open ? "▴" : "▾"}</span>
       </button>
       {open && (

@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Doc } from "./_generated/dataModel";
-import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS, dealToShow, investorProfile, rankMatches, scoreParts } from "./lib/match";
+import { ASK_LAKH, SECTOR_KEYS, STAGE_KEYS, dealToShow, investorProfile, orderTeam, rankMatches, scoreParts } from "./lib/match";
 import { cleanCity, cleanWebsite, domainOf, normaliseLinkedin, normaliseUrl, roundLabel, sharesHerDomain, shortUrl } from "./lib/links";
 import { withSignature } from "./lib/checks";
 import { limits } from "./limits";
@@ -191,6 +191,7 @@ const rowV = v.object({
   applyUrl: v.union(v.string(), v.null()), applyDeadline: v.union(v.string(), v.null()), hasEmail: v.boolean(),
   status: v.union(v.literal("new"), v.literal("sent"), v.literal("replied"), v.literal("meeting"), v.literal("passed")),
   logo: v.union(v.string(), v.null()), // from the fund's own site, when found
+  face: v.union(v.null(), v.object({ name: v.string(), role: v.string(), photo: v.union(v.string(), v.null()) })), // who to pitch, from their own site
   // Her view of their record: sector and stage mix of their deals, the deals, portfolio, thesis, and their team from their own site.
   profile: v.union(v.null(), v.object({
     sectorMix: v.array(v.object({ label: v.string(), n: v.number() })), stageMix: v.array(v.object({ label: v.string(), n: v.number() })),
@@ -257,8 +258,9 @@ export const me = query({
         leadsRounds: !!inv.leadsRounds, firstCheques: inv.stages.includes("idea") || inv.stages.includes("pre_seed"), lastDealYear: inv.recent.reduce<number | null>((y, r) => (r.year && (!y || r.year > y) ? r.year : y), null),
         deal: open || named ? (() => { const x = dealToShow(inv, f.sectors, d ? [d.hook ?? "", (d.editedBody ?? d.body).slice(0, 400)] : []); return x && { ...x, round: x.round && roundLabel(x.round) }; })() : null,
         status: m.status ?? ("new" as const),
+        face: (open || named) && !inv.retired ? (() => { const t = orderTeam(inv.team ?? [], inv.person)[0]; return t ? { name: t.name, role: t.role, photo: t.photo ?? null } : null; })() : null,
         // Open rows get the whole record view; named rows (free, 6–20) the mix and deals; masked rows nothing.
-        profile: open || named ? { ...investorProfile(inv, roundLabel), team: open && !inv.retired ? (inv.team ?? []).slice(0, 6).map((t) => ({ name: t.name, role: t.role, photo: t.photo ?? null, source: t.source })) : [] } : null,
+        profile: open || named ? { ...investorProfile(inv, roundLabel), team: open && !inv.retired ? orderTeam(inv.team ?? [], inv.person).slice(0, 6).map((t) => ({ name: t.name, role: t.role, photo: t.photo ?? null, source: t.source })) : [] } : null,
         followups: open ? (await ctx.db.query("followups").withIndex("by_match_and_n", (q) => q.eq("matchId", m._id)).take(4))
           .filter((x) => x.state !== "cancelled")
           .map((x) => ({ id: x._id, n: x.n, state: x.state, dueAt: x.dueAt, subject: x.subject ?? null, body: x.body ?? null })) : [],

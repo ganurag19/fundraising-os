@@ -23,6 +23,8 @@ import { missingFacts } from "./deckSample";
 import { MarketTab } from "./Market";
 import { useMarket } from "./useMarket";
 import InvLogo from "./InvLogo";
+import { PartnerFace } from "./PartnerFace";
+import { pitchLine } from "./partner";
 import { DeckReview } from "./Review";
 import { COMPARE, PLANS } from "../landing/plans";
 import { Outreach } from "./Outreach";
@@ -238,7 +240,7 @@ function Home({ me, token, k, go, onUnlock, onRate, rated, sent, replies, ready,
 
       <section className="kh-next">
         <div className="kh-next-t"><span className="kb-kicker">Do this next</span><h3>{topSent < top.length ? `Send your top ${top.length} pitches` : "Your top 5 are out. Unlock the rest of your list."}</h3><p>{topSent < top.length ? "Each opens on something that investor actually did. Send 3 to 5 a day." : `${more} more investors fit ${me.company}.`}</p></div>
-        <div className="kh-five">{top.map((r) => <span key={r.rank} className={r.status !== "new" ? "sent" : ""} title={r.displayName ?? ""}><InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={34} /><em>{r.status !== "new" ? "✓ Sent" : (r.displayName ?? "").split(" ")[0]}</em></span>)}</div>
+        <div className="kh-five">{top.map((r) => <span key={r.rank} className={r.status !== "new" ? "sent" : ""} title={[pitchLine(r.face), r.displayName].filter(Boolean).join(" · ")}><PartnerFace face={r.face} logo={r.logo} name={r.displayName ?? ""} kind={r.kind} size={38} /><em>{r.status !== "new" ? "✓ Sent" : (r.face?.name ?? r.displayName ?? "").split(" ")[0]}</em></span>)}</div>
         <div className="kh-next-a">{topSent < top.length ? <button className="btn primary sm" onClick={() => go("outreach")}>Open my top 5 →</button> : <UnlockBtn onUnlock={onUnlock} label={`Unlock all ${me.matchCount}`} />}<span className="kb-dim">{topSent}/{top.length} sent</span></div>
       </section>
 
@@ -255,7 +257,7 @@ function Home({ me, token, k, go, onUnlock, onRate, rated, sent, replies, ready,
         <MarketTile token={token} sector={sector} go={go} />
         <section className="kh-card kh-inv" onClick={() => go("outreach")} role="button" tabIndex={0}>
           <div className="kh-card-h"><b>Your next {named.length} investors</b><span>Named free, with Fit Score and reason</span></div>
-          <div className="kh-inv-rows">{named.slice(0, 3).map((r) => <div key={r.rank}><InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={26} /><b>{r.displayName}</b><i className="kh-score">{r.score}</i></div>)}</div>
+          <div className="kh-inv-rows">{named.slice(0, 3).map((r) => <div key={r.rank}><PartnerFace face={r.face} logo={r.logo} name={r.displayName ?? ""} kind={r.kind} size={28} /><b>{r.displayName}</b><i className="kh-score">{r.score}</i></div>)}</div>
           <div className="kh-card-f"><span>{more > named.length ? `+${more - named.length} more with full access` : "Open your list"}</span><em>Open →</em></div>
         </section>
       </div>

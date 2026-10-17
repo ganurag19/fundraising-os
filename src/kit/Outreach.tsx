@@ -6,8 +6,9 @@ import { Pipeline } from "../components/Investor";
 import { copyOut, openInGmail } from "../lib/send";
 import type { Me, Row } from "../components/Investor";
 import { cheque } from "../lib/investor";
-import InvLogo from "./InvLogo";
 import { InvestorSheet } from "./InvestorSheet";
+import { PartnerFace } from "./PartnerFace";
+import { pitchLine } from "./partner";
 
 // Outreach: one investor at a time as a card. Swipe right (or Send) opens the pitch in her Gmail and marks it sent;
 // swipe left (or Skip) moves it to the back. Nothing leaves without her pressing send in Gmail.
@@ -116,10 +117,10 @@ function Stack({ r, next, me, token, onToast, onUnlock, onSkip, left }: { r: Row
         {dx < -40 && <span className="ko-stamp skip">Later</span>}
         <header className="kc-head">
           <Dial score={r.score} size={54} />
-          <InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={40} />
+          <PartnerFace face={r.face} logo={r.logo} name={r.displayName ?? ""} kind={r.kind} size={48} />
           <div className="ko-who">
             <b>{r.displayName}</b>
-            <span>{[person, r.title].filter(Boolean).join(", ")}</span>
+            <span>{pitchLine(r.face) ?? [person, r.title].filter(Boolean).join(", ")}</span>
             <span className="muted small">{[KIND[r.kind] ?? "Investor", r.city, r.leadsRounds ? "Leads rounds" : null].filter(Boolean).join(" · ")}{r.website && <> · <a href={r.website} target="_blank" rel="noreferrer">{site(r.website)} ↗</a></>}</span>
           </div>
           <span className="ko-left">{left} left</span>
@@ -212,8 +213,8 @@ function List({ me, token, onToast, onOpen, onUnlock }: { me: Me; token: string;
         {todo.map((r) => (
           <button key={r.rank} className={`ko-row2${r.rank < 5 ? " top" : ""}${r.locked ? " locked" : ""}${r.retired ? " retired" : ""}`} onClick={() => setOpen(r.rank)}>
             <Dial score={r.score} size={40} />
-            {r.rank < 20 ? <InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={34} /> : <span className="ko-mask" aria-hidden="true">🔒</span>}
-            <span className="ko-li-main"><b>{r.displayName}{r.rank < 5 && <span className="ko-top5">Top 5</span>}</b><span>{r.retired ? "No longer active" : r.draft?.hook ?? r.reason ?? "Fits your sector, stage and round."}</span></span>
+            {r.rank < 20 ? <PartnerFace face={r.face} logo={r.logo} name={r.displayName ?? ""} kind={r.kind} size={38} /> : <span className="ko-mask" aria-hidden="true">🔒</span>}
+            <span className="ko-li-main"><b>{r.displayName}{r.rank < 5 && <span className="ko-top5">Top 5</span>}</b>{r.face && <span className="ko-who-p">{pitchLine(r.face)}</span>}<span>{r.retired ? "No longer active" : r.draft?.hook ?? r.reason ?? "Fits your sector, stage and round."}</span></span>
             <span className={`ko-li-tag${r.draft ? " ok" : ""}${r.locked ? " lk" : ""}`}>{r.status !== "new" ? "✓ Sent" : r.draft ? "Pitch ready" : r.locked ? (r.rank < 20 ? "🔒 Email & pitch" : "🔒 Full kit") : "Write pitch"}</span>
             <span className="ko-go" aria-hidden="true">›</span>
           </button>

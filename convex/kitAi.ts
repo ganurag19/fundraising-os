@@ -215,20 +215,57 @@ export const logos = action({
 
 const TeamOut = z.object({ people: z.array(z.object({ name: z.string(), role: z.string(), photo: z.string() })) });
 const TEAM_SYSTEM = `You read one investment firm's own web page and list the people the page itself names as its partners or investment team. You get PAGE (the page text) and IMAGES (numbered images on the page with their alt text).
-Return people: up to 8, partners and investment team first, then others named on the page as team. For each: name exactly as written on the page; role as written (e.g. "Managing Partner"), or "" if none; photo: the number of the image that is clearly that person's photo (its alt text or file name matches them), as a string, or "" if unsure.
+Return people: up to 8, partners and investment team first (and CONTACT ON OUR RECORD first if the page names them), then others named on the page as team. For each: name exactly as written on the page; role as written (e.g. "Managing Partner"), or "" if none; photo: the number of the image that is clearly that person's photo (its alt text, file name, or the text right after it names them), as a string, or "" if unsure.
 Only people the page names as working at this firm. Never portfolio founders, advisors of other companies, testimonials or authors of blog posts. If the page names nobody, return an empty list.`;
 
-/** Links on a page that look like its team page, same site only. */
+const decode = (t: string) => t.replace(/&amp;/g, "&").replace(/&#x27;|&#39;|&rsquo;/g, "'").replace(/&quot;/g, '"').replace(/&nbsp;/g, " ");
+const TEAM_PATHS = ["/team", "/our-team", "/people", "/about-us", "/about", "/who-we-are", "/partners", "/team.html", "/about.html", "/aboutus.php", "/about-us/team"];
+
+/** Links on a page that look like its team page (by the link's own address), same site only, best first. */
 function teamLinks(html: string, base: string): string[] {
   const host = new URL(base).hostname.replace(/^www\./, "");
   const out: string[] = [];
-  for (const m of html.matchAll(/<a\b[^>]*href=["']([^"'#]+)["'][^>]*>([\s\S]{0,120}?)<\/a>/gi)) {
+  for (const m of html.matchAll(/<a\b[^>]*?href=["']([^"'#]+)["']/gi)) {
     const href = abs(m[1], base);
-    if (!href || new URL(href).hostname.replace(/^www\./, "") !== host) continue;
-    if (/(team|people|partners|our-team|who-we-are|about)/i.test(href + " " + m[2].replace(/<[^>]+>/g, ""))) out.push(href.replace(/\/$/, ""));
+    if (!href) continue;
+    const u = new URL(href);
+    if (u.hostname.replace(/^www\./, "") !== host) continue;
+    if (/(team|people|partners|who-we-are|about)/i.test(u.pathname)) out.push(href.replace(/\/$/, ""));
   }
   const rank = (u: string) => (/team|people|partners/i.test(u) ? 0 : 1);
-  return [...new Set(out)].sort((a, b) => rank(a) - rank(b)).slice(0, 2);
+  return [...new Set(out)].sort((a, b) => rank(a) - rank(b)).slice(0, 3);
+}
+
+/** Every picture on the page that could be a person: <img> (src, srcset, lazy attributes) and CSS background images,
+ *  each with the text printed right after it, which is usually the person's name and role. */
+function pictures(html: string, base: string): { src: string; alt: string; near: string }[] {
+  const out: { src: string; alt: string; near: string }[] = [];
+  const near = (i: number) => decode(html.slice(i, i + 900).replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim().slice(0, 110);
+  for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
+    const tag = m[0];
+    const raw = attr(tag, "data-src") ?? attr(tag, "data-lazy-src") ?? attr(tag, "src") ?? attr(tag, "srcset")?.split(/\s+/)[0];
+    const src = raw && !raw.startsWith("data:") ? abs(raw, base) : null;
+    if (src && !/\.svg(\?|$)|logo|icon|sprite/i.test(src)) out.push({ src, alt: decode(attr(tag, "alt") ?? "").slice(0, 80), near: near((m.index ?? 0) + tag.length) });
+  }
+  for (const m of html.matchAll(/background-image:\s*url\((["']?)([^)"']+)\1\)/gi)) {
+    const src = abs(m[2], base);
+    if (src && !/\.svg(\?|$)|logo|icon/i.test(src)) out.push({ src, alt: "", near: near((m.index ?? 0) + m[0].length) });
+  }
+  return out.slice(0, 90);
+}
+
+/** The fund's team page: a linked one, else a common address that answers with real content. */
+async function teamPage(home: { text: string; url: string }): Promise<{ text: string; url: string }> {
+  for (const link of teamLinks(home.text, home.url)) {
+    const p = await fetchText(link, "text/html", MAX_HTML);
+    if (p && p.text.length > 1500) return p;
+  }
+  const origin = new URL(home.url).origin;
+  for (const path of TEAM_PATHS) {
+    const p = await fetchText(origin + path, "text/html", MAX_HTML);
+    if (p && p.text.length > 1500 && /team|partner|founder|our people/i.test(p.text)) return p;
+  }
+  return home;
 }
 
 export const teams = action({
@@ -236,12 +273,12 @@ export const teams = action({
   returns: v.number(),
   handler: async (ctx, { token }): Promise<number> => {
     if (!TOKEN.test(token)) return 0;
-    const todo: { id: Id<"investors">; website: string; name: string }[] = await ctx.runQuery(internal.kit.topForTeams, { token });
+    const todo: { id: Id<"investors">; website: string; name: string; person: string | null; kind: string }[] = await ctx.runQuery(internal.kit.topForTeams, { token });
     if (!todo.length || !(await limits.limit(ctx, "teamLooksPerVisitor", { key: token })).ok) return 0;
     if (!(await limits.limit(ctx, "aiCallsGlobal", { count: todo.length })).ok) return 0;
     let found = 0;
     await Promise.all(todo.map(async (t) => {
-      const team = await readTeam(ctx, t.website, t.name).catch(() => []);
+      const team = await readTeam(ctx, t).catch(() => []);
       if (team.length) found++;
       await ctx.runMutation(internal.kit.saveTeam, { id: t.id, team });
     }));
@@ -249,28 +286,46 @@ export const teams = action({
   },
 });
 
-async function readTeam(ctx: ActionCtx, website: string, name: string) {
-  const url = normaliseUrl(website);
+/** Owner only, from the terminal: look up every investor's team once (a batch at a time, then it schedules the next).
+ *  npx convex run [--prod] kitAi:backfillTeams '{}'   Investors already looked at are skipped. */
+export const backfillTeams = internalAction({
+  args: { after: v.optional(v.union(v.string(), v.null())), done: v.optional(v.number()), found: v.optional(v.number()) },
+  returns: v.null(),
+  handler: async (ctx, { after = null, done = 0, found = 0 }) => {
+    const page: { items: { id: Id<"investors">; website: string; name: string; person: string | null; kind: string }[]; after: string | null; finished: boolean } = await ctx.runQuery(internal.kit.teamsToCheck, { after, n: 8 });
+    let hits = 0;
+    await Promise.all(page.items.map(async (t) => {
+      const team = await readTeam(ctx, t).catch(() => []);
+      if (team.length) hits++;
+      await ctx.runMutation(internal.kit.saveTeam, { id: t.id, team });
+    }));
+    console.log(`teams: ${done + page.items.length} looked at, ${found + hits} with a team`);
+    if (!page.finished) await ctx.scheduler.runAfter(1500, internal.kitAi.backfillTeams, { after: page.after, done: done + page.items.length, found: found + hits });
+    return null;
+  },
+});
+
+async function readTeam(ctx: ActionCtx, t: { website: string; name: string; person: string | null; kind: string }) {
+  const url = normaliseUrl(t.website);
   const home = url ? await fetchSite(url) : null;
   if (!home) return [];
-  // Their team page if the home page links one, else the home page itself.
-  let page = home;
-  for (const link of teamLinks(home.text, home.url)) {
-    const p = await fetchText(link, "text/html", MAX_HTML);
-    if (p && p.text.length > 1500) { page = p; break; }
-  }
-  const text = pageText(page.text);
-  const imgs = [...page.text.matchAll(/<img\b[^>]*>/gi)].map((m) => ({ src: abs(attr(m[0], "src") ?? attr(m[0], "data-src"), page.url), alt: (attr(m[0], "alt") ?? "").slice(0, 80) }))
-    .filter((x): x is { src: string; alt: string } => !!x.src && !/\.svg(\?|$)/i.test(x.src)).slice(0, 80);
-  const input = `FIRM: ${name}\n\nPAGE:\n${text.slice(0, 12000)}\n\nIMAGES:\n${imgs.map((x, i) => `${i + 1}. ${x.alt} | ${x.src.split("/").pop()?.slice(0, 60)}`).join("\n")}`;
+  const page = await teamPage(home);
+  const text = decode(pageText(page.text));
+  const imgs = pictures(page.text, page.url);
+  // An angel's website is usually their own company's: we only want them.
+  const angel = t.kind === "angel";
+  const input = `FIRM: ${angel ? `the company of angel investor ${t.person ?? t.name}` : t.name}${t.person && !angel ? `\nCONTACT ON OUR RECORD: ${t.person}` : ""}\n\nPAGE:\n${text.slice(0, 14000)}\n\nIMAGES:\n${imgs.map((x, i) => `${i + 1}. alt: ${x.alt || "-"} | file: ${x.src.split("/").pop()?.split("?")[0].slice(0, 60)} | text after: ${x.near}`).join("\n")}`;
   const started = Date.now();
   try {
     const res = await new Anthropic().messages.parse({ model: HAIKU, max_tokens: 1200, system: TEAM_SYSTEM, messages: [{ role: "user", content: input }], output_config: { format: zodOutputFormat(TeamOut) } });
     await logCall(ctx, { purpose: "investor_team", model: HAIKU, input, output: res.parsed_output ? JSON.stringify(res.parsed_output) : `stop_reason: ${res.stop_reason}`, started, usage: res.usage });
     const low = text.toLowerCase();
-    // Keep only people the page really names; a photo only if it is one of the page's own images.
+    const words = (n: string) => n.toLowerCase().split(/\s+/).filter((w) => w.length > 1);
+    const target = angel ? words(t.person ?? t.name) : null;
+    // Keep only people the page really names (and for an angel, only them); a photo only if it is one of the page's own pictures.
     return (res.parsed_output?.people ?? [])
       .filter((p) => p.name.trim().length > 2 && low.includes(p.name.trim().toLowerCase()))
+      .filter((p) => !target || target.every((w) => p.name.toLowerCase().includes(w)))
       .slice(0, 8)
       .map((p) => { const img = imgs[Number(p.photo) - 1]; return { name: p.name.trim().slice(0, 80), role: p.role.trim().slice(0, 80), photo: img?.src, source: page.url }; });
   } catch (e) {

@@ -19,6 +19,7 @@ import type * as investors from "../investors.js";
 import type * as invites from "../invites.js";
 import type * as kit from "../kit.js";
 import type * as kitAi from "../kitAi.js";
+import type * as landing from "../landing.js";
 import type * as lib_checks from "../lib/checks.js";
 import type * as lib_links from "../lib/links.js";
 import type * as lib_match from "../lib/match.js";
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   invites: typeof invites;
   kit: typeof kit;
   kitAi: typeof kitAi;
+  landing: typeof landing;
   "lib/checks": typeof lib_checks;
   "lib/links": typeof lib_links;
   "lib/match": typeof lib_match;

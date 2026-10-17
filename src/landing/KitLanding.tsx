@@ -9,6 +9,7 @@ import { savedInviteCode, savePrefill } from "../lib/token";
 import { HeroBuild, InvestorCards, KitShowcase, PlanPicker, ProofStrip } from "./KitParts";
 import { COMPARE, PLANS } from "./plans";
 import InAppHint from "../components/InAppHint";
+import { Faces } from "./Faces";
 
 // The main landing page (since 16 Oct; was the /kit draft): the Raise Kit landing, on Relay Studio's skeleton: one input, the product working on screen,
 // alternating "visual + one promise" sections, calm light theme. Example founder and investors are made up.
@@ -112,6 +113,7 @@ export default function KitLanding() {
       </section>
 
       <ProofStrip />
+      <Faces />
 
 
       {/* 1: just your website */}

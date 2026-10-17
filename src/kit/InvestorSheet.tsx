@@ -7,7 +7,8 @@ import { StatusMenu } from "../components/Investor";
 import type { Me, Row } from "../components/Investor";
 import { copyOut, openInGmail } from "../lib/send";
 import { cheque } from "../lib/investor";
-import InvLogo from "./InvLogo";
+import { PartnerFace } from "./PartnerFace";
+import { pitchLine } from "./partner";
 
 // One investor, everything in one place (17 Oct, after "the open card is not intuitive"): who they are, where their
 // money goes, their deals and team (from their own site), why they fit her, and her pitch with Send. Facts from the record only.
@@ -55,10 +56,10 @@ export function InvestorSheet({ r, me, token, onClose, onToast, onUnlock, onCard
     <div className="is-wrap" role="dialog" aria-modal="true" aria-label={r.displayName ?? "Investor"} onClick={onClose}>
       <aside className="is" onClick={(e) => e.stopPropagation()}>
         <header className="is-head">
-          <InvLogo src={r.logo} name={r.displayName ?? ""} kind={r.kind} size={48} />
+          <PartnerFace face={r.face} logo={r.logo} name={r.displayName ?? ""} kind={r.kind} size={56} />
           <div className="is-who">
             <b>{r.displayName}</b>
-            {(person || r.title) && <span>{[person, r.title].filter(Boolean).join(", ")}</span>}
+            {r.face ? <span>Pitch <b className="is-pp">{pitchLine(r.face)}</b></span> : (person || r.title) && <span>{[person, r.title].filter(Boolean).join(", ")}</span>}
             <span className="is-meta">{[KIND[r.kind] ?? "Investor", r.city].filter(Boolean).join(" · ")}{r.website && <> · <a href={r.website} target="_blank" rel="noreferrer noopener">{site(r.website)} ↗</a></>}</span>
           </div>
           <Dial score={r.score} size={50} />
